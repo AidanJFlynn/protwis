@@ -107,6 +107,31 @@ class Numeric extends DataTypeBase {
             }
         };
     }
+
+    cellFormatting(cell, cellData, rowData, rowIndex, colIndex) {
+        if(this.cssClassCell){
+            if(this.cssClassCell === "_conditional_category_"){
+                this._apply_categorical_class(cell, rowData, this.cssClassCellConditionSource, this.cssClassCellConditionRules);
+            }
+            else {
+                cell.classList.add(className);
+            }
+        }
+    }
+
+    _apply_categorical_class(cell, rowData, conditionSource, conditionRules) {
+        if(conditionSource && conditionRules){
+            const conditionSourceValue = rowData[conditionSource];
+            const rules = conditionRules.split(';');
+            for (const rule of rules) {
+                const [condition, className] = rule.split(':');
+                if (conditionSourceValue.toString().toLowerCase() === condition.toLowerCase()) {
+                    cell.classList.add(className);
+                    break; // Stop after the first matching rule
+                }
+            }
+        }
+    }
 }
 
 export { Numeric };

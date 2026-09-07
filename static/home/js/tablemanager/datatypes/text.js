@@ -137,6 +137,28 @@ class Text extends DataTypeBase {
             tableManagerReference.dataTableReference.columns(col_idx).search(newSearchValue, useRegex).draw();
         }
     }
+
+    cellFormatting(cell, cellData, rowData, rowIndex, colIndex) {
+        if(this.cssClassCell){
+            if(this.cssClassCell === "_conditional_"){
+                if(this.cssClassCellConditionSource && this.cssClassCellConditionRules){
+                    const conditionSourceValue = rowData[this.cssClassCellConditionSource];
+                    const rules = this.cssClassCellConditionRules.split(';');
+                    for (const rule of rules) {
+                        const [condition, className] = rule.split(':');
+                        if (conditionSourceValue.toString().toLowerCase() === condition.toLowerCase()) {
+                            cell.classList.add(className);
+                            break; // Stop after the first matching rule
+                        }
+                    }
+
+                }
+            }
+            else {
+                cell.classList.add(className);
+            }
+        }
+    }
 }
 
 export { Text };

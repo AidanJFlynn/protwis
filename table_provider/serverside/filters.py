@@ -168,3 +168,23 @@ class NumericRangeFilter(FilterRequirement):
         else:
             comp = 'min' if self.filter_action == 'gt' else 'max'
             return Q(**{f"{self.db_field_name}__{self.filter_action}": self.filter_values[comp]})
+
+class BooleanFilter(FilterRequirement):
+    """Represents a boolean filter requirement for a specific database field.
+
+    It supports filtering based on a boolean value.
+    """
+
+    def __init__(self, db_field_name, filter_value):
+        """Initializes a BooleanFilter instance with the specified database field name and filter values."""
+        super().__init__(db_field_name, 'boolean')
+
+        self.filter_values = filter_value
+        self.filter_action = 'equals'
+
+    def format_query(self):
+        """Converts filter values into a Django Q object for querying the database"""
+        if(self.filter_action == 'equals'):
+            return Q(**{f"{self.db_field_name}": self.filter_values})
+        else:
+            raise ValueError(f"Invalid filter action for BooleanFilter: {self.filter_action}")

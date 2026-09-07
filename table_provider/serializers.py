@@ -150,3 +150,148 @@ class GpcrStatisticsSummarySerializer(serializers.Serializer):
         return mapping
 
 
+class PdbStructureSummarySerializer(serializers.Serializer):
+    """Serializer to generate JSON for the PDB structure data stored in the table_pdb_data database table."""
+
+    _uniprot_resource = None
+    _entrez_resource = None
+    _pdb_resource = None
+
+    uniprot = serializers.SerializerMethodField()
+    protein_name_short = serializers.CharField(read_only=True)
+    receptor_family_short = serializers.ReadOnlyField()
+    receptor_class_code = serializers.ReadOnlyField(read_only=True, )
+    gene = serializers.SerializerMethodField()
+    fraction_of_wt_seq = serializers.ReadOnlyField(read_only=True)
+    closest_to_human = serializers.ReadOnlyField(read_only=True)
+    species_common_name = serializers.CharField(read_only=True)
+    identity_to_human = serializers.ReadOnlyField(read_only=True)
+
+    structure_type = serializers.ReadOnlyField(read_only=True)
+    pdb_id = serializers.SerializerMethodField()
+
+    # Resolution ("-" when not available)
+    resolution = serializers.SerializerMethodField()
+    resolution_best = serializers.ReadOnlyField(read_only=True)
+    state = serializers.ReadOnlyField(read_only=True)
+    query_effector = serializers.ReadOnlyField(read_only=True)
+
+    gprot_bound_likeness = serializers.ReadOnlyField(read_only=True)
+    tm6_angle = serializers.ReadOnlyField(read_only=True)
+
+    signal_protein = serializers.ReadOnlyField(read_only=True)
+    signal_protein_subtype = serializers.ReadOnlyField(read_only=True)
+    signal_protein_note = serializers.ReadOnlyField(read_only=True)
+    signal_protein_pcntseq = serializers.ReadOnlyField(read_only=True)
+
+    fusion = serializers.ReadOnlyField(read_only=True)
+    antibody = serializers.ReadOnlyField(read_only=True)
+
+    ligand = serializers.ReadOnlyField(read_only=True)
+    ligand_role = serializers.ReadOnlyField(read_only=True)
+
+    class Meta:
+        """The Meta data subclass provides additional information used for filter processing.
+
+        Meta.datatypes: contains data types of each field which is used when building server-side filters
+        Meta.serializer_method_to_filter_field_map: contains a mapping for fields that use SerializerMethodField (e.g. weblinks) to a single source
+        field in the database (serializer_method_to_filter_field_map).
+        """
+
+        datatypes = {
+            'uniprot': 'text', 'protein_name_short': 'text', 'receptor_family_short': 'text', 'receptor_class_code': 'text', 'gene': 'text',
+            'fraction_of_wt_seq': 'numeric', 'closest_to_human': 'text', 'species_common_name': 'text',
+            'identity_to_human': 'numeric', 'structure_type': 'text', 'pdb_id': 'text', 'resolution': 'numeric', 'resolution_best': 'text',
+            'state': 'text', 'query_effector': 'text', 'gprot_bound_likeness': 'numeric', 'tm6_angle': 'numeric',
+            'signal_protein': 'text', 'signal_protein_subtype': 'text', 'signal_protein_note': 'text', 'signal_protein_pcntseq': 'numeric',
+            'fusion': 'text', 'antibody': 'text', 'ligand': 'text', 'ligand_role': 'text',
+        }
+        #Mapping for fields that use a SerializerMethodField to a single source field in the database. This is used for filtering and sorting.
+        serializer_method_to_filter_field_map = {
+            'uniprot': 'uniprot_entry_name', 'gene': 'gene_name', 'pdb_id': 'pdb_id', 'resolution': 'resolution',
+        }
+
+    @staticmethod
+    def _format_resolution(value):
+        return value if value is not None else "-"
+
+    def get_resolution(self, obj):
+        return self._format_resolution(getattr(obj, 'resolution', None))
+
+    def get_gene_weblink(self, entrez_id):
+        if entrez_id:
+            return str(WebLink(index=entrez_id, web_resource=self._get_entrez_resource()))
+        return None
+
+    def get_gene(self, obj):
+        if hasattr(obj, 'gene_name') and obj.gene_name:
+            gene_anchor = {}
+            gene_anchor['anchor_content'] = obj.gene_name
+            if hasattr(obj, 'gene_entrez_id') and obj.gene_entrez_id:
+                gene_anchor['anchor_href'] = self.get_gene_weblink(obj.gene_entrez_id)
+            else:
+                gene_anchor['anchor_href'] = None
+            return gene_anchor
+        return None
+
+    def get_uniprot_weblink(self, obj):
+        if obj.uniprot_accession:
+            return str(WebLink(index=obj.uniprot_accession, web_resource=self._get_uniprot_resource()))
+        return None
+
+    def get_uniprot(self, obj):
+        uniprot_anchor = {}
+        uniprot_anchor['anchor_content'] = obj.uniprot_entry_name
+        uniprot_anchor['anchor_href'] = self.get_uniprot_weblink(obj)
+        return uniprot_anchor
+
+    def get_pdb_weblink(self, obj):
+        if obj.pdb_id:
+            return str(WebLink(index=obj.pdb_id, web_resource=self._get_pdb_resource()))
+        return None
+
+    def get_pdb_id(self, obj):
+        pdb_anchor = {}
+        pdb_anchor['anchor_content'] = obj.pdb_id
+        pdb_anchor['anchor_href'] = self.get_pdb_weblink(obj)
+        return pdb_anchor
+
+    #Make WebResource objects for Uniprot, Entrez Gene, and PDB available at the class level to prevent multiple database queries.
+    def _get_uniprot_resource(self):
+        if self._uniprot_resource is None:
+            self._uniprot_resource = WebResource.objects.get(slug="uniprot")
+        return self._uniprot_resource
+
+    def _get_entrez_resource(self):
+        if self._entrez_resource is None:
+            self._entrez_resource = WebResource.objects.get(slug="entrez_gene")
+        return self._entrez_resource
+
+    def _get_pdb_resource(self):
+        if self._pdb_resource is None:
+            self._pdb_resource = WebResource.objects.get(slug="pdb")
+        return self._pdb_resource
+
+    @classmethod
+    def source_mapping(cls):
+        """Generate a mapping of serializer field names to their corresponding source fields in the database.
+
+        Handles both simple fields and those that use SerializerMethodField, ensuring that all fields are accounted for in the mapping.
+            :return: A dictionary mapping serializer field names to database source field names.
+        """
+        mapping = dict()
+        for key, field in cls.__dict__['_declared_fields'].items():
+
+            if isinstance(field, serializers.SerializerMethodField):
+                try:
+                    mapping[key] = cls.Meta.serializer_method_to_filter_field_map[key]
+                    continue
+                except KeyError:
+                    raise KeyError(f"No query source mapping found for field '{key}' in serializer. " + \
+                                    "Ensure you have declared all fields that do not have a source " + \
+                                    "parameter in serializer_method_to_filter_field_map under meta data")
+
+            mapping[key] = key
+
+        return mapping
+

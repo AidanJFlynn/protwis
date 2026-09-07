@@ -59,30 +59,31 @@ class Migration(migrations.Migration):
                 ('id', models.AutoField(auto_created=True, primary_key=True, serialize=False, verbose_name='ID')),
                 ('uniprot_entry_name', models.CharField(max_length=20)),
                 ('uniprot_accession', models.CharField(max_length=20)),
+                ('protein_name_short', models.CharField(max_length=100)),
+                ('receptor_family_short', models.CharField(max_length=100, null=True)),
+                ('receptor_class_code', models.CharField(max_length=100, null=True)),
                 ('gene_name', models.CharField(max_length=100, null=True)),
                 ('gene_entrez_id', models.CharField(max_length=100, null=True)),
-                ('protein_name', models.CharField(max_length=100)),
-                ('receptor_family', models.CharField(max_length=100, null=True)),
-                ('receptor_class', models.CharField(max_length=100, null=True)),
                 ('fraction_of_wt_seq', models.DecimalField(decimal_places=2, max_digits=5, null=True)),
+                ('closest_to_human', models.BooleanField(default=False)),
                 ('species_common_name', models.CharField(max_length=100, null=True)),
-                ('species_best', models.BooleanField(default=False)),
                 ('identity_to_human', models.DecimalField(decimal_places=2, max_digits=5, null=True)),
                 ('structure_type', models.CharField(max_length=100, null=True)),
                 ('pdb_id', models.CharField(max_length=10)),
                 ('resolution', models.DecimalField(decimal_places=2, max_digits=5, null=True)),
-                ('resolution_best', models.BooleanField(default=False)),
+                ('resolution_best', models.BooleanField(null=True)),
                 ('state', models.CharField(max_length=100, null=True)),
+                ('query_effector', models.CharField(max_length=100, null=True)),
                 ('gprot_bound_likeness', models.DecimalField(decimal_places=2, max_digits=5, null=True)),
                 ('tm6_angle', models.DecimalField(decimal_places=2, max_digits=5, null=True)),
                 ('signal_protein', models.CharField(max_length=100, null=True)),
                 ('signal_protein_subtype', models.CharField(max_length=100, null=True)),
                 ('signal_protein_note', models.CharField(max_length=100, null=True)),
-                ('signal_protein_seq_cons', models.DecimalField(decimal_places=2, max_digits=5, null=True)),
+                ('signal_protein_pcntseq', models.DecimalField(decimal_places=2, max_digits=5, null=True)),
                 ('fusion', models.CharField(max_length=100, null=True)),
                 ('antibody', models.CharField(max_length=100, null=True)),
                 ('ligand', models.CharField(max_length=100, null=True)),
-                ('ligand_function', models.CharField(max_length=100, null=True)),
+                ('ligand_role', models.CharField(max_length=100, null=True)),
             ],
             options={
                 'db_table': 'table_pdb_data',
@@ -94,19 +95,27 @@ class Migration(migrations.Migration):
         ),
         migrations.AddIndex(
             model_name='pdbtable',
+            index=models.Index(fields=['uniprot_accession'], name='pdb_uniprot_accession_idx'),
+        ),
+        migrations.AddIndex(
+            model_name='pdbtable',
+            index=models.Index(fields=['protein_name_short'], name='pdb_protein_name_idx'),
+        ),
+        migrations.AddIndex(
+            model_name='pdbtable',
+            index=models.Index(fields=['receptor_family_short'], name='pdb_receptor_family_idx'),
+        ),
+        migrations.AddIndex(
+            model_name='pdbtable',
+            index=models.Index(fields=['receptor_class_code'], name='pdb_receptor_class_idx'),
+        ),
+        migrations.AddIndex(
+            model_name='pdbtable',
             index=models.Index(fields=['gene_name'], name='pdb_gene_idx'),
         ),
         migrations.AddIndex(
             model_name='pdbtable',
-            index=models.Index(fields=['protein_name'], name='pdb_protein_name_idx'),
-        ),
-        migrations.AddIndex(
-            model_name='pdbtable',
-            index=models.Index(fields=['receptor_family'], name='pdb_receptor_family_idx'),
-        ),
-        migrations.AddIndex(
-            model_name='pdbtable',
-            index=models.Index(fields=['receptor_class'], name='pdb_receptor_class_idx'),
+            index=models.Index(fields=['gene_entrez_id'], name='pdb_gene_entrez_id_idx'),
         ),
         migrations.AddIndex(
             model_name='pdbtable',
@@ -114,11 +123,11 @@ class Migration(migrations.Migration):
         ),
         migrations.AddIndex(
             model_name='pdbtable',
-            index=models.Index(fields=['species_common_name'], name='pdb_species_name_idx'),
+            index=models.Index(fields=['closest_to_human'], name='pdb_closest_to_human_idx'),
         ),
         migrations.AddIndex(
             model_name='pdbtable',
-            index=models.Index(fields=['species_best'], name='pdb_species_best_idx'),
+            index=models.Index(fields=['species_common_name'], name='pdb_species_common_name_idx'),
         ),
         migrations.AddIndex(
             model_name='pdbtable',
@@ -146,6 +155,10 @@ class Migration(migrations.Migration):
         ),
         migrations.AddIndex(
             model_name='pdbtable',
+            index=models.Index(fields=['query_effector'], name='pdb_query_effector_idx'),
+        ),
+        migrations.AddIndex(
+            model_name='pdbtable',
             index=models.Index(fields=['gprot_bound_likeness'], name='pdb_gprot_bound_likeness_idx'),
         ),
         migrations.AddIndex(
@@ -166,7 +179,7 @@ class Migration(migrations.Migration):
         ),
         migrations.AddIndex(
             model_name='pdbtable',
-            index=models.Index(fields=['signal_protein_seq_cons'], name='pdb_sig_prot_seq_cons_idx'),
+            index=models.Index(fields=['signal_protein_pcntseq'], name='pdb_sig_prot_pcntseq_idx'),
         ),
         migrations.AddIndex(
             model_name='pdbtable',
@@ -182,7 +195,7 @@ class Migration(migrations.Migration):
         ),
         migrations.AddIndex(
             model_name='pdbtable',
-            index=models.Index(fields=['ligand_function'], name='pdb_ligand_function_idx'),
+            index=models.Index(fields=['ligand_role'], name='pdb_ligand_role_idx'),
         ),
         migrations.AddIndex(
             model_name='gpcrstructurestatisticstable',

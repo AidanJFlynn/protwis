@@ -427,6 +427,7 @@ class TableManager {
   columnToDataTableColDef(column) {
     const colDef = { data: column.json_id };
     colDef.render = (data, type, row, meta) => column.dataTableRenderer(data, type, row, meta);
+    colDef.createdCell = (cell, cellData, rowData, rowIndex, colIndex) => column.cellFormatting(cell, cellData, rowData, rowIndex, colIndex);
     return colDef;
   }
 

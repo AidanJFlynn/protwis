@@ -9,11 +9,12 @@ from rest_framework.pagination import LimitOffsetPagination
 
 #Table provider imports
 from table_provider.configuration_provider.configuration_factory import ColumnConfigurationFactory, DataTablesConfigurationFactory
-from table_provider.models import GpcrStructureStatisticsTable
-from table_provider.serializers import GpcrStatisticsSummarySerializer
-from table_provider.serverside.filters import FilterSet
+from table_provider.models import GpcrStructureStatisticsTable, PdbTable
+from table_provider.serializers import GpcrStatisticsSummarySerializer, PdbStructureSummarySerializer
+from table_provider.serverside.filters import FilterSet, TextFilter, BooleanFilter
 from table_provider.serverside.querystringprocessing import DatatablesQueryStringProcessor
 from structure.tables.structure_coverage_statistics_query import GpcrStructureCoverageStatisticsQuery
+from contactnetwork.tables.pdb_table_query import PdbTableDataSource
 
 #Pagination handler for dataTables server side processing
 class DataTablesLimitOffsetPagination(LimitOffsetPagination):
@@ -105,6 +106,103 @@ class GpcrStructureStatisticsSummaryTable(generics.ListCreateAPIView):
     def build_statistics_summary_table(self):
         stat_data_model = [ GpcrStructureStatisticsTable(**data_item) for data_item in GpcrStructureCoverageStatisticsQuery() ]
         GpcrStructureStatisticsTable.objects.bulk_create(stat_data_model, batch_size=10000)
+
+
+class PdbStructureSummaryTable(generics.ListCreateAPIView):
+    """API endpoint for PDB structure browser data"""
+
+    #############
+    # API setup #
+    #############
+
+    serializer_class = PdbStructureSummarySerializer
+    pagination_class = DataTablesLimitOffsetPagination
+
+    def get_queryset(self):
+        effector = self.request.GET.get('effector', 'no_effector')
+        exclude_non_interacting = True if self.request.GET.get('exclude_non_interacting') == 'true' else False
+
+        filters = FilterSet(self.request, PdbStructureSummarySerializer)
+        filters.add_filter(TextFilter('query_effector', effector))
+        if exclude_non_interacting:
+            filters.add_filter(BooleanFilter('is_complex', exclude_non_interacting))
+
+        queryset = self.pdb_structure_table_fetch(filters)
+        return queryset
+
+    def list(self, request, *args, **kwargs):
+
+        table_qs = PdbTable.objects.all()
+
+        if not table_qs.exists():
+            self.build_pdb_structure_table()
+
+        unfilteredCount = table_qs.count()
+
+        queryset = self.get_queryset()
+        url_params = DatatablesQueryStringProcessor(self.request).query_set
+
+        # server side datatables processing response format
+        if 'draw' in url_params:
+
+            response = {}
+
+            filteredCount = queryset.count()
+
+            page = self.paginate_queryset(queryset)
+            rows = page if page is not None else queryset
+
+            serializer = self.get_serializer(rows, many=True)
+
+            response["draw"] = url_params["draw"]
+            response["recordsTotal"] = unfilteredCount
+            response["recordsFiltered"] = filteredCount
+            response["data"] = serializer.data
+
+            return JsonResponse(response)
+
+        else:
+            # client side datatables processing response format
+            serializer = self.get_serializer(queryset, many=True)
+            # for consistency with server side processing response format,
+            # wrap data in "data" key, even though client side processing doesn't require this
+            response = {}
+            response["data"] = serializer.data
+            return Response(response)
+
+    def pdb_structure_table_fetch(self, filters):
+
+        queryset = PdbTable.objects.all()
+
+        for query_filter in filters.get_filters():
+            queryset = queryset.filter(query_filter.format_query())
+
+        if filters.get_ordering():
+            queryset = queryset.order_by(*filters.get_ordering())
+
+        return queryset
+
+    @staticmethod
+    def get_select_options(request, column):
+        #Map any complex table columns back to their primary data column for the query (e.g. weblinks with custom renderers)
+        if column in PdbStructureSummarySerializer.Meta.serializer_method_to_filter_field_map:
+            column = PdbStructureSummarySerializer.Meta.serializer_method_to_filter_field_map[column]
+
+        try:
+            queryset = PdbTable.objects.values_list(column, flat=True).distinct().order_by(column)
+        except FieldError:
+            return JsonResponse({'error': f'Invalid column requested: {column}'}, status=400)
+
+        return JsonResponse(list(queryset), safe=False)
+
+    def build_pdb_structure_table(self):
+        """Builds the PDB structure summary table by fetching data from the PdbTableDataSource and bulk creating PdbTable instances."""        
+        pdb_data_model = []
+        for entries in PdbTableDataSource().values():
+            for entry in entries.values():
+                pdb_data_model.append(PdbTable(**entry))
+
+        PdbTable.objects.bulk_create(pdb_data_model, batch_size=10000)
 
 
 class ConfigurationFactoryView(generics.ListCreateAPIView):

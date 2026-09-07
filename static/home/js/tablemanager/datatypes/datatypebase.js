@@ -18,6 +18,11 @@ class DataTypeBase {
     return data;
   } 
   
+  cellFormatting(cell, cellData, rowData, rowIndex, colIndex ) {
+    // Default implementation does nothing. Subclasses can override this method to apply specific formatting to table cells.
+    return null; 
+  }
+
 }
 
 export { DataTypeBase };
