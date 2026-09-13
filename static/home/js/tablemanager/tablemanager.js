@@ -1,5 +1,6 @@
 import { Column } from "./column.js";
 import { DataTypeFactory } from "./datatypefactory.js";
+import { CellStyleFactory } from "./cellstylefactory.js";
 
 // This class represents the TableManager, which is responsible for managing the data table and its associated columns, filters, and rendering logic.
 // The TableManager interacts with the back end TableProvider to fetch configuration and content data, then initializes a DataTable with the appropriate settings and column definitions.
@@ -16,11 +17,15 @@ class TableManager {
   constructor(
     columnSpecification,
     tableId, 
-    DataTypeFactoryReference
+    DataTypeFactoryReference,
+    CellStyleFactoryReference
   ) {
     this.dataTypeFactory = DataTypeFactoryReference || new DataTypeFactory();
+    this.cellStyleFactory = CellStyleFactoryReference || new CellStyleFactory();
+    
     this.columns = this.initialiseColumns(columnSpecification);
     this.tableId = tableId;
+    
     //Array to store functions that need to be run after data is loaded into the table, 
     // e.g. to populate filter interfaces that require access to the dataset to determine their options (e.g. select dropdowns populated with unique values from the dataset)
     this.dataLoadedCallBacks = []; 
@@ -427,7 +432,7 @@ class TableManager {
   columnToDataTableColDef(column) {
     const colDef = { data: column.json_id };
     colDef.render = (data, type, row, meta) => column.dataTableRenderer(data, type, row, meta);
-    colDef.createdCell = (cell, cellData, rowData, rowIndex, colIndex) => column.cellFormatting(cell, cellData, rowData, rowIndex, colIndex);
+    colDef.createdCell = (cell, cellData, rowData, rowIndex, colIndex) => column.cellFormatting(cell, cellData, rowData, rowIndex, colIndex, this);
     return colDef;
   }
 

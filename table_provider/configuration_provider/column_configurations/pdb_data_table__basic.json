@@ -47,7 +47,7 @@
     "title": "Species",
     "data_type": "text",
     "allow_filter": true,
-    "cssClassCell": "_conditional_",
+    "cssClassCell": "_conditional_categorical_",
     "cssClassCellConditionSource": "closest_to_human",
     "cssClassCellConditionRules": "true:bestSpeciesTrue;false:bestSpeciesFalse"
   },
@@ -78,9 +78,9 @@
     "title": "Resolution",
     "data_type": "numeric",
     "allow_filter": true,
-    "cssClassCell": "_conditional_category_",
-    "cssClassCellConditionSource": "resolution_best",
-    "cssClassCellConditionRules": "true:bestResolutionTrue;false:bestResolutionFalse"
+    "cssClassCell": "_conditional_gradient_greyscale_",
+    "cssClassCellConditionSource": "resolution",
+    "cssClassCellConditionRules": "shadingMin:0;shadingMax:30;valueClampMax:4"
   },
     {
     "column_group": "Receptor State",

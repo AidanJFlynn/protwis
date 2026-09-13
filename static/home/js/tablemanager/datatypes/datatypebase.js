@@ -18,10 +18,38 @@ class DataTypeBase {
     return data;
   } 
   
-  cellFormatting(cell, cellData, rowData, rowIndex, colIndex ) {
-    // Default implementation does nothing. Subclasses can override this method to apply specific formatting to table cells.
-    return null; 
+  cellFormatting(cell, cellData, rowData, rowIndex, colIndex, tableManagerReference) {
+    if (this.cssClassCell) {
+        if(this.cssClassCell.includes("_conditional_")){            
+            let conditionSource = null;
+            if (this.cssClassCellConditionSource) { conditionSource = this.cssClassCellConditionSource.split(';'); }
+            
+            let settings = null;
+            if (this.cssClassCellConditionRules) { settings = this.parseSettingsList(this.cssClassCellConditionRules); }
+            
+            let styler = tableManagerReference.cellStyleFactory.getStyler(this.cssClassCell, cell, cellData, rowData, rowIndex, colIndex, conditionSource, tableManagerReference, settings);
+            styler.applyStyle();
+        } else {
+            cell.classList.add(this.cssClassCell);
+        }
+    }
   }
+
+  parseSettingsList(settingsList){
+        // Parse the settings list into a dictionary of key-value pairs
+
+        if (settingsList == null || settingsList === undefined || settingsList.trim() === "") {
+            return null;
+        }
+
+        let settingsDict = {};
+        let settingsArray = settingsList.split(';');
+        for (let setting of settingsArray) {
+            let [key, value] = setting.split(':');
+            settingsDict[key.trim()] = value.trim();
+        }
+        return settingsDict;
+    }
 
 }
 

@@ -1,6 +1,7 @@
 #Django Framework imports
 from django.http import JsonResponse
 from django.core.exceptions import FieldError
+from django.db.models import Min, Max
 
 #Rest Framework imports
 from rest_framework import generics
@@ -194,6 +195,23 @@ class PdbStructureSummaryTable(generics.ListCreateAPIView):
             return JsonResponse({'error': f'Invalid column requested: {column}'}, status=400)
 
         return JsonResponse(list(queryset), safe=False)
+
+    @staticmethod
+    def get_numeric_range(request, column):
+        #Map any complex table columns back to their primary data column for the query (e.g. weblinks with custom renderers)
+        if column in PdbStructureSummarySerializer.Meta.serializer_method_to_filter_field_map:
+            column = PdbStructureSummarySerializer.Meta.serializer_method_to_filter_field_map[column]
+
+        if column in PdbStructureSummarySerializer.Meta.datatypes and PdbStructureSummarySerializer.Meta.datatypes[column] == 'numeric':
+            try:
+                queryset = PdbTable.objects.aggregate(min=Min(column), max=Max(column))
+            except FieldError:
+                return JsonResponse({'error': f'Invalid column requested: {column}'}, status=400)
+        else:
+            return JsonResponse({'error': f'Column {column} is not a numeric column'}, status=400)
+
+        return JsonResponse(queryset, safe=False)
+
 
     def build_pdb_structure_table(self):
         """Builds the PDB structure summary table by fetching data from the PdbTableDataSource and bulk creating PdbTable instances."""        

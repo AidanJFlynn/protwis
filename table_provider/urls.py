@@ -28,6 +28,9 @@ urlpatterns = [
     #AJAX source for dropdown select options for filtering various columns in the PDB Structure Table
     url(r'^pdb_data_table/options/(?P<column>[^/]+)/?$', (PdbStructureSummaryTable.get_select_options), name='pdb_structure_table_options'),
 
+    #AJAX request for numeric range (min, max) of data for a given column in the PDB Structure Table
+    url(r'^pdb_data_table/range/(?P<column>[^/]+)/?$', (PdbStructureSummaryTable.get_numeric_range), name='pdb_structure_table_options'),
+
     ######################################
     # TableManager configuration factory #
     ######################################
