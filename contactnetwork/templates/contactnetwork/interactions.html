@@ -191,7 +191,7 @@
                         <!-- <input class="crystal-pdb" type="hidden" value="[]" /> -->
                         <input class="crystal-pdb" type="hidden" value="[&quot;5XRA&quot;,&quot;5WB1&quot;,&quot;5G53&quot;,&quot;3SN6&quot;,&quot;5T04&quot;,&quot;6G79&quot;,&quot;5C1M&quot;,&quot;5XSZ&quot;,&quot;4MQT&quot;,&quot;5UNG&quot;,&quot;5ZKP&quot;,&quot;5TUD&quot;,&quot;6B73&quot;,&quot;6AK3&quot;,&quot;5DYS&quot;,&quot;6D9H&quot;,&quot;4XT1&quot;,&quot;6H7N&quot;,&quot;4ZWJ&quot;]">
                         <button type="button" class="btn btn-primary" data-toggle="modal" data-target="#single-crystal-group-pdbs-modal-table">Select Structures</button>
-                        <span class="crystal-count">No</span> structure(s) selected.
+                        <span id="single-crystal-group-select-display" class="crystal-count">No</span> structure(s) selected.
 <!--                        <div class="checkbox normalized" style="padding-left:20px;display:inline;">
                             <label>
                               <input type="checkbox"> Normalized
@@ -634,19 +634,67 @@
                 <div class="modal-header">
                     <h4 class="modal-title">Select a set of structures</h4>
                     <span id="single-crystal-group-pdbs-modal-text">0 structure(s) selected</span>
-                    <button type="button" onclick="resetselection(false, true);" class="btn btn-xs btn-primary reset-selection">Reset selection</button>
                     <button type="button" class="btn btn-default pull-right" data-dismiss="modal">Close</button>
                 </div>
                 <div class="modal-body">
                     <div class="col-md-12">
-                        <div class="tableview"></div>
+                        <div class="tableview">
+                        <!-- This table is populated by the TableManager -->
+                            <table id="single-crystal-group-pdb-table" width="100%" class="display">
+                                <script type="module">
+                                    // Populate PDB table using TableManager
+                                    import { TableManager } from "{% static 'home/js/tablemanager/tablemanager.js' %}";
+                                    import { InjectorTemplates } from "{% static 'home/js/tablemanager/injectors/injectortemplates.js' %}";
+
+                                    let config
+                                    try {
+                                        config = await TableManager.fetchConfiguration(
+                                        'pdb_data_table', //dataTableConfigName
+                                        'clientside', //dataTableConfigVariant
+                                        'pdb_data_table', //columnConfigName
+                                        'basic' //columnConfigVariant
+                                        );
+                                    } catch(error) {
+                                        console.error('Error fetching configuration:', error);
+                                    }
+
+                                    if (config) {
+                                        // Initialize the table (multi-select checkboxes are the default)
+                                        let singleCrystalGroupTableManager = new TableManager(config.columnsSpecifications, 'single-crystal-group-pdb-table');
+
+                                        // Register a super header injector to add info-icon to "Receptor state" header
+                                        singleCrystalGroupTableManager.superHeaderInjectors.registerInjector("Receptor State", function(cellElementArray) {
+                                            return InjectorTemplates.addInfoIconLink(cellElementArray, "https://docs.gpcrdb.org/structures.html#structure-descriptors");
+                                        });
+
+                                        singleCrystalGroupTableManager.initialiseDataTable(config.datatableConfiguration);
+
+                                        singleCrystalGroupTableManager.eventPubSub.subscribe("checkboxStateChanged", function(eventData) {
+                                            let count = singleCrystalGroupTableManager.state.activeCheckBoxes.size;
+                                            document.querySelector("#single-crystal-group-pdbs-modal-text").textContent = `${count} structure(s) selected`;
+                                            document.querySelector("#single-crystal-group-select-display").textContent = count;
+                                        });
+
+                                        document.querySelector("#single-crystal-group-reset-selection").addEventListener("click", function() {
+                                            const activeCheckBoxes = singleCrystalGroupTableManager.state.activeCheckBoxes;
+                                            [...activeCheckBoxes].forEach(([rowId, cellData]) => {
+                                                activeCheckBoxes.delete(rowId);
+                                                singleCrystalGroupTableManager.eventPubSub.publish("checkboxStateChanged", { rowId: rowId, checked: false, cellData: cellData });
+                                            });
+                                            // Redraw to sync the rendered checkboxes with the cleared state
+                                            singleCrystalGroupTableManager.dataTableReference.draw(false);
+                                        });
+
+                                        window.tableManagers = window.tableManagers || {};
+                                        window.tableManagers.singleCrystalGroupTableManager = singleCrystalGroupTableManager;
+                                    }
+                                </script>
+                            </table>
+                        </div>
                     </div>
                 </div>
                 <div class="modal-footer">
                 </div>
-            </div>
-            <div class="loading_overlay">
-                <img src="/static/home/images/loading.gif" id="img-load" />
             </div>
         </div>
     </div>
@@ -659,7 +707,6 @@
                 <div class="modal-header">
                     <h4 class="modal-title">Select a set of structures</h4>
                     <span id="two-crystal-group-pdbs-modal-1-text">0 structure(s) selected</span>
-                    <button type="button" onclick="resetselection(false, true);" class="btn btn-xs btn-primary reset-selection">Reset selection</button>
                     <button type="button" class="btn btn-default pull-right" data-dismiss="modal">Close</button>
                 </div>
                 <div class="modal-body">

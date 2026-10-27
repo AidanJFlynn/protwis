@@ -1616,7 +1616,7 @@ function initalizeSingleCrystalView() {
 
 function initializeSingleGroupCrystalView() {
     //            initializeSegmentButtons('#single-crystal-group-tab');
-    initializeGoButton('#single-crystal-group-tab', true);
+    initializeGoButton('#single-crystal-group-tab', 'singleCrystalGroupTableManager', true);
     initializeFullscreenButton('#single-crystal-group-tab');
     initializeInteractionButtons('#single-crystal-group-tab');
 }
