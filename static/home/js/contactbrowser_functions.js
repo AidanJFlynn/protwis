@@ -524,7 +524,7 @@ function redraw_renders() {
     }
 
 
-    $('div.dataTables_scrollBody:visible').height('50vh');
+    $('div.dt-scroll-body:visible, div.dataTables_scrollBody:visible').height('50vh');
 
     // Make sure browser-tables are not too wide.
     browser_table_div_width = $('.contact-browser:visible').width();
@@ -533,7 +533,7 @@ function redraw_renders() {
     } else {
         browser_table_width = browser_table_div_width - 30;
     }
-    $('.contact-browser .dataTables_wrapper').width(browser_table_width);
+    $('.contact-browser .dt-container, .contact-browser .dataTables_wrapper').width(browser_table_width);
     // console.log(browser_table_div_width,browser_table_width);
 
     var width_svg = visible_svg.width();
@@ -742,9 +742,10 @@ function initializeInteractionButtons(selector) {
 }
 
 
-function initializeGoButton(selector, generic = false) {
+function initializeGoButton(selector, TableManagerName, generic = false) {
     $(selector + ' .go-button').click(function () {
-        var pdb = JSON.parse($(selector + ' .crystal-pdb').val());
+        var pdb = []; 
+        window.tableManagers[TableManagerName].state.activeCheckBoxes.forEach(cb => pdb.push(cb.data.pdb_id));
         loadPDBsView(pdb, selector, generic)
     });
 }
@@ -1106,7 +1107,7 @@ function loadPDBsView(pdb, selector, generic) {
                 renderBrowser_5(data);
                 generate_display_options();
                 browser_visible = $(".nav-browsers:visible li.active a").attr('id');
-                renderDataTablesYadcf(browser_visible);
+                renderDataTables(browser_visible);
                 $(".main_loading_overlay").hide();
 
                 // Set up default visualisation
@@ -1179,7 +1180,7 @@ function loadTwoPDBsView(pdbs1, pdbs2, selector, generic) {
                 renderBrowser_4(data);
                 renderBrowser_5(data);
                 browser_visible = $(".nav-browsers:visible li.active a").attr('id');
-                renderDataTablesYadcf(browser_visible);
+                renderDataTables(browser_visible);
                 generate_display_options();
                 $(".main_loading_overlay").hide();
 
@@ -1237,10 +1238,10 @@ function initializeFullscreenButton(selector) {
 
         if (fullScreenElement.attr('id')) {
             if (fullScreenElement.attr('id').startsWith('DataTable')) {
-                top_height = $('div.dataTables_scrollHead:visible').outerHeight();
-                bottom_height = $('div.dataTables_info:visible').outerHeight();
+                top_height = $('div.dt-scroll-head:visible, div.dataTables_scrollHead:visible').outerHeight();
+                bottom_height = $('div.dt-info:visible, div.dataTables_info:visible').outerHeight();
                 scrollbody_height = screen.height - top_height - bottom_height;
-                $('div.dataTables_scrollBody:visible').height(scrollbody_height + 'px');
+                $('div.dt-scroll-body:visible, div.dataTables_scrollBody:visible').height(scrollbody_height + 'px');
             }
         }
     });
@@ -1609,7 +1610,7 @@ var pdbTableDataReady = null;
 
 function initalizeSingleCrystalView() {
     //            initializeSegmentButtons('#single-crystal-tab');
-    initializeGoButton('#single-crystal-tab');
+    initializeGoButton('#single-crystal-tab', 'singleCrystalTableManager');
     initializeFullscreenButton('#single-crystal-tab');
 }
 

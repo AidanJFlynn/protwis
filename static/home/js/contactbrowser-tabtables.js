@@ -3,6 +3,15 @@ var filtered_cluster_groups = [];
 var filtered_gns = [];
 var filtered_gns_abs_diff_values = {};
 var filtered_cluster_groups_set = {};
+
+// Destroys the initialised DataTable(s) among the given elements. With scrollX DataTables keeps cloned header and
+// footer tables with the same class; calling .DataTable() on those would initialise them as extra default DataTables.
+function destroy_data_table(table) {
+    table.filter((i, el) => $.fn.DataTable.isDataTable(el)).each(function () {
+        $(this).DataTable().destroy();
+    });
+}
+
 function filter_browser() {
     old_filtered_gn_pairs = filtered_gn_pairs;
     filtered_gn_pairs = [];
@@ -14,10 +23,13 @@ function filter_browser() {
     const selector = "#" + $('.main_option:visible').attr('id');
     const analys_mode = selector.replace('-tab', '');
 
-    if ($.fn.DataTable.isDataTable(".browser-table-1:visible")) {
-        var table = $(".browser-table-1:visible").DataTable();
+    // Only pick the initialised table: with scrollX DataTables also keeps a cloned header table with the same class,
+    // and calling .DataTable() on that would initialise it as a second, default DataTable (with its own search box)
+    var visible_table = $(".browser-table-1:visible").filter((i, el) => $.fn.DataTable.isDataTable(el));
+    if (visible_table.length) {
+        var table = visible_table.first().DataTable();
         table.rows({
-            filter: 'applied'
+            search: 'applied'
         }).data().each(function(i) {
             filtered_gn_pairs.push(i['DT_RowId'])
             gns = separatePair(i['DT_RowId']);
@@ -107,9 +119,9 @@ function filter_browser() {
         console.time('Update network');
         if (old_filtered_gn_pairs.sort().join(',') !== filtered_gn_pairs.sort().join(',')) {
             // only update this if there are new filtered things..
-            rowIndexes = table.rows({ filter: 'applied' }).indexes();
+            rowIndexes = table.rows({ search: 'applied' }).indexes();
             table.rows({
-                filter: 'applied'
+                search: 'applied'
             }).data().each(function (i, index) {
                 rowindex = rowIndexes[index];
                 gns = separatePair(i['DT_RowId']);
@@ -169,6 +181,105 @@ function make_range_number_cols(start_column, repeat_number) {
     return repeated_from_to;
 }
 
+/**
+ * Adds filter inputs to the header cells of a DataTable and applies them with a DataTables search plugin.
+ * Replaces the yadcf column filters. Each config is {column_number, filter_type, ...} where filter_type is
+ * "text" (case-insensitive contains, debounced by filter_delay), "multi_select" (select2 over the distinct column
+ * values, split on text_data_delimiter when given) or "range_number" (min/max on the numeric cell value).
+ * Filters are combined with AND, and the select options are fixed at init (not narrowed by other filters).
+ * @param {DataTables.Api} dt - The DataTable to filter.
+ * @param {Object[]} configs - One filter configuration per filtered column.
+ */
+function initColumnFilters(dt, configs) {
+    const tableSettings = dt.settings()[0];
+    const filters = {}; // column index -> predicate on the cell's filter text
+
+    // Splits a cell text on the delimiter (if any) into trimmed, non-empty values
+    // The columns use a custom type, so DataTables does not strip HTML from the filter text; strip it here
+    const splitCell = (text, delimiter) => {
+        const plain = String(text).replace(/<[^>]*>/g, "");
+        return (delimiter ? plain.split(delimiter) : [plain]).map(v => v.trim()).filter(v => v !== "");
+    };
+
+    // The filters read the row's own data (the 4th argument) rather than DataTables' cached filter text, so they
+    // compare exactly the cell contents the select options were built from
+    $.fn.dataTable.ext.search.push(function (settings, searchData, dataIndex, rowData) {
+        if (settings !== tableSettings) return true;
+        for (const col in filters) {
+            if (!filters[col](rowData[col])) return false;
+        }
+        return true;
+    });
+
+    const setFilter = (col, predicate) => {
+        if (predicate) filters[col] = predicate; else delete filters[col];
+        dt.draw();
+    };
+
+    // The headers span several rows, so the filters get one row of their own at the bottom of the header, with a
+    // cell per column. It is added to the visible header, which is the cloned one when the table scrolls.
+    const thead = $(dt.column(0).header()).closest('thead');
+    thead.find('tr.column-filters').remove();
+    const filterRow = $('<tr class="column-filters"></tr>');
+    for (let i = 0; i < dt.columns().count(); i++) {
+        filterRow.append('<td style="vertical-align: top; padding: 2px;"></td>');
+    }
+    thead.append(filterRow);
+
+    configs.forEach(function (cfg) {
+        const col = cfg.column_number;
+        const cell = filterRow.children().eq(col);
+        const wrapper = $('<div class="column-filter" style="display: flex; gap: 2px;"></div>');
+        // Keep interaction with the filter from reaching DataTables' header click/keyboard sorting
+        wrapper.on('click mousedown keydown keyup keypress', e => e.stopPropagation());
+
+        if (cfg.filter_type === "text") {
+            const input = $('<input type="text" class="form-control input-sm" style="min-width: 0; width: 100%;"/>').attr('placeholder', cfg.filter_default_label || "");
+            let timer;
+            input.on('input', function () {
+                clearTimeout(timer);
+                timer = setTimeout(() => {
+                    const term = input.val().trim().toLowerCase();
+                    setFilter(col, term ? text => String(text).replace(/<[^>]*>/g, "").toLowerCase().includes(term) : null);
+                }, cfg.filter_delay || 0);
+            });
+            wrapper.append(input);
+        } else if (cfg.filter_type === "multi_select") {
+            const select = $('<select multiple></select>');
+            const values = new Set();
+            dt.column(col).data().each(text => splitCell(text, cfg.text_data_delimiter).forEach(v => values.add(v)));
+            [...values].sort((a, b) => a.localeCompare(b, undefined, { numeric: true }))
+                .forEach(v => select.append($('<option></option>').val(v).text(v)));
+            wrapper.append(select);
+            select.select2(Object.assign({
+                multiple: true,
+                closeOnSelect: true,
+                allowClear: true,
+                placeholder: cfg.filter_default_label || "Select..."
+            }, cfg.select_type_options));
+            select.on('change', function () {
+                const selected = new Set(select.val());
+                setFilter(col, selected.size ? text => splitCell(text, cfg.text_data_delimiter).some(v => selected.has(v)) : null);
+            });
+        } else if (cfg.filter_type === "range_number") {
+            const min = $('<input type="text" class="form-control input-sm" placeholder="Min" style="min-width: 0; width: 50%;"/>');
+            const max = $('<input type="text" class="form-control input-sm" placeholder="Max" style="min-width: 0; width: 50%;"/>');
+            const bound = input => { const v = parseFloat(input.val()); return Number.isFinite(v) ? v : null; };
+            const apply = function () {
+                const lo = bound(min), hi = bound(max);
+                setFilter(col, lo === null && hi === null ? null : text => {
+                    const v = parseFloat(String(text).replace(/<[^>]*>/g, ""));
+                    return Number.isFinite(v) && (lo === null || v >= lo) && (hi === null || v <= hi);
+                });
+            };
+            min.add(max).on('input', apply);
+            wrapper.append(min, max);
+        }
+        cell.append(wrapper);
+    });
+    dt.columns.adjust();
+}
+
 jQuery.extend( $.fn.dataTable.ext.type.order, {
     "non-empty-string-asc": function (str1, str2) {
         if(str1 == "")
@@ -195,9 +306,9 @@ jQuery.extend( $.fn.dataTable.ext.type.order, {
     }
 } );
 
-function renderDataTablesYadcf(element) {
+function renderDataTables(element) {
 
-    console.time("renderDataTablesYadcf");
+    console.time("renderDataTables");
 
     const tab_number = element.split("-").reverse()[2];
     const selector = "#" + $('.main_option:visible').attr('id');
@@ -211,14 +322,14 @@ function renderDataTablesYadcf(element) {
     }
     // If table is without tbody, then do not init further.
     if (!(table.find("thead").length)) {
-        console.timeEnd("renderDataTablesYadcf");
+        console.timeEnd("renderDataTables");
         $(".main_loading_overlay").hide();
         return
     }
     // Do not re init the table.
     if ($.fn.DataTable.isDataTable(selector + " .browser-table-" + tab_number)) {
-        console.timeEnd("renderDataTablesYadcf");
-        var btable = $(selector + " .browser-table-" + tab_number).DataTable();
+        console.timeEnd("renderDataTables");
+        var btable = $(selector + " .browser-table-" + tab_number).filter((i, el) => $.fn.DataTable.isDataTable(el)).first().DataTable();
         btable.columns.adjust().draw();
         $(".main_loading_overlay").hide();
         return
@@ -238,6 +349,8 @@ function renderDataTablesYadcf(element) {
             console.time("Render DataTable " + tab_number)
             btable = table.DataTable({
                 'scrollX': true,
+                // Hide the global search box; searching itself must stay enabled, as the column filters run through it
+                layout: { topEnd: null },
                 scrollY: '50vh',
                 // "sDom": 't', // To disable the pages on the button..
                 paging: true,
@@ -249,7 +362,7 @@ function renderDataTablesYadcf(element) {
                     filtered = iMax - iTotal;
                     filtered_text = filtered ? " (" + filtered + " contact-pairs filtered out)" : "";
                     var cols = []
-                    var table = $(selector + ' .dataTables_scrollBody');
+                    var table = $(selector + ' .dt-scroll-body');
                     cols_of_interest = [0, 1];
                     for (let [i, row] of [...table.find("tbody")[0].rows].entries()) {
                         for (let [j, cell] of [...row.cells].entries()) {
@@ -259,7 +372,7 @@ function renderDataTablesYadcf(element) {
                             }
                         }
                     }
-                    distinctPositions = [...new Set(cols[1].map((val, i) => val.split("-")).flat())]
+                    distinctPositions = [...new Set((cols[1] || []).map((val, i) => val.split("-")).flat())]
                     //console.log(cols);
                     // distinctReceptors = [...new Set(cols[1])];
                     // distinctReceptorState = [...new Set(cols[1].map((val, i) => [cols[11]].reduce((a, arr) => [...a, arr[i]], [val])))];
@@ -268,6 +381,8 @@ function renderDataTablesYadcf(element) {
                     return "Showing " + iTotal + " contact-pairs covering "+distinctPositions.length+" positions"+filtered_text;
                   },
                 "order": [],
+                // Sort controls go on the third (label) header row only, 0-indexed
+                titleRow: 2,
                 columnDefs: [{
                         type: "string",
                         targets: 1
@@ -287,7 +402,7 @@ function renderDataTablesYadcf(element) {
                 repeated_from_to_1 = make_range_number_cols(8, 18);
                 repeated_from_to_2 = make_range_number_cols(28, 10);
 
-                yadcf.init(btable,
+                initColumnFilters(btable,
                     [{
                             column_number: 0,
                             filter_type: "text",
@@ -344,15 +459,12 @@ function renderDataTablesYadcf(element) {
                         },
                         filter_default_label: "AA",
                         filter_reset_button_text: false,
-                    }]).concat(repeated_from_to_2), {
-                        cumulative_filtering: false
-                    }
-
+                    }]).concat(repeated_from_to_2)
                 );
             } else if (analys_mode == "#single-crystal-group") {
                 repeated_from_to_1 = make_range_number_cols(6, 18);
                 repeated_from_to_2 = make_range_number_cols(26, 7);
-                yadcf.init(btable,
+                initColumnFilters(btable,
                     [{
                             column_number: 0,
                             filter_type: "text",
@@ -400,16 +512,13 @@ function renderDataTablesYadcf(element) {
                             filter_default_label: "AA",
                             filter_reset_button_text: false,
                         }
-                    ].concat(repeated_from_to_1).concat(repeated_from_to_2), {
-                        cumulative_filtering: false
-                    }
-
+                    ].concat(repeated_from_to_1).concat(repeated_from_to_2)
                 );
             } else if (analys_mode == "#single-crystal") {
                 repeated_from_to_1 = make_range_number_cols(7, 11);
                 repeated_from_to_2 = make_range_number_cols(20, 1);
 
-                yadcf.init(btable,
+                initColumnFilters(btable,
                     [{
                             column_number: 0,
                             filter_type: "text",
@@ -428,7 +537,7 @@ function renderDataTablesYadcf(element) {
                             html_data_type: "text",
                             text_data_delimiter: "-",
                             filter_default_label: "Res. No.",
-                            filter_reset_button_text: false // hide yadcf reset button
+                            filter_reset_button_text: false
                         },
                         {
                             column_number: 2,
@@ -471,10 +580,7 @@ function renderDataTablesYadcf(element) {
                             filter_default_label: "AA",
                             filter_reset_button_text: false,
                         }
-                    ].concat(repeated_from_to_1).concat(repeated_from_to_2), {
-                        cumulative_filtering: false
-                    }
-
+                    ].concat(repeated_from_to_1).concat(repeated_from_to_2)
                 );
             }
             btable.on('draw.dt', function(e, oSettings) {
@@ -495,6 +601,8 @@ function renderDataTablesYadcf(element) {
 
             btable = table.DataTable({
                 'scrollX': true,
+                // Hide the global search box; searching itself must stay enabled, as the column filters run through it
+                layout: { topEnd: null },
                 scrollY: '50vh',
                 // "sDom": 't', // To disable the pages on the button..
                 "bLengthChange": false,
@@ -504,7 +612,7 @@ function renderDataTablesYadcf(element) {
                     filtered = iMax - iTotal;
                     filtered_text = filtered ? " (" + filtered + " contact-pairs filtered out)" : "";
                     var cols = []
-                    var table = $(selector + ' .dataTables_scrollBody');
+                    var table = $(selector + ' .dt-scroll-body');
                     cols_of_interest = [0, 1];
                     for (let [i, row] of [...table.find("tbody")[0].rows].entries()) {
                         for (let [j, cell] of [...row.cells].entries()) {
@@ -514,7 +622,7 @@ function renderDataTablesYadcf(element) {
                             }
                         }
                     }
-                    distinctPositions = [...new Set(cols[1].map((val, i) => val.split("-")).flat())]
+                    distinctPositions = [...new Set((cols[1] || []).map((val, i) => val.split("-")).flat())]
                     //console.log(cols);
                     // distinctReceptors = [...new Set(cols[1])];
                     // distinctReceptorState = [...new Set(cols[1].map((val, i) => [cols[11]].reduce((a, arr) => [...a, arr[i]], [val])))];
@@ -525,6 +633,8 @@ function renderDataTablesYadcf(element) {
                 paging: true,
                 pageLength: 200,
                 "order": [],
+                // Sort controls go on the third (label) header row only, 0-indexed
+                titleRow: 2,
                 columnDefs: [{
                         type: "string",
                         targets: 1
@@ -546,7 +656,7 @@ function renderDataTablesYadcf(element) {
                 repeated_from_to_3 = make_range_number_cols(27, 13);
                 repeated_from_to_4 = make_range_number_cols(42, 6);
 
-                yadcf.init(btable,
+                initColumnFilters(btable,
                     [{
                             column_number: 0,
                             filter_type: "text",
@@ -601,10 +711,7 @@ function renderDataTablesYadcf(element) {
                         },
                         filter_default_label: "AA",
                         filter_reset_button_text: false,
-                    }]).concat(repeated_from_to_4), {
-                        cumulative_filtering: false
-                    }
-
+                    }]).concat(repeated_from_to_4)
                 );
             } else if (analys_mode == "#single-crystal-group") {
 
@@ -613,7 +720,7 @@ function renderDataTablesYadcf(element) {
                 repeated_from_to_3 = make_range_number_cols(17, 13);
                 repeated_from_to_4 = make_range_number_cols(32, 6);
 
-                yadcf.init(btable,
+                initColumnFilters(btable,
                     [{
                             column_number: 0,
                             filter_type: "text",
@@ -680,10 +787,7 @@ function renderDataTablesYadcf(element) {
                     //     text_data_delimiter: "|",
                     //     filter_reset_button_text: false,
                     // }
-                    ]).concat(repeated_from_to_3).concat(repeated_from_to_4), {
-                            cumulative_filtering: false
-                     }
-
+                    ]).concat(repeated_from_to_3).concat(repeated_from_to_4)
                 );
             } else if (analys_mode == "#single-crystal") {
 
@@ -691,7 +795,7 @@ function renderDataTablesYadcf(element) {
                 repeated_from_to_2 = make_range_number_cols(8, 11);
                 repeated_from_to_3 = make_range_number_cols(21, 4);
 
-                yadcf.init(btable,
+                initColumnFilters(btable,
                     [{
                             column_number: 0,
                             filter_type: "text",
@@ -758,10 +862,7 @@ function renderDataTablesYadcf(element) {
                         filter_default_label: "Type",
                         text_data_delimiter: "|",
                         filter_reset_button_text: false,
-                    }]).concat(repeated_from_to_2).concat(repeated_from_to_3), {
-                        cumulative_filtering: false
-                    }
-
+                    }]).concat(repeated_from_to_2).concat(repeated_from_to_3)
                 );
             }
             // btable.on('draw.dt', function(e, oSettings) {
@@ -783,6 +884,8 @@ function renderDataTablesYadcf(element) {
 
             btable = table.DataTable({
                 'scrollX': true,
+                // Hide the global search box; searching itself must stay enabled, as the column filters run through it
+                layout: { topEnd: null },
                 scrollY: '50vh',
                 // "sDom": 't', // To disable the pages on the button..
                 "bLengthChange": false,
@@ -792,7 +895,7 @@ function renderDataTablesYadcf(element) {
                     filtered = iMax - iTotal;
                     filtered_text = filtered ? " (" + filtered + " positions filtered out)" : "";
                     var cols = []
-                    var table = $(selector + ' .dataTables_scrollBody');
+                    var table = $(selector + ' .dt-scroll-body');
                     cols_of_interest = [0, 1];
                     for (let [i, row] of [...table.find("tbody")[0].rows].entries()) {
                         for (let [j, cell] of [...row.cells].entries()) {
@@ -833,7 +936,7 @@ function renderDataTablesYadcf(element) {
                 repeated_from_to_2 = make_range_number_cols(11, 3);
                 repeated_from_to_3 = make_range_number_cols(15, 5);
 
-                yadcf.init(btable,
+                initColumnFilters(btable,
                     [{
                             column_number: 0,
                             filter_type: "multi_select",
@@ -882,10 +985,7 @@ function renderDataTablesYadcf(element) {
                         filter_default_label: "AA",
                         filter_reset_button_text: false,
                         filter_reset_button_text: false,
-                    }]).concat(repeated_from_to_3), {
-                        cumulative_filtering: false
-                    }
-
+                    }]).concat(repeated_from_to_3)
                 );
             } else if (analys_mode == "#single-crystal-group") {
 
@@ -910,6 +1010,8 @@ function renderDataTablesYadcf(element) {
 
             btable = table.DataTable({
                 'scrollX': true,
+                // Hide the global search box; searching itself must stay enabled, as the column filters run through it
+                layout: { topEnd: null },
                 scrollY: '50vh',
                 // "sDom": 't', // To disable the pages on the button..
                 "bLengthChange": false,
@@ -919,7 +1021,7 @@ function renderDataTablesYadcf(element) {
                     filtered = iMax - iTotal;
                     filtered_text = filtered ? " (" + filtered + " positions filtered out)" : "";
                     var cols = []
-                    var table = $(selector + ' .dataTables_scrollBody');
+                    var table = $(selector + ' .dt-scroll-body');
                     cols_of_interest = [0, 1];
                     for (let [i, row] of [...table.find("tbody")[0].rows].entries()) {
                         for (let [j, cell] of [...row.cells].entries()) {
@@ -940,6 +1042,8 @@ function renderDataTablesYadcf(element) {
                 paging: true,
                 pageLength: 200,
                 "order": [],
+                // The single-set header has only two rows; sort controls go on the second (label) row
+                ...(analys_mode == "#two-crystal-groups" ? {} : {titleRow: 1}),
                 columnDefs: [{
                         type: "string",
                         targets: 1
@@ -958,13 +1062,13 @@ function renderDataTablesYadcf(element) {
                 repeated_from_to_3 = make_range_number_cols(31, 2);
                 repeated_from_to_4 = make_range_number_cols(35, 1);
 
-                yadcf.init(btable,
+                initColumnFilters(btable,
                     [{
                             column_number: 0,
                             filter_type: "multi_select",
                             select_type: 'select2',
                             select_type_options: {
-                                width: '40px'
+                                width: '100%'
                             },
                             filter_default_label: "Seg",
                             filter_reset_button_text: false,
@@ -974,7 +1078,7 @@ function renderDataTablesYadcf(element) {
                             filter_type: "multi_select",
                             select_type: 'select2',
                             select_type_options: {
-                                width: '40px'
+                                width: '100%'
                             },
                             filter_default_label: "Pos",
                             filter_reset_button_text: false,
@@ -984,7 +1088,7 @@ function renderDataTablesYadcf(element) {
                         filter_type: "multi_select",
                         select_type: 'select2',
                         select_type_options: {
-                            width: '60px'
+                            width: '100%'
                         },
                         filter_default_label: "AA",
                         filter_reset_button_text: false,
@@ -993,7 +1097,7 @@ function renderDataTablesYadcf(element) {
                         filter_type: "multi_select",
                         select_type: 'select2',
                         select_type_options: {
-                            width: '60px'
+                            width: '100%'
                         },
                         filter_default_label: "AA",
                         filter_reset_button_text: false,
@@ -1002,7 +1106,7 @@ function renderDataTablesYadcf(element) {
                         filter_type: "multi_select",
                         select_type: 'select2',
                         select_type_options: {
-                            width: '60px'
+                            width: '100%'
                         },
                         filter_default_label: "AA",
                         filter_reset_button_text: false,
@@ -1011,7 +1115,7 @@ function renderDataTablesYadcf(element) {
                         filter_type: "multi_select",
                         select_type: 'select2',
                         select_type_options: {
-                            width: '60px'
+                            width: '100%'
                         },
                         filter_default_label: "AA",
                         filter_reset_button_text: false,
@@ -1021,27 +1125,24 @@ function renderDataTablesYadcf(element) {
                         filter_type: "multi_select",
                         select_type: 'select2',
                         select_type_options: {
-                            width: '60px'
+                            width: '100%'
                         },
                         filter_default_label: "AA",
                         filter_reset_button_text: false,
-                    }]).concat(repeated_from_to_3).concat(repeated_from_to_4), {
-                        cumulative_filtering: false
-                    }
-
+                    }]).concat(repeated_from_to_3).concat(repeated_from_to_4)
                 );
             } else if (analys_mode == "#single-crystal-group") {
                 repeated_from_to_1 = make_range_number_cols(3, 7);
                 repeated_from_to_2 = make_range_number_cols(11, 1);
                 repeated_from_to_3 = make_range_number_cols(13, 1);
 
-                yadcf.init(btable,
+                initColumnFilters(btable,
                     [{
                             column_number: 0,
                             filter_type: "multi_select",
                             select_type: 'select2',
                             select_type_options: {
-                                width: '40px'
+                                width: '100%'
                             },
                             filter_default_label: "Seg",
                             filter_reset_button_text: false,
@@ -1051,7 +1152,7 @@ function renderDataTablesYadcf(element) {
                             filter_type: "multi_select",
                             select_type: 'select2',
                             select_type_options: {
-                                width: '40px'
+                                width: '100%'
                             },
                             filter_default_label: "Pos",
                             filter_reset_button_text: false,
@@ -1061,7 +1162,7 @@ function renderDataTablesYadcf(element) {
                             filter_type: "multi_select",
                             select_type: 'select2',
                             select_type_options: {
-                                width: '60px'
+                                width: '100%'
                             },
                             filter_default_label: "SS",
                             filter_reset_button_text: false,
@@ -1071,7 +1172,7 @@ function renderDataTablesYadcf(element) {
                         filter_type: "multi_select",
                         select_type: 'select2',
                         select_type_options: {
-                            width: '60px'
+                            width: '100%'
                         },
                         filter_default_label: "AA",
                         filter_reset_button_text: false,
@@ -1080,26 +1181,23 @@ function renderDataTablesYadcf(element) {
                         filter_type: "multi_select",
                         select_type: 'select2',
                         select_type_options: {
-                            width: '60px'
+                            width: '100%'
                         },
                         filter_default_label: "AA",
                         filter_reset_button_text: false,
-                    }]).concat(repeated_from_to_3), {
-                        cumulative_filtering: false
-                    }
-
+                    }]).concat(repeated_from_to_3)
                 );
             } else if (analys_mode == "#single-crystal") {
                 repeated_from_to_1 = make_range_number_cols(3, 6);
                 repeated_from_to_2 = make_range_number_cols(11, 1);
 
-                yadcf.init(btable,
+                initColumnFilters(btable,
                     [{
                             column_number: 0,
                             filter_type: "multi_select",
                             select_type: 'select2',
                             select_type_options: {
-                                width: '40px'
+                                width: '100%'
                             },
                             filter_default_label: "Seg",
                             filter_reset_button_text: false,
@@ -1109,7 +1207,7 @@ function renderDataTablesYadcf(element) {
                             filter_type: "multi_select",
                             select_type: 'select2',
                             select_type_options: {
-                                width: '40px'
+                                width: '100%'
                             },
                             filter_default_label: "Pos",
                             filter_reset_button_text: false,
@@ -1119,7 +1217,7 @@ function renderDataTablesYadcf(element) {
                             filter_type: "multi_select",
                             select_type: 'select2',
                             select_type_options: {
-                                width: '60px'
+                                width: '100%'
                             },
                             filter_default_label: "SS",
                             filter_reset_button_text: false,
@@ -1129,7 +1227,7 @@ function renderDataTablesYadcf(element) {
                         filter_type: "multi_select",
                         select_type: 'select2',
                         select_type_options: {
-                            width: '60px'
+                            width: '100%'
                         },
                         filter_default_label: "AA",
                         filter_reset_button_text: false,
@@ -1138,14 +1236,11 @@ function renderDataTablesYadcf(element) {
                         filter_type: "multi_select",
                         select_type: 'select2',
                         select_type_options: {
-                            width: '60px'
+                            width: '100%'
                         },
                         filter_default_label: "AA",
                         filter_reset_button_text: false,
-                    }]).concat(repeated_from_to_2), {
-                        cumulative_filtering: false
-                    }
-
+                    }]).concat(repeated_from_to_2)
                 );
             }
             // btable.on('draw.dt', function(e, oSettings) {
@@ -1166,6 +1261,8 @@ function renderDataTablesYadcf(element) {
 
             btable = table.DataTable({
                 'scrollX': true,
+                // Hide the global search box; searching itself must stay enabled, as the column filters run through it
+                layout: { topEnd: null },
                 scrollY: '50vh',
                 // "sDom": 't', // To disable the pages on the button..
                 "bLengthChange": false,
@@ -1175,7 +1272,7 @@ function renderDataTablesYadcf(element) {
                     filtered = iMax - iTotal;
                     filtered_text = filtered ? " (" + filtered + " positions filtered out)" : "";
                     var cols = []
-                    var table = $(selector + ' .dataTables_scrollBody');
+                    var table = $(selector + ' .dt-scroll-body');
                     cols_of_interest = [0, 1];
                     for (let [i, row] of [...table.find("tbody")[0].rows].entries()) {
                         for (let [j, cell] of [...row.cells].entries()) {
@@ -1196,6 +1293,8 @@ function renderDataTablesYadcf(element) {
                 paging: true,
                 pageLength: 200,
                 "order": [],
+                // The single-set header has only two rows; sort controls go on the second (label) row
+                ...(analys_mode == "#two-crystal-groups" ? {} : {titleRow: 1}),
                 columnDefs: [{
                         type: "string",
                         targets: 1
@@ -1209,13 +1308,13 @@ function renderDataTablesYadcf(element) {
             });
             repeated_from_to = make_range_number_cols(2, 3);
 
-            yadcf.init(btable,
+            initColumnFilters(btable,
                 [{
                         column_number: 0,
                         filter_type: "multi_select",
                         select_type: 'select2',
                         select_type_options: {
-                            width: '40px'
+                            width: '100%'
                         },
                         filter_default_label: "Seg",
                         filter_reset_button_text: false,
@@ -1225,15 +1324,12 @@ function renderDataTablesYadcf(element) {
                         filter_type: "multi_select",
                         select_type: 'select2',
                         select_type_options: {
-                            width: '40px'
+                            width: '100%'
                         },
                         filter_default_label: "Pos",
                         filter_reset_button_text: false,
                     }
-                ].concat(repeated_from_to), {
-                    cumulative_filtering: false
-                }
-
+                ].concat(repeated_from_to)
             );
             if (analys_mode == "#two-crystal-groups") {
 
@@ -1256,7 +1352,7 @@ function renderDataTablesYadcf(element) {
     btable.columns.adjust().draw();
 
     $(".main_loading_overlay").hide();
-    $('div.dataTables_scrollBody:visible').height('50vh');
+    $('div.dt-scroll-body:visible').height('50vh');
 
     // Make sure browser-tables are not too wide.
     browser_table_div_width = $('.contact-browser:visible').width();
@@ -1265,8 +1361,8 @@ function renderDataTablesYadcf(element) {
     } else {
         browser_table_width = browser_table_div_width - 30;
     }
-    $('.contact-browser .dataTables_wrapper').width(browser_table_width);
-    console.timeEnd("renderDataTablesYadcf");
+    $('.contact-browser .dt-container').width(browser_table_width);
+    console.timeEnd("renderDataTables");
 }
 
 const types_to_short = { 'ionic': 'Ion', 'aromatic': 'Aro', 'polar': 'Pol', 'hydrophobic': 'Hyd', 'van-der-waals': 'vdW' }
@@ -1316,7 +1412,7 @@ function renderBrowser(data) {
     var selector = $('ul#mode_nav').find('li.active').find('a').attr("href");
     var table = $(selector + " .browser-table-1");
     if ($.fn.DataTable.isDataTable(selector + " .browser-table-1")) {
-        table.DataTable().destroy();
+        destroy_data_table(table);
     }
     table.parent().html('<table class="browser-table-1 compact cell-border" style3="max-width: 2000px !important; width: 2000px !important" width2="2500px" style2="margin-left:0px" style="margin:0 auto"><thead></thead><tbody class="hidden"></tbody></table>');
     var table = $(selector + " .browser-table-1");
@@ -1965,7 +2061,7 @@ function renderBrowser_2(data) {
     var selector = $('ul#mode_nav').find('li.active').find('a').attr("href");
     var table = $(selector + " .browser-table-2");
     if ($.fn.DataTable.isDataTable(selector + " .browser-table-2")) {
-        table.DataTable().destroy();
+        destroy_data_table(table);
     }
     table.parent().html('<table class="browser-table-2 compact cell-border" style3="max-width: 2000px !important; width: 2000px !important" width2="2500px" style2="margin-left:0px" style="margin:0 auto"><thead></thead><tbody class="hidden"></tbody></table>');
     var table = $(selector + " .browser-table-2");
@@ -2672,7 +2768,7 @@ function renderBrowser_3(data) {
     var selector = $('ul#mode_nav').find('li.active').find('a').attr("href");
     var table = $(selector + " .browser-table-3");
     if ($.fn.DataTable.isDataTable(selector + " .browser-table-3")) {
-        table.DataTable().destroy();
+        destroy_data_table(table);
     }
     table.parent().html('<table class="browser-table-3 compact cell-border" style3="max-width: 2000px !important; width: 2000px !important" width2="2500px" style2="margin-left:0px" style="margin:0 auto"><thead></thead><tbody class="hidden"></tbody></table>');
     var table = $(selector + " .browser-table-3");
@@ -2955,7 +3051,7 @@ function renderBrowser_3(data) {
                         <tbody><tr><td>${set1}</td><td>${set2}</td><td>${common}</td></tr></tbody></table>`;
             column.attr("data-content", table);
             column.popover({
-                'container': selector + ' .dataTables_scrollBody',
+                'container': selector + ' .dt-scroll-body',
                 'placement': 'bottom',
                 'animation': true,
                 'html': true,
@@ -3007,7 +3103,7 @@ function renderBrowser_4(data) {
     var selector = $('ul#mode_nav').find('li.active').find('a').attr("href");
     var table = $(selector + " .browser-table-4");
     if ($.fn.DataTable.isDataTable(selector + " .browser-table-4")) {
-        table.DataTable().destroy();
+        destroy_data_table(table);
     }
     table.parent().html('<table class="browser-table-4 compact cell-border" style3="max-width: 2000px !important; width: 2000px !important" width2="2500px" style2="margin-left:0px" style="margin:0 auto"><thead></thead><tbody class="hidden"></tbody></table>');
     var table = $(selector + " .browser-table-4");
@@ -3395,20 +3491,6 @@ function renderBrowser_4(data) {
                           <th colspan="1">AA</th> \
                           <th colspan="1">AA</th> \
                           <th colspan="1">Cons (%)</th> \
-                        </tr> \
-                        <tr> \
-                          <th class="dt-center"></th> \
-                          <th class="dt-center"></th> \
-                          <th class="narrow_col"></th> \
-                          <th class="narrow_col"></th> \
-                          <th class="narrow_col"></th> \
-                          <th class="narrow_col"></th> \
-                          <th class="narrow_col"></th> \
-                          <th class="narrow_col"></th> \
-                          <th class="narrow_col"></th> \
-                          <th class="narrow_col"></th> \
-                          <th class="narrow_col"></th> \
-                          <th class="narrow_col"></th> \
                         </tr>';
         table.find('thead').html(thead);
         tr_list = ''
@@ -3497,7 +3579,7 @@ function renderBrowser_5(data) {
     var selector = $('ul#mode_nav').find('li.active').find('a').attr("href");
     var table = $(selector + " .browser-table-5");
     if ($.fn.DataTable.isDataTable(selector + " .browser-table-5")) {
-        table.DataTable().destroy();
+        destroy_data_table(table);
     }
     table.parent().html('<table class="browser-table-5 compact cell-border"><thead></thead><tbody class="hidden"></tbody></table>');
     var table = $(selector + " .browser-table-5");
@@ -3566,21 +3648,6 @@ function renderBrowser_5(data) {
                 <th colspan="1">Conservation (%)</th> \
                 <th colspan="1">AA</th> \
                 <th colspan="1">Cons (%)</th> \
-                </tr> \
-                <tr> \
-                <th class="dt-center"></th> \
-                <th class="dt-center"></th> \
-                <th class="narrow_col"></th> \
-                <th class="narrow_col"></th> \
-                <th class="narrow_col"></th> \
-                <th class="narrow_col"></th> \
-                <th class="narrow_col"></th> \
-                <th class="narrow_col"></th> \
-                <th class="narrow_col"></th> \
-                <th class="narrow_col"><br></th> \
-                <th class="narrow_col"><br></th> \
-                <th class="narrow_col"></th> \
-                <th class="narrow_col"></th> \
                 </tr>';
     }
     table.find('thead').html(thead);
@@ -3737,7 +3804,7 @@ function gray_scale_table(table) {
     for (let [i, row] of [...table.find("tbody")[0].rows].entries()) {
         for (let [j, cell] of [...row.cells].entries()) {
             c_maxmin = maxmin[j];
-            c_header = h_cols[j];
+            c_header = h_cols[j] || '';
             value = parseFloat(cell.innerText);
             comparison_toggle = cell.hasAttribute("data_comparison")
             if (!(isNaN(value) || isNaN(c_maxmin[0]) || isNaN(c_maxmin[1]))) {

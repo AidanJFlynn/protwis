@@ -884,7 +884,7 @@ function getDateFromTable(browser_tab, columns) {
     if ($.fn.DataTable.isDataTable(tab_id)) {
         var table = $(tab_id).DataTable();
         table.rows({
-            filter: 'applied'
+            search: 'applied'
         }).data().each(function (i) {
             var temp = [];
             columns.forEach(function (c, ii) {

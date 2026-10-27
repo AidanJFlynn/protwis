@@ -30,8 +30,8 @@
                         <input type="hidden" class="interactions-input" value="[]" />
                         <!-- <input class="crystal-pdb" type="hidden" value="[]" /> -->
                         <input class="crystal-pdb" type="hidden" value="[&quot;2RH1&quot;]">
-                        <button type="button" class="btn btn-primary" data-toggle="modal" data-target="#single-crystal-pdb-modal-table">Select Structure</button> <span class="crystal-count">No structure selected.</span>
-                        <div class="btn btn-success pull-right go-button"><span>Go</span></div>
+                        <button type="button" class="btn btn-primary" data-toggle="modal" data-target="#single-crystal-pdb-modal-table">Select Structure</button> <span id="single-crystal-select-display" class="crystal-count">No structure selected.</span>
+                        <div id="single-crystal-go-button" class="btn btn-success pull-right go-button"><span>Go</span></div>
                         <span class="pull-right glyphicon glyphicon-cog btn-settings" title="Customize interaction settings"></span>
                     </div>
                 </div>
@@ -197,7 +197,7 @@
                               <input type="checkbox"> Normalized
                             </label>
                           </div>-->
-                        <div class="btn pull-right btn-success go-button">Go</div>
+                        <div id="single-crystal-group-go-button" class="btn pull-right btn-success go-button">Go</div>
                         <span class="pull-right glyphicon glyphicon-cog btn-settings" title="Customize interaction settings"></span>
                     </div>
                 </div>
@@ -380,7 +380,7 @@
                               <input type="checkbox"> Normalized
                             </label>
                           </div>-->
-                        <div class="btn pull-right btn-success go-button">Go</div>
+                        <div id="two-crystal-group-go-button" class="btn pull-right btn-success go-button">Go</div>
                         <span class="pull-right glyphicon glyphicon-cog btn-settings" title="Customize interaction settings"></span>
                       </div>
                 </div>
@@ -568,10 +568,11 @@
                     <div class="col-md-12">
                         <div class="tableview">
                         <!-- This table is populated by the TableManager -->
-                            <table id="single-crystal-pdb-table" width="100%">
+                            <table id="single-crystal-pdb-table" width="100%" class="display">
                                   <script type="module">
                                     // Populate PDB table using TableManager
                                     import { TableManager } from "{% static 'home/js/tablemanager/tablemanager.js' %}";
+                                    import { InjectorTemplates } from "{% static 'home/js/tablemanager/injectors/injectortemplates.js' %}";
 
                                     let config
                                     try {
@@ -581,34 +582,34 @@
                                         'pdb_data_table', //columnConfigName
                                         'basic' //columnConfigVariant
                                         );
+    
+                                        //override checkboxMultiSelect to false for the checkbox column for single crystal select table
+                                        config.columnsSpecifications.find(colSpec => colSpec.data_type === "checkbox").checkboxMultiSelect = false;
+
                                     } catch(error) {
                                         console.error('Error fetching configuration:', error);
                                     }
 
                                     if (config) {
                                         // Initialize the table
-                                        let pdbTableManager = new TableManager(config.columnsSpecifications, 'single-crystal-pdb-table');
+                                        let singleCrystalTableManager = new TableManager(config.columnsSpecifications, 'single-crystal-pdb-table');
 
                                         // Register a super header injector to add info-icon to "Receptor state" header
-                                        pdbTableManager.superHeaderInjectors.registerInjector("Receptor State", function(cellElementArray) {
-                                            // Custom rendering logic for the "Receptor state" super header
-                                            let anchor = document.createElement('a');
-                                            anchor.href = "https://docs.gpcrdb.org/structures.html#structure-descriptors";
-                                            anchor.target = "_blank";
-
-                                            let span = document.createElement('span');
-                                            span.className = "glyphicon glyphicon-info-sign";
-                                            
-                                            anchor.appendChild(span);
-
-                                            cellElementArray.push(anchor);
-                                            
-                                            return cellElementArray;
+                                        singleCrystalTableManager.superHeaderInjectors.registerInjector("Receptor State", function(cellElementArray) {
+                                            return InjectorTemplates.addInfoIconLink(cellElementArray, "https://docs.gpcrdb.org/structures.html#structure-descriptors");                                            
                                         });
 
-                                        pdbTableManager.initialiseDataTable(config.datatableConfiguration);
+                                        singleCrystalTableManager.initialiseDataTable(config.datatableConfiguration);
 
-                                        window.pdbTableManager = pdbTableManager;
+                                        singleCrystalTableManager.eventPubSub.subscribe("checkboxStateChanged", function(eventData) {
+                                            let selectedPDBDisplay = [];
+                                            singleCrystalTableManager.state.activeCheckBoxes.forEach((cb) => { selectedPDBDisplay.push(`${cb.data.protein_name_short} - ${cb.data.pdb_id}`); });
+                                            let displayString = selectedPDBDisplay.length > 0 ? selectedPDBDisplay.join(", ") : "No Structure Selected";
+                                            document.querySelector("#single-crystal-select-display").innerHTML = displayString;
+                                        });
+
+                                        window.tableManagers = window.tableManagers || {}; 
+                                        window.tableManagers.singleCrystalTableManager = singleCrystalTableManager;
                                     }
                                 </script>
                             </table>
@@ -841,13 +842,13 @@
 
 
             // Create tab/figure switch catcher
-            //$('.nav-browsers a').on('shown.bs.tab', function (e) {
-            //  // Check if datatables is rendered, otherwise do so.
-            //  $(".main_loading_overlay").show(0);
-            //  // console.log('switch browser',e.currentTarget.id);
-            //  setTimeout("renderDataTablesYadcf('"+e.currentTarget.id+"');", 100);
+            $('.nav-browsers a').on('shown.bs.tab', function (e) {
+              // Check if datatables is rendered, otherwise do so.
+              $(".main_loading_overlay").show(0);
+              // console.log('switch browser',e.currentTarget.id);
+              setTimeout("renderDataTables('"+e.currentTarget.id+"');", 100);
               // $(".main_loading_overlay").hide();
-            //});
+            });
 
 
             $('#mode_nav a').on('shown.bs.tab', function (e) {
