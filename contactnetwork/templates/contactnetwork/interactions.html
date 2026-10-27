@@ -30,7 +30,7 @@
                         <input type="hidden" class="interactions-input" value="[]" />
                         <!-- <input class="crystal-pdb" type="hidden" value="[]" /> -->
                         <input class="crystal-pdb" type="hidden" value="[&quot;2RH1&quot;]">
-                        <button type="button" class="btn btn-primary" data-toggle="modal" data-target="#single-crystal-pdb-modal-table">Select Structure</button> <span id="single-crystal-select-display" class="crystal-count">No structure selected.</span>
+                        <button id="single-crystal-select-button" type="button" class="btn btn-primary" data-toggle="modal" data-target="#single-crystal-pdb-modal-table" disabled>Select Structure</button> <span id="single-crystal-select-display" class="crystal-count">No structure selected.</span>
                         <div id="single-crystal-go-button" class="btn btn-success pull-right go-button"><span>Go</span></div>
                         <span class="pull-right glyphicon glyphicon-cog btn-settings" title="Customize interaction settings"></span>
                     </div>
@@ -190,7 +190,7 @@
                     <div class="panel-body">
                         <!-- <input class="crystal-pdb" type="hidden" value="[]" /> -->
                         <input class="crystal-pdb" type="hidden" value="[&quot;5XRA&quot;,&quot;5WB1&quot;,&quot;5G53&quot;,&quot;3SN6&quot;,&quot;5T04&quot;,&quot;6G79&quot;,&quot;5C1M&quot;,&quot;5XSZ&quot;,&quot;4MQT&quot;,&quot;5UNG&quot;,&quot;5ZKP&quot;,&quot;5TUD&quot;,&quot;6B73&quot;,&quot;6AK3&quot;,&quot;5DYS&quot;,&quot;6D9H&quot;,&quot;4XT1&quot;,&quot;6H7N&quot;,&quot;4ZWJ&quot;]">
-                        <button type="button" class="btn btn-primary" data-toggle="modal" data-target="#single-crystal-group-pdbs-modal-table">Select Structures</button>
+                        <button id='single-crystal-group-select-button' type="button" class="btn btn-primary" data-toggle="modal" data-target="#single-crystal-group-pdbs-modal-table" disabled>Select Structures</button>
                         <span id="single-crystal-group-select-display" class="crystal-count">No</span> structure(s) selected.
 <!--                        <div class="checkbox normalized" style="padding-left:20px;display:inline;">
                             <label>
@@ -370,10 +370,10 @@
                     <div class="panel-body">
                         <!-- <input class="crystal-group-1-pdbs" type="hidden" value="[]" /> -->
                         <input class="crystal-group-1-pdbs" type="hidden" value="[&quot;6A94&quot;,&quot;6BQH&quot;,&quot;5CXV&quot;,&quot;5ZKC&quot;,&quot;5DSG&quot;,&quot;2RH1&quot;,&quot;6CM4&quot;,&quot;3PBL&quot;,&quot;6C1R&quot;,&quot;5ZBQ&quot;,&quot;4N6H&quot;,&quot;4DJH&quot;,&quot;4ZJ8&quot;,&quot;5WQC&quot;,&quot;6HLP&quot;,&quot;4Z36&quot;,&quot;4Z35&quot;,&quot;3V2Y&quot;,&quot;5ZTY&quot;,&quot;6D27&quot;,&quot;5UEN&quot;,&quot;5NM4&quot;,&quot;4DKL&quot;,&quot;4U15&quot;]">
-                        <button type="button" class="btn btn-primary" data-toggle="modal" data-target="#two-crystal-group-pdbs-modal-1-table">Select (Set 1)</button> <span class="crystal-count-1">None</span> selected.
+                        <button id="two-crystal-group-1-select-button" type="button" class="btn btn-primary" data-toggle="modal" data-target="#two-crystal-group-pdbs-modal-1-table" disabled>Select (Set 1)</button> <span class="crystal-count-1">None</span> selected.
                         <!-- <input class="crystal-group-2-pdbs" type="hidden" value="[]" /> -->
                         <input class="crystal-group-2-pdbs" type="hidden" value="[&quot;3SN6&quot;,&quot;6OIJ&quot;,&quot;6OS9&quot;,&quot;6N4B&quot;,&quot;6OIK&quot;,&quot;6DDE&quot;,&quot;6G79&quot;,&quot;6D9H&quot;,&quot;5G53&quot;,&quot;5XJM&quot;,&quot;6B73&quot;]">
-                        <button type="button" class="btn btn-primary" data-toggle="modal" data-target="#two-crystal-group-pdbs-modal-2-table">Select (Set 2)</button> <span class="crystal-count-2">None</span> selected.
+                        <button id="two-crystal-group-2-select-button" type="button" class="btn btn-primary" data-toggle="modal" data-target="#two-crystal-group-pdbs-modal-2-table" disabled>Select (Set 2)</button> <span class="crystal-count-2">None</span> selected.
 
 <!--                          <div class="checkbox normalized" style="padding-left:20px;display:inline;">
                             <label>
@@ -578,7 +578,7 @@
                                     try {
                                         config = await TableManager.fetchConfiguration(
                                         'pdb_data_table', //dataTableConfigName
-                                        'clientside', //dataTableConfigVariant
+                                        'serverside', //dataTableConfigVariant
                                         'pdb_data_table', //columnConfigName
                                         'basic' //columnConfigVariant
                                         );
@@ -600,6 +600,11 @@
                                         });
 
                                         singleCrystalTableManager.initialiseDataTable(config.datatableConfiguration);
+
+                                        // Enable the select button once the table is ready
+                                        singleCrystalTableManager.ready.then(() => {
+                                            document.getElementById("single-crystal-select-button").disabled = false;
+                                        });
 
                                         singleCrystalTableManager.eventPubSub.subscribe("checkboxStateChanged", function(eventData) {
                                             let selectedPDBDisplay = [];
@@ -669,6 +674,11 @@
 
                                         singleCrystalGroupTableManager.initialiseDataTable(config.datatableConfiguration);
 
+                                        // Enable the select button once the table is ready
+                                        singleCrystalGroupTableManager.ready.then(() => {
+                                            document.getElementById("single-crystal-group-select-button").disabled = false;
+                                        });
+
                                         singleCrystalGroupTableManager.eventPubSub.subscribe("checkboxStateChanged", function(eventData) {
                                             let count = singleCrystalGroupTableManager.state.activeCheckBoxes.size;
                                             document.querySelector("#single-crystal-group-pdbs-modal-text").textContent = `${count} structure(s) selected`;
@@ -731,6 +741,11 @@
 
                                     twoCrystalGroup1TableManager.initialiseDataTable(config.datatableConfiguration);
 
+                                    // Enable the select button once the table is ready
+                                    twoCrystalGroup1TableManager.ready.then(() => {
+                                        document.getElementById("two-crystal-group-1-select-button").disabled = false;
+                                    });
+
                                     twoCrystalGroup1TableManager.eventPubSub.subscribe("checkboxStateChanged", function(eventData) {
                                         let count = twoCrystalGroup1TableManager.state.activeCheckBoxes.size;
                                         document.querySelector("#two-crystal-group-pdbs-modal-1-text").textContent = `${count} structure(s) selected`;
@@ -789,6 +804,11 @@
                                     });
 
                                     twoCrystalGroup2TableManager.initialiseDataTable(config.datatableConfiguration);
+
+                                    // Enable the select button once the table is ready
+                                    twoCrystalGroup2TableManager.ready.then(() => {
+                                        document.getElementById("two-crystal-group-2-select-button").disabled = false;
+                                    });
 
                                     twoCrystalGroup2TableManager.eventPubSub.subscribe("checkboxStateChanged", function(eventData) {
                                         let count = twoCrystalGroup2TableManager.state.activeCheckBoxes.size;
