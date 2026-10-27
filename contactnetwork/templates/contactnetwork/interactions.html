@@ -675,16 +675,6 @@
                                             document.querySelector("#single-crystal-group-select-display").textContent = count;
                                         });
 
-                                        document.querySelector("#single-crystal-group-reset-selection").addEventListener("click", function() {
-                                            const activeCheckBoxes = singleCrystalGroupTableManager.state.activeCheckBoxes;
-                                            [...activeCheckBoxes].forEach(([rowId, cellData]) => {
-                                                activeCheckBoxes.delete(rowId);
-                                                singleCrystalGroupTableManager.eventPubSub.publish("checkboxStateChanged", { rowId: rowId, checked: false, cellData: cellData });
-                                            });
-                                            // Redraw to sync the rendered checkboxes with the cleared state
-                                            singleCrystalGroupTableManager.dataTableReference.draw(false);
-                                        });
-
                                         window.tableManagers = window.tableManagers || {};
                                         window.tableManagers.singleCrystalGroupTableManager = singleCrystalGroupTableManager;
                                     }
@@ -710,11 +700,50 @@
                     <button type="button" class="btn btn-default pull-right" data-dismiss="modal">Close</button>
                 </div>
                 <div class="modal-body">
-                    <div class="tableview group-number-1" group-number="1"></div>
+                    <div class="tableview group-number-1" group-number="1">
+                    <!-- This table is populated by the TableManager -->
+                        <table id="two-crystal-group-1-pdb-table" width="100%" class="display">
+                            <script type="module">
+                                // Populate PDB table using TableManager
+                                import { TableManager } from "{% static 'home/js/tablemanager/tablemanager.js' %}";
+                                import { InjectorTemplates } from "{% static 'home/js/tablemanager/injectors/injectortemplates.js' %}";
+
+                                let config
+                                try {
+                                    config = await TableManager.fetchConfiguration(
+                                    'pdb_data_table', //dataTableConfigName
+                                    'clientside', //dataTableConfigVariant
+                                    'pdb_data_table', //columnConfigName
+                                    'basic' //columnConfigVariant
+                                    );
+                                } catch(error) {
+                                    console.error('Error fetching configuration:', error);
+                                }
+
+                                if (config) {
+                                    // Initialize the table (multi-select checkboxes are the default)
+                                    let twoCrystalGroup1TableManager = new TableManager(config.columnsSpecifications, 'two-crystal-group-1-pdb-table');
+
+                                    // Register a super header injector to add info-icon to "Receptor state" header
+                                    twoCrystalGroup1TableManager.superHeaderInjectors.registerInjector("Receptor State", function(cellElementArray) {
+                                        return InjectorTemplates.addInfoIconLink(cellElementArray, "https://docs.gpcrdb.org/structures.html#structure-descriptors");
+                                    });
+
+                                    twoCrystalGroup1TableManager.initialiseDataTable(config.datatableConfiguration);
+
+                                    twoCrystalGroup1TableManager.eventPubSub.subscribe("checkboxStateChanged", function(eventData) {
+                                        let count = twoCrystalGroup1TableManager.state.activeCheckBoxes.size;
+                                        document.querySelector("#two-crystal-group-pdbs-modal-1-text").textContent = `${count} structure(s) selected`;
+                                        document.querySelector("#two-crystal-groups-tab .crystal-count-1").textContent = count > 0 ? count : "None";
+                                    });
+
+                                    window.tableManagers = window.tableManagers || {};
+                                    window.tableManagers.twoCrystalGroup1TableManager = twoCrystalGroup1TableManager;
+                                }
+                            </script>
+                        </table>
+                    </div>
                 </div>
-            </div>
-            <div class="loading_overlay">
-                <img src="/static/home/images/loading.gif" id="img-load" />
             </div>
         </div>
     </div>
@@ -727,15 +756,53 @@
                 <div class="modal-header">
                     <h4 class="modal-title">Select a set of structures</h4>
                     <span id="two-crystal-group-pdbs-modal-2-text">0 structure(s) selected</span>
-                    <button type="button" onclick="resetselection(false, true);" class="btn btn-xs btn-primary reset-selection">Reset selection</button>
                     <button type="button" class="btn btn-default pull-right" data-dismiss="modal">Close</button>
                 </div>
                 <div class="modal-body">
-                    <div class="tableview group-number-2" group-number="2"></div>
+                    <div class="tableview group-number-2" group-number="2">
+                    <!-- This table is populated by the TableManager -->
+                        <table id="two-crystal-group-2-pdb-table" width="100%" class="display">
+                            <script type="module">
+                                // Populate PDB table using TableManager
+                                import { TableManager } from "{% static 'home/js/tablemanager/tablemanager.js' %}";
+                                import { InjectorTemplates } from "{% static 'home/js/tablemanager/injectors/injectortemplates.js' %}";
+
+                                let config
+                                try {
+                                    config = await TableManager.fetchConfiguration(
+                                    'pdb_data_table', //dataTableConfigName
+                                    'clientside', //dataTableConfigVariant
+                                    'pdb_data_table', //columnConfigName
+                                    'basic' //columnConfigVariant
+                                    );
+                                } catch(error) {
+                                    console.error('Error fetching configuration:', error);
+                                }
+
+                                if (config) {
+                                    // Initialize the table (multi-select checkboxes are the default)
+                                    let twoCrystalGroup2TableManager = new TableManager(config.columnsSpecifications, 'two-crystal-group-2-pdb-table');
+
+                                    // Register a super header injector to add info-icon to "Receptor state" header
+                                    twoCrystalGroup2TableManager.superHeaderInjectors.registerInjector("Receptor State", function(cellElementArray) {
+                                        return InjectorTemplates.addInfoIconLink(cellElementArray, "https://docs.gpcrdb.org/structures.html#structure-descriptors");
+                                    });
+
+                                    twoCrystalGroup2TableManager.initialiseDataTable(config.datatableConfiguration);
+
+                                    twoCrystalGroup2TableManager.eventPubSub.subscribe("checkboxStateChanged", function(eventData) {
+                                        let count = twoCrystalGroup2TableManager.state.activeCheckBoxes.size;
+                                        document.querySelector("#two-crystal-group-pdbs-modal-2-text").textContent = `${count} structure(s) selected`;
+                                        document.querySelector("#two-crystal-groups-tab .crystal-count-2").textContent = count > 0 ? count : "None";
+                                    });
+
+                                    window.tableManagers = window.tableManagers || {};
+                                    window.tableManagers.twoCrystalGroup2TableManager = twoCrystalGroup2TableManager;
+                                }
+                            </script>
+                        </table>
+                    </div>
                 </div>
-            </div>
-            <div class="loading_overlay">
-                <img src="/static/home/images/loading.gif" id="img-load" />
             </div>
         </div>
     </div>

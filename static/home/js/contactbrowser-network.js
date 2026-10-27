@@ -609,10 +609,10 @@ function createNetworkPlot(raw_data,original_width, inputGraph, containerSelecto
     
 }
 
-Array.prototype.indexOfForArrays = function(search)
+Object.defineProperty(Array.prototype, "indexOfForArrays", {enumerable: false, writable: true, configurable: true, value: function(search)
 {
   var searchJson = JSON.stringify(search); // "[3,566,23,79]"
   var arrJson = this.map(JSON.stringify); // ["[2,6,89,45]", "[3,566,23,79]", "[434,677,9,23]"]
     console.log("hi!",arrJson, searchJson,arrJson.indexOf(searchJson));
   return arrJson.indexOf(searchJson);
-};
+}});

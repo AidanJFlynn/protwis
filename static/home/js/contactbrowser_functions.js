@@ -1121,8 +1121,10 @@ function loadPDBsView(pdb, selector, generic) {
 
 function initializeGoButtonTwoCrystalGroups(selector, generic = false) {
     $(selector + ' .go-button').click(function () {
-        var pdbs1 = JSON.parse($(selector + ' .crystal-group-1-pdbs').val());
-        var pdbs2 = JSON.parse($(selector + ' .crystal-group-2-pdbs').val());
+        var pdbs1 = [];
+        var pdbs2 = [];
+        window.tableManagers.twoCrystalGroup1TableManager.state.activeCheckBoxes.forEach(cb => pdbs1.push(cb.data.pdb_id));
+        window.tableManagers.twoCrystalGroup2TableManager.state.activeCheckBoxes.forEach(cb => pdbs2.push(cb.data.pdb_id));
         loadTwoPDBsView(pdbs1, pdbs2, selector, generic)
 
 
