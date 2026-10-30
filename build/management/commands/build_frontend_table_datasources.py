@@ -27,7 +27,7 @@ class Command(BaseCommand):
 
     def handle(self, *args, **options):
         functions = [
-            #'build_structure_browser_table',
+            'build_structure_browser_table',
             'build_pdb_structure_table',
             'build_structure_statistics_table',
         ]
