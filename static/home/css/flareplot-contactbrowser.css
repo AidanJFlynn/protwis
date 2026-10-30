@@ -25,22 +25,12 @@
   margin: 0 auto;
 }
 
-.contact-browser th.narrow_col {
+.contact-browser th.narrow_col,
+.contact-browser td.narrow_col {
+  box-sizing: border-box;
   width: 75px;
-}
-
-.contact-browser div.dataTables_wrapper {
-  margin: 0 auto;
-  width: 2030px;
-}
-
-.contact-browser div.dataTables_scrollHeadInner {
-  margin: 0 auto;
-}
-
-.contact-browser .yadcf-filter-range {
-  min-width: 41px;
-  padding-left: 2px;
+  min-width: 75px;
+  max-width: 75px;
 }
 
 .plot-container {

@@ -4,10 +4,16 @@ var filtered_gns = [];
 var filtered_gns_abs_diff_values = {};
 var filtered_cluster_groups_set = {};
 
+// Returns only the real initialised DataTable(s) among the given elements. isDataTable also reports true for the cloned
+// header and footer tables that scrollX creates (they hold no rows), so those are excluded.
+function initialised_data_tables(table) {
+    return table.filter((i, el) => $.fn.DataTable.isDataTable(el) && !$(el).closest('.dt-scroll-head, .dt-scroll-foot').length);
+}
+
 // Destroys the initialised DataTable(s) among the given elements. With scrollX DataTables keeps cloned header and
 // footer tables with the same class; calling .DataTable() on those would initialise them as extra default DataTables.
 function destroy_data_table(table) {
-    table.filter((i, el) => $.fn.DataTable.isDataTable(el)).each(function () {
+    initialised_data_tables(table).each(function () {
         $(this).DataTable().destroy();
     });
 }
@@ -23,9 +29,9 @@ function filter_browser() {
     const selector = "#" + $('.main_option:visible').attr('id');
     const analys_mode = selector.replace('-tab', '');
 
-    // Only pick the initialised table: with scrollX DataTables also keeps a cloned header table with the same class,
-    // and calling .DataTable() on that would initialise it as a second, default DataTable (with its own search box)
-    var visible_table = $(".browser-table-1:visible").filter((i, el) => $.fn.DataTable.isDataTable(el));
+    // Only pick the initialised table: with scrollX DataTables also keeps cloned header/footer tables with the same
+    // class that also report isDataTable() === true but hold no rows, so exclude those too.
+    var visible_table = initialised_data_tables($(".browser-table-1:visible"));
     if (visible_table.length) {
         var table = visible_table.first().DataTable();
         table.rows({
@@ -329,7 +335,7 @@ function renderDataTables(element) {
     // Do not re init the table.
     if ($.fn.DataTable.isDataTable(selector + " .browser-table-" + tab_number)) {
         console.timeEnd("renderDataTables");
-        var btable = $(selector + " .browser-table-" + tab_number).filter((i, el) => $.fn.DataTable.isDataTable(el)).first().DataTable();
+        var btable = initialised_data_tables($(selector + " .browser-table-" + tab_number)).first().DataTable();
         btable.columns.adjust().draw();
         $(".main_loading_overlay").hide();
         return
@@ -352,13 +358,10 @@ function renderDataTables(element) {
                 // Hide the global search box; searching itself must stay enabled, as the column filters run through it
                 layout: { topEnd: null },
                 scrollY: '50vh',
-                // "sDom": 't', // To disable the pages on the button..
-                paging: true,
-                pageLength: 200,
-                "bLengthChange": false,
-                "bPaginate": false,
-                "bInfo": true,
-                "fnInfoCallback": function (oSettings, iStart, iEnd, iMax, iTotal, sPre) {
+                paging: false,
+                lengthChange: false,
+                info: true,
+                infoCallback: function (oSettings, iStart, iEnd, iMax, iTotal, sPre) {
                     filtered = iMax - iTotal;
                     filtered_text = filtered ? " (" + filtered + " contact-pairs filtered out)" : "";
                     var cols = []
@@ -604,11 +607,9 @@ function renderDataTables(element) {
                 // Hide the global search box; searching itself must stay enabled, as the column filters run through it
                 layout: { topEnd: null },
                 scrollY: '50vh',
-                // "sDom": 't', // To disable the pages on the button..
-                "bLengthChange": false,
-                "bPaginate": false,
-                "bInfo": true,
-                "fnInfoCallback": function (oSettings, iStart, iEnd, iMax, iTotal, sPre) {
+                lengthChange: false,
+                info: true,
+                infoCallback: function (oSettings, iStart, iEnd, iMax, iTotal, sPre) {
                     filtered = iMax - iTotal;
                     filtered_text = filtered ? " (" + filtered + " contact-pairs filtered out)" : "";
                     var cols = []
@@ -630,8 +631,7 @@ function renderDataTables(element) {
                     //console.log(iStart, iEnd, iMax, iTotal, sPre)
                     return "Showing " + iTotal + " contact-pairs covering "+distinctPositions.length+" positions"+filtered_text;
                   },
-                paging: true,
-                pageLength: 200,
+                paging: false,
                 "order": [],
                 // Sort controls go on the third (label) header row only, 0-indexed
                 titleRow: 2,
@@ -887,11 +887,9 @@ function renderDataTables(element) {
                 // Hide the global search box; searching itself must stay enabled, as the column filters run through it
                 layout: { topEnd: null },
                 scrollY: '50vh',
-                // "sDom": 't', // To disable the pages on the button..
-                "bLengthChange": false,
-                "bPaginate": false,
-                "bInfo": true,
-                "fnInfoCallback": function (oSettings, iStart, iEnd, iMax, iTotal, sPre) {
+                lengthChange: false,
+                info: true,
+                infoCallback: function (oSettings, iStart, iEnd, iMax, iTotal, sPre) {
                     filtered = iMax - iTotal;
                     filtered_text = filtered ? " (" + filtered + " positions filtered out)" : "";
                     var cols = []
@@ -913,8 +911,7 @@ function renderDataTables(element) {
                     //console.log(iStart, iEnd, iMax, iTotal, sPre)
                     return "Showing " + iTotal + " positions"+filtered_text;
                   },
-                paging: true,
-                pageLength: 200,
+                paging: false,
                 "order": [],
                 columnDefs: [{
                         type: "string",
@@ -1013,11 +1010,9 @@ function renderDataTables(element) {
                 // Hide the global search box; searching itself must stay enabled, as the column filters run through it
                 layout: { topEnd: null },
                 scrollY: '50vh',
-                // "sDom": 't', // To disable the pages on the button..
-                "bLengthChange": false,
-                "bPaginate": false,
-                "bInfo": true,
-                "fnInfoCallback": function (oSettings, iStart, iEnd, iMax, iTotal, sPre) {
+                lengthChange: false,
+                info: true,
+                infoCallback: function (oSettings, iStart, iEnd, iMax, iTotal, sPre) {
                     filtered = iMax - iTotal;
                     filtered_text = filtered ? " (" + filtered + " positions filtered out)" : "";
                     var cols = []
@@ -1039,8 +1034,7 @@ function renderDataTables(element) {
                     //console.log(iStart, iEnd, iMax, iTotal, sPre)
                     return "Showing " + iTotal + " positions"+filtered_text;
                   },
-                paging: true,
-                pageLength: 200,
+                paging: false,
                 "order": [],
                 // The single-set header has only two rows; sort controls go on the second (label) row
                 ...(analys_mode == "#two-crystal-groups" ? {} : {titleRow: 1}),
@@ -1264,11 +1258,9 @@ function renderDataTables(element) {
                 // Hide the global search box; searching itself must stay enabled, as the column filters run through it
                 layout: { topEnd: null },
                 scrollY: '50vh',
-                // "sDom": 't', // To disable the pages on the button..
-                "bLengthChange": false,
-                "bPaginate": false,
-                "bInfo": true,
-                "fnInfoCallback": function (oSettings, iStart, iEnd, iMax, iTotal, sPre) {
+                lengthChange: false,
+                info: true,
+                infoCallback: function (oSettings, iStart, iEnd, iMax, iTotal, sPre) {
                     filtered = iMax - iTotal;
                     filtered_text = filtered ? " (" + filtered + " positions filtered out)" : "";
                     var cols = []
@@ -1290,8 +1282,7 @@ function renderDataTables(element) {
                     //console.log(iStart, iEnd, iMax, iTotal, sPre)
                     return "Showing " + iTotal + " positions"+filtered_text;
                   },
-                paging: true,
-                pageLength: 200,
+                paging: false,
                 "order": [],
                 // The single-set header has only two rows; sort controls go on the second (label) row
                 ...(analys_mode == "#two-crystal-groups" ? {} : {titleRow: 1}),
@@ -1306,9 +1297,14 @@ function renderDataTables(element) {
                     }
                 ]
             });
-            repeated_from_to = make_range_number_cols(2, 3);
 
-            initColumnFilters(btable,
+
+            if (analys_mode == "#two-crystal-groups") {
+                repeated_from_2_to_8 = make_range_number_cols(2, 7);
+                repeated_from_11_to_13 = make_range_number_cols(11, 3);
+                repeated_from_15_to_15 = make_range_number_cols(15, 1);
+
+                initColumnFilters(btable,
                 [{
                         column_number: 0,
                         filter_type: "multi_select",
@@ -1329,15 +1325,101 @@ function renderDataTables(element) {
                         filter_default_label: "Pos",
                         filter_reset_button_text: false,
                     }
-                ].concat(repeated_from_to)
-            );
-            if (analys_mode == "#two-crystal-groups") {
+                ]
+                .concat(repeated_from_2_to_8)
+                .concat([{
+                            column_number: 9,
+                            filter_type: "multi_select",
+                            select_type: 'select2',
+                            select_type_options: {
+                                width: '60px'
+                            },
+                            filter_default_label: "AA",
+                            filter_reset_button_text: false,
+                        },
+                        {
+                            column_number: 10,
+                            filter_type: "multi_select",
+                            select_type: 'select2',
+                            select_type_options: {
+                                width: '60px'
+                            },
+                            filter_default_label: "AA",
+                            filter_reset_button_text: false,
+                        }
+                    ])
+                    .concat(repeated_from_11_to_13)
+                    .concat([{
+                            column_number: 14,
+                            filter_type: "multi_select",
+                            select_type: 'select2',
+                            select_type_options: {
+                                width: '100%'
+                            },
+                            filter_default_label: "AA",
+                            filter_reset_button_text: false,
+                        }
+                    ])
+                    .concat(repeated_from_15_to_15));
+            } else {
+                repeated_from_3_to_8 = make_range_number_cols(3, 6);
+                repeated_from_10_to_10 = make_range_number_cols(10, 1);
+                repeated_from_12_to_12 = make_range_number_cols(12, 1);
 
-            } else if (analys_mode == "#single-crystal-group") {
-
-            } else if (analys_mode == "#single-crystal") {
-
-            }
+                initColumnFilters(btable,
+                [{
+                        column_number: 0,
+                        filter_type: "multi_select",
+                        select_type: 'select2',
+                        select_type_options: {
+                            width: '100%'
+                        },
+                        filter_default_label: "Seg",
+                        filter_reset_button_text: false,
+                    },
+                    {
+                        column_number: 1,
+                        filter_type: "multi_select",
+                        select_type: 'select2',
+                        select_type_options: {
+                            width: '100%'
+                        },
+                        filter_default_label: "Pos",
+                        filter_reset_button_text: false,
+                    },
+                    {
+                        column_number: 2,
+                        filter_type: false,                        
+                    }
+                ]
+                .concat(repeated_from_3_to_8)
+                .concat([{
+                            column_number: 9,
+                            filter_type: "multi_select",
+                            select_type: 'select2',
+                            select_type_options: {
+                                width: '60px'
+                            },
+                            filter_default_label: "AA",
+                            filter_reset_button_text: false,
+                        }
+                    ])
+                    .concat(repeated_from_10_to_10)
+                    .concat([
+                        {
+                            column_number: 11,
+                            filter_type: "multi_select",
+                            select_type: 'select2',
+                            width: '60px',
+                            select_type_options: {
+                                width: '60px'
+                            },
+                            filter_default_label: "AA",
+                            filter_reset_button_text: false,
+                        }
+                    ])
+                    .concat(repeated_from_12_to_12));
+            } 
             // btable.on('draw.dt', function(e, oSettings) {
             //     filter_browser();
             // });
@@ -1356,11 +1438,11 @@ function renderDataTables(element) {
 
     // Make sure browser-tables are not too wide.
     browser_table_div_width = $('.contact-browser:visible').width();
-    if (browser_table_div_width > 2060) {
-        browser_table_width = 2030;
-    } else {
-        browser_table_width = browser_table_div_width - 30;
-    }
+    // if (browser_table_div_width > 2060) {
+    //     browser_table_width = 2030;
+    // } else {
+    browser_table_width = browser_table_div_width - 30;
+    // }
     $('.contact-browser .dt-container').width(browser_table_width);
     console.timeEnd("renderDataTables");
 }
@@ -1704,7 +1786,7 @@ function renderBrowser(data) {
                     </tr>`;
             tbody.append(tr);
         });
-    } else if ((data['proteins'].length > 1 && normalized) || (data['pdbs'].length > 1 && !normalized)) {
+    } else if ((data['pdbs'].length > 1 && normalized) || (data['pdbs'].length > 1 && !normalized)) {
         thead = '<tr> \
                           <th colspan="1" rowspan="2">Segment</th> \
                           <th colspan="1" rowspan="2">Positions</th> \
@@ -2363,7 +2445,7 @@ function renderBrowser_2(data) {
         });
         // insert natively for speed increase on Chrome
         tbody[0].innerHTML = tr_list;
-    } else if (data['proteins'].length > 1) {
+    } else if (data['pdbs'].length > 1) {
         thead = '<tr> \
                           <th colspan="1" rowspan="2">Segment</th> \
                           <th colspan="1" rowspan="2">Positions</th> \
@@ -2903,7 +2985,7 @@ function renderBrowser_3(data) {
         });
         // insert natively for speed increase on Chrome
         tbody[0].innerHTML = tr_list;
-    } else if (data['proteins'].length > 1) {
+    } else if (data['pdbs'].length > 1) {
       thead = '<tr> \
                         <th colspan="1" rowspan="2">Segment</th> \
                         <th colspan="1" rowspan="2">Position</th> \
@@ -3330,7 +3412,7 @@ function renderBrowser_4(data) {
         tbody[0].innerHTML = tr_list;
 
 
-    } else if (data['proteins'].length > 1) {
+    } else if (data['pdbs'].length > 1) {
         var proteins = data['proteins'].length;
         var pdbs_count = data['pdbs'].length;
         var normalized = data['normalized'];
@@ -3638,16 +3720,16 @@ function renderBrowser_5(data) {
                 <th colspan="2" rowspan="1">Class seq consensus</th> \
                 </tr> \
                 <tr> \
-                <th colspan="1">Avg distance to<br/>residues</th> \
-                <th colspan="1">Distance to<br/>7TM axis (Å)</th> \
-                <th colspan="1">Angle to helix<br/>and 7TM axes</th> \
-                <th colspan="1">Rotamer</th> \
-                <th colspan="1">SASA (Å&sup2;)</th> \
-                <th colspan="1">RSA (Å&sup2;)</th> \
-                <th colspan="1">AA</th> \
-                <th colspan="1">Conservation (%)</th> \
-                <th colspan="1">AA</th> \
-                <th colspan="1">Cons (%)</th> \
+                <th class="narrow_col" colspan="1">Avg distance to<br/>residues</th> \
+                <th class="narrow_col" colspan="1">Distance to<br/>7TM axis (Å)</th> \
+                <th class="narrow_col" colspan="1">Angle to helix<br/>and 7TM axes</th> \
+                <th class="narrow_col" colspan="1">Rotamer</th> \
+                <th class="narrow_col" colspan="1">SASA (Å&sup2;)</th> \
+                <th class="narrow_col" colspan="1">RSA (Å&sup2;)</th> \
+                <th class="narrow_col" colspan="1">AA</th> \
+                <th class="narrow_col" colspan="1">Conservation (%)</th> \
+                <th class="narrow_col" colspan="1">AA</th> \
+                <th class="narrow_col" colspan="1">Cons (%)</th> \
                 </tr>';
     }
     table.find('thead').html(thead);

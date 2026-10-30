@@ -24,6 +24,9 @@
 	},
   "lengthMenu": [10, 25, 50, 100] ,
   "nullValuePlaceholder": "-",
-  "showCategoryCounts": true,
-  "buttons": [ "clear_selection_default", "clear_filters_default", "column_visibility", "closest_to_human_toggle", "best_resolution_toggle"]
+  "showCategoryCounts": false,
+  "buttons": [ "clear_selection_default", "clear_filters_default", "column_visibility", "closest_to_human_toggle", "best_resolution_toggle"],
+  "localStorageKey": "pdb_data_table_clientside",
+  "localStorageDurationDays": 7,
+  "fixedWidthTable": true
 }

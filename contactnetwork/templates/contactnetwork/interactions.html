@@ -574,20 +574,36 @@
                                     import { TableManager } from "{% static 'home/js/tablemanager/tablemanager.js' %}";
                                     import { InjectorTemplates } from "{% static 'home/js/tablemanager/injectors/injectortemplates.js' %}";
 
+                                    window.tableManagers = window.tableManagers || {}; 
+
+                                    // Create a promise that will be resolved when the single crystal table is ready
+                                    // Used as a timing point that all the other tables can wait for before initializing, so that the single crystal table is always initialized first
+                                    // allowing the other tables to use the cached data from the single crystal table instead of making their own requests to the server
+                                    let resolveSingleCrystalTableReady, rejectSingleCrystalTableReady;
+                                    window.tableManagers.singleCrystalTableReady = new Promise((resolve, reject) => {
+                                        resolveSingleCrystalTableReady = resolve;
+                                        rejectSingleCrystalTableReady = reject;
+                                    });
+
                                     let config
                                     try {
                                         config = await TableManager.fetchConfiguration(
                                         'pdb_data_table', //dataTableConfigName
-                                        'serverside', //dataTableConfigVariant
+                                        'clientside', //dataTableConfigVariant
                                         'pdb_data_table', //columnConfigName
                                         'basic' //columnConfigVariant
                                         );
+                                        
+                                        // Store the config in a global variable for other tables to use
+                                        // Config must be cloned or the TableManager will modify it and break the other tables that use the same config
+                                        window.tableManagers.sharedConfig = structuredClone(config); 
     
                                         //override checkboxMultiSelect to false for the checkbox column for single crystal select table
                                         config.columnsSpecifications.find(colSpec => colSpec.data_type === "checkbox").checkboxMultiSelect = false;
 
                                     } catch(error) {
                                         console.error('Error fetching configuration:', error);
+                                        rejectSingleCrystalTableReady(error);
                                     }
 
                                     if (config) {
@@ -612,9 +628,13 @@
                                             let displayString = selectedPDBDisplay.length > 0 ? selectedPDBDisplay.join(", ") : "No Structure Selected";
                                             document.querySelector("#single-crystal-select-display").innerHTML = displayString;
                                         });
-
-                                        window.tableManagers = window.tableManagers || {}; 
+                                        
                                         window.tableManagers.singleCrystalTableManager = singleCrystalTableManager;
+                                        // Wait for the table to be ready before resolving the promise
+                                        singleCrystalTableManager.ready.then(() => {
+                                            resolveSingleCrystalTableReady();
+                                        }); 
+                                        
                                     }
                                 </script>
                             </table>
@@ -649,19 +669,14 @@
                                 <script type="module">
                                     // Populate PDB table using TableManager
                                     import { TableManager } from "{% static 'home/js/tablemanager/tablemanager.js' %}";
-                                    import { InjectorTemplates } from "{% static 'home/js/tablemanager/injectors/injectortemplates.js' %}";
+                                    import { InjectorTemplates } from "{% static 'home/js/tablemanager/injectors/injectortemplates.js' %}";                                    
 
-                                    let config
-                                    try {
-                                        config = await TableManager.fetchConfiguration(
-                                        'pdb_data_table', //dataTableConfigName
-                                        'clientside', //dataTableConfigVariant
-                                        'pdb_data_table', //columnConfigName
-                                        'basic' //columnConfigVariant
-                                        );
-                                    } catch(error) {
-                                        console.error('Error fetching configuration:', error);
-                                    }
+                                    // Wait for the single crystal table to be ready before initializing this table (to use config and data from the single crystal table)
+                                    await window.tableManagers.singleCrystalTableReady; 
+
+                                    // Use the shared configuration if it exists
+                                    // Config must be cloned or the TableManager will modify it and break the other tables that use the same config
+                                    let config = structuredClone(window.tableManagers.sharedConfig); 
 
                                     if (config) {
                                         // Initialize the table (multi-select checkboxes are the default)
@@ -718,17 +733,12 @@
                                 import { TableManager } from "{% static 'home/js/tablemanager/tablemanager.js' %}";
                                 import { InjectorTemplates } from "{% static 'home/js/tablemanager/injectors/injectortemplates.js' %}";
 
-                                let config
-                                try {
-                                    config = await TableManager.fetchConfiguration(
-                                    'pdb_data_table', //dataTableConfigName
-                                    'clientside', //dataTableConfigVariant
-                                    'pdb_data_table', //columnConfigName
-                                    'basic' //columnConfigVariant
-                                    );
-                                } catch(error) {
-                                    console.error('Error fetching configuration:', error);
-                                }
+                                // Wait for the single crystal table to be ready before initializing this table (to use config and data from the single crystal table)
+                                await window.tableManagers.singleCrystalTableReady;
+
+                                // Use the shared configuration if it exists.
+                                // Config must be cloned or the TableManager will modify it and break the other tables that use the same config
+                                let config = structuredClone(window.tableManagers.sharedConfig);                                
 
                                 if (config) {
                                     // Initialize the table (multi-select checkboxes are the default)
@@ -782,17 +792,12 @@
                                 import { TableManager } from "{% static 'home/js/tablemanager/tablemanager.js' %}";
                                 import { InjectorTemplates } from "{% static 'home/js/tablemanager/injectors/injectortemplates.js' %}";
 
-                                let config
-                                try {
-                                    config = await TableManager.fetchConfiguration(
-                                    'pdb_data_table', //dataTableConfigName
-                                    'clientside', //dataTableConfigVariant
-                                    'pdb_data_table', //columnConfigName
-                                    'basic' //columnConfigVariant
-                                    );
-                                } catch(error) {
-                                    console.error('Error fetching configuration:', error);
-                                }
+                                // Wait for the single crystal table to be ready before initializing this table (to use config and data from the single crystal table)
+                                await window.tableManagers.singleCrystalTableReady;
+
+                                // Use the shared configuration if it exists. 
+                                // Config must be cloned or the TableManager will modify it and break the other tables that use the same config
+                                let config = structuredClone(window.tableManagers.sharedConfig);
 
                                 if (config) {
                                     // Initialize the table (multi-select checkboxes are the default)
@@ -909,6 +914,7 @@
     <script type="text/javascript" src="{% static 'home/js/flareplot_segments-contactbrowser.js' %}"> </script>
     <script type="text/javascript" src="{% static 'home/js/flareplot-selectors.js' %}"> </script>
     <script type="text/javascript" src="{% static 'home/js/flareplot-rangeslider.js' %}"> </script>
+    <script type="text/javascript" src="{% static 'home/js/uiSpinner.js' %}"> </script>
     <script type="text/javascript" src="{% static 'home/js/contactbrowser_functions.js' %}"> </script>
     <script type="text/javascript" src="{% static 'home/js/contactbrowser-ngl.js' %}"> </script>
     <script type="text/javascript" src="{% static 'home/js/contactbrowser-heatmap.js' %}"> </script>
@@ -1049,8 +1055,6 @@
     </script>
 {% endblock %}
 {% block addon_css %}
-    <!-- <link rel="stylesheet" href="{% static 'home/css/jquery.dataTables.min.css' %}" type="text/css" /> -->
-    <!-- <link rel="stylesheet" href="{% static 'home/css/yadcf_bootstrap_version.css' %}" type="text/css" /> -->
     <!-- <link rel="stylesheet" href="{% static 'home/css/select2.css' %}" type="text/css" /> -->
     <link rel="stylesheet" href="{% static '/home/css/frameworks/select2/4.1.0/select2.min.css' %}" type="text/css" />
     <link rel="stylesheet" href="{% static '/home/css/frameworks/datatables/datatables_bundle-3.1.4_min.css' %}">
@@ -1060,6 +1064,7 @@
     <link href="{% static 'home/css/flareplot-selectors.css' %}" rel="stylesheet">
     <link href="{% static 'home/css/flareplot-rangeslider.css' %}" rel="stylesheet">
     <link rel="stylesheet" href="{% static 'home/css/spectrum.css' %}" type="text/css" />
+    <link rel="stylesheet" href="{% static 'home/css/uispinner.css' %}">
     <style>
 
         th.selector, th.pairselector, th.skip {

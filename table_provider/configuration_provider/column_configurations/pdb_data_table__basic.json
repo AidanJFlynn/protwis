@@ -13,14 +13,16 @@
     "json_id": "pdb_id",
     "title": "PDB ID",
     "data_type": "weblinktext",
-    "allow_filter": true   
+    "allow_filter": true,
+    "width": "70px"
   },
    {
     "column_group": "Structure",
     "json_id": "structure_type",
     "title": "Structure Type",
     "data_type": "textselect",
-    "allow_filter": true   
+    "allow_filter": true,
+    "width": "70px"
   },
     {
     "column_group": "Structure",
@@ -37,7 +39,7 @@
         "false": "bestFalse"
       }
     },
-    "filterHeaderInjector": "show_best_resolution_toggle"
+    "width": "70px"
   },
    {
     "column_group": "Structure",
@@ -52,7 +54,8 @@
     "json_id": "uniprot",
     "title": "Uniprot",
     "data_type": "weblinktext",
-    "allow_filter": true   
+    "allow_filter": true,
+    "width": "120px"
   },
     {
     "column_group": "Receptor",
@@ -72,9 +75,10 @@
     "column_group": "Receptor",
     "json_id": "receptor_family_short",
     "title": "Receptor Family",
-    "max_display_length": 15,
+    "max_display_length": 20,
     "data_type": "textselect",
-    "allow_filter": true   
+    "allow_filter": true,
+    "width": "150px"
   },
     {
     "column_group": "Receptor",
@@ -205,6 +209,7 @@
     "json_id": "ligand_role",
     "title": "Role",
     "data_type": "textselect",
-    "allow_filter": true   
+    "allow_filter": true,
+    "width": "140px"
   }
 ]

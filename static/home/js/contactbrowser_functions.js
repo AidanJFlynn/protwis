@@ -524,16 +524,14 @@ function redraw_renders() {
     }
 
 
-    $('div.dt-scroll-body:visible, div.dataTables_scrollBody:visible').height('50vh');
+    $('div.dt-scroll-body:visible').height('50vh');
 
     // Make sure browser-tables are not too wide.
     browser_table_div_width = $('.contact-browser:visible').width();
-    if (browser_table_div_width > 2060) {
-        browser_table_width = 2030;
-    } else {
-        browser_table_width = browser_table_div_width - 30;
-    }
-    $('.contact-browser .dt-container, .contact-browser .dataTables_wrapper').width(browser_table_width);
+
+    browser_table_width = browser_table_div_width - 30;
+
+    $('.contact-browser .dt-container').width(browser_table_width);
     // console.log(browser_table_div_width,browser_table_width);
 
     var width_svg = visible_svg.width();
@@ -744,14 +742,16 @@ function initializeInteractionButtons(selector) {
 
 function initializeGoButton(selector, TableManagerName, generic = false) {
     $(selector + ' .go-button').click(function () {
-        var pdb = []; 
+        var pdb = [];
         window.tableManagers[TableManagerName].state.activeCheckBoxes.forEach(cb => pdb.push(cb.data.pdb_id));
-        loadPDBsView(pdb, selector, generic)
+        UiSpinner.runWithButtonSpinner(this, () => loadPDBsView(pdb, selector, generic));
     });
 }
 
 function drawPlotPanel(plot_type, plot_div) {
     plot_id = plot_div.attr('id');
+    // Remember the selected plot type on the panel so a later filter change can re-draw it (see updateNetworkPlots).
+    plot_div.attr('data-plot-type', plot_type);
     // console.log(plot_type);
     // console.log(plot_div);
     // console.log(plot_id);
@@ -1064,7 +1064,7 @@ function loadPDBsView(pdb, selector, generic) {
         //                    interactionTypes = JSON.parse($(selector + ' .interactions-input').val());
 
         //normalized = $(".normalized:visible input").prop("checked");
-        $.ajax({
+        return $.ajax({
             url: '/contactnetwork/browserdata',
             dataType: 'json',
             data: {
@@ -1116,6 +1116,8 @@ function loadPDBsView(pdb, selector, generic) {
         });
 
     }
+    $(".main_loading_overlay").hide();
+    return Promise.resolve();
 }
 
 
@@ -1125,9 +1127,7 @@ function initializeGoButtonTwoCrystalGroups(selector, generic = false) {
         var pdbs2 = [];
         window.tableManagers.twoCrystalGroup1TableManager.state.activeCheckBoxes.forEach(cb => pdbs1.push(cb.data.pdb_id));
         window.tableManagers.twoCrystalGroup2TableManager.state.activeCheckBoxes.forEach(cb => pdbs2.push(cb.data.pdb_id));
-        loadTwoPDBsView(pdbs1, pdbs2, selector, generic)
-
-
+        UiSpinner.runWithButtonSpinner(this, () => loadTwoPDBsView(pdbs1, pdbs2, selector, generic));
     });
 }
 
@@ -1151,7 +1151,7 @@ function loadTwoPDBsView(pdbs1, pdbs2, selector, generic) {
 
         //normalized = $(".normalized:visible input").prop("checked");
 
-        $.ajax({
+        return $.ajax({
             url: '/contactnetwork/browserdata',
             dataType: 'json',
             data: {
@@ -1191,7 +1191,8 @@ function loadTwoPDBsView(pdbs1, pdbs2, selector, generic) {
             }
         });
     }
-    // $(".main_loading_overlay").hide();
+    $(".main_loading_overlay").hide();
+    return Promise.resolve();
 }
 
 function initilizeInitialPlots() {
@@ -1240,10 +1241,10 @@ function initializeFullscreenButton(selector) {
 
         if (fullScreenElement.attr('id')) {
             if (fullScreenElement.attr('id').startsWith('DataTable')) {
-                top_height = $('div.dt-scroll-head:visible, div.dataTables_scrollHead:visible').outerHeight();
-                bottom_height = $('div.dt-info:visible, div.dataTables_info:visible').outerHeight();
+                top_height = $('div.dt-scroll-head:visible').outerHeight();
+                bottom_height = $('div.dt-info:visible').outerHeight();
                 scrollbody_height = screen.height - top_height - bottom_height;
-                $('div.dt-scroll-body:visible, div.dataTables_scrollBody:visible').height(scrollbody_height + 'px');
+                $('div.dt-scroll-body:visible').height(scrollbody_height + 'px');
             }
         }
     });
@@ -1691,6 +1692,17 @@ function updateMatrix() {
     }
 }
 
+// Network (2D/3D) plots have no lightweight update path like updateFlareplot's path show/hide: prepare_data()
+// inside contactbrowser-network_v4.js/contactbrowser-3dforce.js captures filtered_gn_pairs/filtered_cluster_groups
+// by reference once, at draw time, and filter_browser() always reassigns those globals to new arrays rather than
+// mutating them in place, so the captured reference goes stale as soon as the table is filtered again. Re-running
+// drawPlotPanel is the only way to pick up the current filtered_gn_pairs/filtered_cluster_groups.
+function updateNetworkPlots() {
+    $('.panel[data-plot-type^="force_network"]').each(function () {
+        drawPlotPanel($(this).attr('data-plot-type'), $(this));
+    });
+}
+
 // TODO update for other tabs
 function updateFlareplot() {
 
@@ -1866,6 +1878,7 @@ function updateGeneralControls(ignore_ngl = false) {
     console.log('ignore_ngl', ignore_ngl);
 
     updateFlareplot();
+    updateNetworkPlots();
     switch (currentViz.toLowerCase()) {
         case "matrix":
             updateMatrix()
@@ -2081,7 +2094,14 @@ function showVisualizationPanel(plot_destination, table_number, datatype, column
         } else {
             // show column options
             $("#interaction_settings").append('<h5 class="border-bottom">Select which column to plot:</h5>')
-            var header = $(".main_option:visible .browser-table-" + table_number)[0].childNodes[0].children[3];
+            // With scrollX, DataTables renders the navigable header in a cloned header-only table inside
+            // .dt-scroll-head, and keeps the original (with a <colgroup> before its <thead>) in the scrolling
+            // body table. Pick the scroll-head clone explicitly instead of relying on DOM match order, and find
+            // <thead> via .children() so it doesn't matter whether a <colgroup>/<tfoot> comes before it.
+            var table_matches = $(".main_option:visible .browser-table-" + table_number);
+            var scroll_head_table = table_matches.filter(function () { return $(this).closest('.dt-scroll-head').length > 0; });
+            var header_table = scroll_head_table.length ? scroll_head_table.first() : table_matches.first();
+            var header = header_table.children('thead').children().eq(3)[0];
             var num_columns = options[0].reduce((a, b) => a + b, 0);
             for (var i = 0; i < num_columns; i++) {
                 //console.log(header.children[parseInt(columnNumber) + i].innerText);
@@ -2190,13 +2210,12 @@ function downloadURI(uri, name) {
     document.body.appendChild(link);
     link.click();
     document.body.removeChild(link);
-    delete link;
 }
 
 function separatePair(stringPair) {
     var regex = /([0-9x]+),([0-9x]+)/g;
     var m;
-    matches = regex.exec(stringPair);
+    var matches = regex.exec(stringPair);
 
     return [matches[1], matches[2]];
 }
