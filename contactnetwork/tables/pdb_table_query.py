@@ -1,7 +1,7 @@
 from decimal import Decimal
 
 from django.conf import settings
-from django.db.models import Prefetch, ExpressionWrapper, Sum, Case, When, IntegerField, Max, Min, BooleanField, Count, FloatField, Value
+from django.db.models import Q, Prefetch, ExpressionWrapper, Sum, Case, When, IntegerField, Max, Min, BooleanField, Count, FloatField, Value
 from django.db.models.functions import Cast, Coalesce, Length
 
 from structure.models import Structure, StructureExtraProteins
@@ -70,8 +70,14 @@ def PdbTableDataSource():
 
     # Loop through all effectors and create a query set for each effector, as well as a query set for the signal protein coverage
     # Used by arrestin and g-protein databases
+    # Restrict to experimental structures plus the effector's own AlphaFold model type
+    af_model_slugs = {'G alpha': 'af-signprot', 'Arrestin': 'af-arrestin'}
     for effector in effector_list:
-        temp_data_qs = Structure.objects.all() \
+        structure_filter = Q(structure_type__origin='experiment')
+        if effector in af_model_slugs:
+            structure_filter |= Q(structure_type__slug=af_model_slugs[effector])
+
+        temp_data_qs = Structure.objects.filter(structure_filter) \
             .prefetch_related(*common_prefetch,
                               Prefetch("ligands", queryset=ligand_qs.prefetch_related('ligand', 'ligand__ligand_type', 'ligand_role')))
         
@@ -249,6 +255,7 @@ def PdbTableDataSource():
                     entry['signal_protein_pcntseq'] = None
 
             entry['structure_type'] = s.structure_type.type_short()
+            entry['structure_type_origin'] = s.structure_type.origin
             try:
                 entry['resolution'] = s.resolution
                 entry['resolution_best'] = s.resolution == bestresolution_lookup[effector]['{}_{}'.format(shorted.pk, s.state.name)]
@@ -281,6 +288,7 @@ def PdbTableDataSource():
                 #     entry['ligand_type'] = l.ligand.ligand_type.name
 
             entry['query_effector'] = effector
+            entry['is_complex'] = s.is_complex
 
             entries[pdb_id] = entry          
         result_sets[effector] = entries  

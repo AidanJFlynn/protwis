@@ -197,6 +197,7 @@ class PdbTable (models.Model):
     species_common_name = models.CharField(max_length=50, null=True)
     identity_to_human = models.DecimalField(max_digits=5, decimal_places=2, null=True)
     structure_type = models.CharField(max_length=20, null=True)
+    structure_type_origin = models.CharField(max_length=30, null=False)
     pdb_id = models.CharField(max_length=150, null=False)
     resolution = models.DecimalField(max_digits=5, decimal_places=2, null=True)
     resolution_best = models.BooleanField(null=True, default=False)
@@ -212,14 +213,7 @@ class PdbTable (models.Model):
     ligand = models.CharField(max_length=250, null=True)
     ligand_role = models.CharField(max_length=30, null=True)
     query_effector = models.CharField(max_length=20, null=True)
-    #ligand_type = models.CharField(max_length=100, null=True)
-    #distance_representative = models.BooleanField(null=False, default=False)
-    #contact_representative = models.BooleanField(null=False, default=False)
-    #class_consensus_based_representative = models.BooleanField(null=False, default=False)
-    #mammal = models.BooleanField(null=False, default=False)
-    #seven_tm_distance = models.DecimalField(max_digits=5, decimal_places=2, null=True)
-    #g_protein = models.CharField(max_length=100, null=True)
-    #arrestin = models.CharField(max_length=100, null=True)
+    is_complex = models.BooleanField(null=False, default=False)
 
     class Meta:
         """Index definitions for the PdbTable model to optimize query performance during table filtering"""
@@ -238,11 +232,13 @@ class PdbTable (models.Model):
             models.Index(fields=["species_common_name"], name="pdb_species_common_name_idx"),
             models.Index(fields=["identity_to_human"], name="pdb_identity_to_human_idx"),
             models.Index(fields=["structure_type"], name="pdb_structure_type_idx"),
+            models.Index(fields=["structure_type_origin"], name="pdb_structure_type_origin_idx"),
             models.Index(fields=["pdb_id"], name="pdb_id_idx"),        
             models.Index(fields=["resolution"], name="pdb_resolution_idx"),
             models.Index(fields=["resolution_best"], name="pdb_resolution_best_idx"),
             models.Index(fields=["state"], name="pdb_state_idx"),
             models.Index(fields=["query_effector"], name="pdb_query_effector_idx"),
+            models.Index(fields=["is_complex"], name="pdb_is_complex_idx"),
             models.Index(fields=["gprot_bound_likeness"], name="pdb_gprot_bound_likeness_idx"),
             models.Index(fields=["tm6_angle"], name="pdb_tm6_angle_idx"),
             models.Index(fields=["signal_protein"], name="pdb_signal_protein_idx"),
@@ -252,13 +248,5 @@ class PdbTable (models.Model):
             models.Index(fields=["fusion"], name="pdb_fusion_idx"),
             models.Index(fields=["antibody"], name="pdb_antibody_idx"),
             models.Index(fields=["ligand"], name="pdb_ligand_idx"),
-            models.Index(fields=["ligand_role"], name="pdb_ligand_role_idx"),            
-            #models.Index(fields=["ligand_type"], name="pdb_ligand_type_idx"),            
-            #models.Index(fields=["distance_representative"], name="pdb_distance_represent_idx"),
-            #models.Index(fields=["contact_representative"], name="pdb_contact_represent_idx"),
-            #models.Index(fields=["class_consensus_based_representative"], name="pdb_class_cons_represent_idx"),
-            #models.Index(fields=["mammal"], name="pdb_mammal_idx"),
-            #models.Index(fields=["closest_to_human"], name="pdb_closest_human_idx"),
-            #models.Index(fields=["g_protein"], name="pdb_g_protein_idx"),
-            #models.Index(fields=["arrestin"], name="pdb_arrestin_idx"),
+            models.Index(fields=["ligand_role"], name="pdb_ligand_role_idx")
         ]
