@@ -24,7 +24,7 @@ from protein.models import Protein, ProteinSegment, ProteinCouplings, ProteinCon
 from residue.models import Residue, ResidueGenericNumber
 from signprot.models import SignprotComplex
 from interaction.models import StructureLigandInteraction, ResidueFragmentInteraction
-from angles.models import ResidueAngle, get_angle_averages, get_all_angles
+from contactnetwork.models import ResidueAngle, get_angle_averages, get_all_angles
 from mutation.models import MutationExperiment
 
 Alignment = getattr(__import__('common.alignment_' + settings.SITE_NAME, fromlist=['Alignment']), 'Alignment')

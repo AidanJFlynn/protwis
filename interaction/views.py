@@ -1391,7 +1391,7 @@ def StructureDetails(request, pdbname):
     HelixBox = DrawHelixBox(
                 residuelist, p.get_protein_class(), str(p), nobuttons=1)
     if not pdbname.startswith('AFM'):
-        from angles.models import get_snake_plot_distance_lookup
+        from contactnetwork.models import get_snake_plot_distance_lookup
         SnakePlot = DrawSnakePlot(
                     residuelist, p.get_protein_class(), str(p), nobuttons=1,
                     residue_distance_lookup=get_snake_plot_distance_lookup(p))

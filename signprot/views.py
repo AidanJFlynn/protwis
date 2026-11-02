@@ -1610,7 +1610,7 @@ def familyDetail(request, slug):
 
 @cache_page(60 * 60 * 24 * 7)
 def Ginterface(request, protein=None):
-    from angles.models import get_snake_plot_distance_lookup
+    from contactnetwork.models import get_snake_plot_distance_lookup
     residuelist = Residue.objects.filter(protein_conformation__protein__entry_name=protein).prefetch_related(
         'protein_segment', 'display_generic_number', 'generic_number')
     distance_lookup = get_snake_plot_distance_lookup(Protein.objects.get(entry_name=protein))

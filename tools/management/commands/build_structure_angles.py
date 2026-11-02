@@ -4,7 +4,7 @@ from django.db import connection
 import contactnetwork.pdb as pdb
 from structure.models import Structure, StructureVectors
 from residue.models import Residue
-from angles.models import ResidueAngle as Angle
+from contactnetwork.models import ResidueAngle as Angle
 from contactnetwork.models import Distance, distance_scaling_factor
 from common.tools import test_model_updates
 import Bio.PDB
