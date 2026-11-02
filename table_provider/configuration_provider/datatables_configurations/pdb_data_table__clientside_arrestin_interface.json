@@ -1,0 +1,32 @@
+{
+  "serverSide": false,
+  "processing": true,
+  "deferRender": true,
+  "scrollX": true,
+  "layout": {
+    "topEnd": "pageLength",
+   	"topStart": "buttons"
+	},
+  "fixedColumns": { "left": 2 },
+  "ajax": {
+    "url": "/table_provider/pdb_data_table_cached?effector=Arrestin&exclude_non_interacting=true",
+    "type": "GET",
+    "cache": false,
+    "dataSrc":  "data"
+  },
+  "search": {
+    "regex": true,
+    "caseInsensitive": true
+  },
+  "order": {
+		"name": "uniprot",
+		"dir": "asc"
+	},
+  "lengthMenu": [10, 25, 50, 100] ,
+  "nullValuePlaceholder": "-",
+  "showCategoryCounts": false,
+  "buttons": [ "clear_selection_default", "clear_filters_default", "column_visibility", "closest_to_human_toggle", "best_resolution_toggle"],
+  "localStorageKey": "pdb_data_table_clientside_arrestin_interface",
+  "localStorageDurationDays": 7,
+  "fixedWidthTable": true
+}
