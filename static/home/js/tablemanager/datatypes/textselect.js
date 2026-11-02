@@ -43,8 +43,23 @@ class TextSelect extends Text {
       // instead of looking it up by id, avoiding collisions across tables.
       this.filterInput = this._createInputForSelectFilter(tableManagerReference);
 
-      return this.filterInput;
+      // Without a symbol popup the select is returned bare, as before
+      const wrapper = document.createElement("div");
+      wrapper.classList.add("tm-text-filter-wrapper");
+      wrapper.appendChild(this.filterInput);
+      if (!this.addSymbolPopupIfEnabled(wrapper, () => this._getSelect2SearchField())) {
+        return this.filterInput;
+      }
+      return wrapper;
   }
+
+    /**
+     * Finds the text box select2 uses for typing in the filter, which is where symbols from the popup are inserted.
+     * @returns {HTMLInputElement|null} The search field, or null if select2 has not been initialised yet.
+     */
+    _getSelect2SearchField() {
+      return $(this.filterInput).next(".select2-container").find(".select2-search__field")[0] ?? null;
+    }
 
     // select2 is initialised once the header, and so the select, is in the DOM
     /**

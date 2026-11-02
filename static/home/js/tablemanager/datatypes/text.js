@@ -103,21 +103,35 @@ class Text extends DataTypeBase {
         wrapper.classList.add("tm-text-filter-wrapper");
         wrapper.appendChild(filterInput);
 
-        if (column.show_symbol_popup) {
-            const { symbolBtn, popup } = this.createSymbolPopup(filterInput);
-            wrapper.appendChild(symbolBtn);
-            wrapper.appendChild(popup);
-        }
+        this.addSymbolPopupIfEnabled(wrapper, () => filterInput);
 
         return wrapper;
     }
 
     /**
-     * Creates the Greek symbol button and its popup. Clicking a symbol appends it to the filter input.
-     * @param {HTMLInputElement} filterInput - The filter input to insert symbols into.
+     * Adds the symbol button and popup to a filter wrapper if the column has show_symbol_popup set. Shared by every
+     * text-based data type, so each only needs to say where the chosen symbol should be inserted.
+     * @param {HTMLElement} wrapper - The filter wrapper to append the button and popup to.
+     * @param {function(): (HTMLInputElement|null)} getTextInput - Returns the text input to insert symbols into. Called on
+     * each click, so the input may be created later (e.g. the select2 search field).
+     * @returns {boolean} True if the button and popup were added.
+     */
+    addSymbolPopupIfEnabled(wrapper, getTextInput) {
+        if (!this.column.show_symbol_popup) {
+            return false;
+        }
+        const { symbolBtn, popup } = this.createSymbolPopup(getTextInput);
+        wrapper.appendChild(symbolBtn);
+        wrapper.appendChild(popup);
+        return true;
+    }
+
+    /**
+     * Creates the Greek symbol button and its popup. Clicking a symbol appends it to the text input.
+     * @param {function(): (HTMLInputElement|null)} getTextInput - Returns the text input to insert symbols into.
      * @returns {{symbolBtn: HTMLButtonElement, popup: HTMLDivElement}} The toggle button and the popup.
      */
-    createSymbolPopup(filterInput) {
+    createSymbolPopup(getTextInput) {
         const greekSymbols = [
             { label: "α", name: "alpha" },
             { label: "β", name: "beta" },
@@ -137,8 +151,14 @@ class Text extends DataTypeBase {
             cell.classList.add("tm-symbol-popup-item");
             cell.addEventListener("mousedown", (e) => {
                 e.preventDefault();
-                filterInput.value += label;
-                filterInput.focus();
+                const input = getTextInput();
+                if (!input) {
+                    return;
+                }
+                input.value += label;
+                // Lets listeners such as select2's search box react to the inserted symbol
+                input.dispatchEvent(new Event("input", { bubbles: true }));
+                input.focus();
             });
             popup.appendChild(cell);
         });
