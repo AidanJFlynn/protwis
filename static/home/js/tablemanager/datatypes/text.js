@@ -151,6 +151,9 @@ class Text extends DataTypeBase {
             cell.classList.add("tm-symbol-popup-item");
             cell.addEventListener("mousedown", (e) => {
                 e.preventDefault();
+                // Focusing the select2 search field below opens its dropdown. If this mousedown then bubbled to the
+                // document, select2's outside-click handler would close the dropdown again and clear the typed symbol.
+                e.stopPropagation();
                 const input = getTextInput();
                 if (!input) {
                     return;
