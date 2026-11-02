@@ -194,7 +194,10 @@ class PdbStructureSummarySerializer(DataTablesSerializerMixin, serializers.Seria
         return self.weblink_anchor(obj.gene_name, obj.gene_entrez_id, 'entrez_gene')
 
     def get_pdb_id(self, obj):
-        return self.weblink_anchor(obj.pdb_id, obj.pdb_id, 'pdb')
+        if obj.structure_type_origin == 'experiment':
+            return self.weblink_anchor(obj.pdb_id, obj.pdb_id, 'pdb')
+        else:
+            return self.weblink_anchor(obj.pdb_id, None, 'pdb')
 
 
 # Serializer behind each table name used in the configuration files (<table_name>__<variant>.json)
