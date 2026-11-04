@@ -30,7 +30,7 @@ class WebLinkText extends Text {
             return tableManagerReference.nullValuePlaceholder;
         }
         if (type === "display" && data) {
-            const truncated_content = this._truncateText(data.anchor_content, this.column.max_display_length);
+            const truncated_content = this._truncateText(data.anchor_content || "", this.column.max_display_length);
             
             if (!data.anchor_href) {
                 return data.anchor_html || truncated_content.data || ""; // fallback to displaying the content unlinked if href is missing
@@ -47,7 +47,7 @@ class WebLinkText extends Text {
             return link.outerHTML;
         }
         // Search, order and type return
-        return data ? data.anchor_content : ""
+        return data ? data.anchor_content || data.anchor_html : ""
     }
  
     /**
