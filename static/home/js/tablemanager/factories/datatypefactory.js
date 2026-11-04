@@ -4,6 +4,7 @@ import { TextSelect } from "../datatypes/textselect.js";
 import { WebLinkText } from "../datatypes/weblinktext.js";
 import { WebLinkTextSelect } from "../datatypes/weblinktextselect.js";
 import { WebLinkTextList } from "../datatypes/weblinktextlist.js";
+import { ReferenceList } from "../datatypes/referencelist.js";
 import { Checkbox } from "../datatypes/checkbox.js"
 
 // This class is responsible for managing the different data types used in the table manager. 
@@ -29,6 +30,7 @@ class DataTypeFactory {
         this.registerDataType("weblinktext", WebLinkText);
         this.registerDataType("weblinktextselect", WebLinkTextSelect);
         this.registerDataType("weblinktextlist", WebLinkTextList);
+        this.registerDataType("referencelist", ReferenceList);
         this.registerDataType("checkbox", Checkbox);
     }
 

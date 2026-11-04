@@ -75,6 +75,18 @@ class DataTypeBase {
   }
   
   /**
+   * Hook for the value a cell exports with. The default returns undefined, which exports the displayed cell content
+   * with its HTML stripped. Override it when the display value is not what should be exported.
+   * @param {*} cellData - The cell data.
+   * @param {*} rowData - The full row data.
+   * @param {Object} tableManagerReference - The table manager that owns the table.
+   * @returns {*} The value to export, or undefined to export the displayed content.
+   */
+  exportValue(cellData, rowData, tableManagerReference) {
+    return undefined;
+  }
+
+  /**
    * Runs once a cell has been rendered: applies formatting, attaches event handlers, then runs any cell injectors.
    * @param {HTMLElement} cell - The rendered table cell.
    * @param {*} cellData - The cell data.
@@ -177,37 +189,6 @@ class DataTypeBase {
     tableManagerReference.annotateColumnGroupBoundaries(cell, column, tableManagerReference.columns, isVisible);
   }
 
-  /**
-   * Parses a settings string of the form "key:value;key:value" into an object. Each entry is split on its first colon,
-   * so values can contain colons. Blank entries and entries without a colon are skipped.
-   * @param {string|null|undefined} settingsList - The settings string.
-   * @returns {Object<string, string>|null} The parsed settings, or null if the string is empty or blank.
-   */
-  parseSettingsList(settingsList){
-        // Parse the settings list into a dictionary of key-value pairs
-
-        if (settingsList == null || settingsList === undefined || settingsList.trim() === "") {
-            return null;
-        }
-
-        let settingsDict = {};
-        let settingsArray = settingsList.split(';');
-        for (let setting of settingsArray) {
-            // Skip empty entries (e.g. from trailing semicolon)
-            if (!setting.trim()) {
-                continue;
-            }
-            // Split on the first colon only, so values can contain colons (e.g. "url:http://x")
-            const colonIndex = setting.indexOf(':');
-            if (colonIndex === -1) {
-                continue; // Skip entries without a colon
-            }
-            const key = setting.slice(0, colonIndex).trim();
-            const value = setting.slice(colonIndex + 1).trim();
-            settingsDict[key] = value;
-        }
-        return settingsDict;
-    }
 
 }
 

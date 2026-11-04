@@ -1,3 +1,5 @@
+@import "struct_tooltip.css";
+
 /* --------------*/
 /* Table Styling */
 /* --------------*/    
@@ -141,7 +143,12 @@ table.dataTable.tablemanager-standard tbody td {
     line-height: 1.4;
 }
 
-/* "more..." popup of the weblinktextlist data type, attached to the document body */
+/* ------------------------------------------- */
+/* WebLinkTextList "+"(show more) button popup */
+/* (popup of the weblinktextlist data type,    */
+/*  attached to the document body)             */
+/* ------------------------------------------- */
+
 .tm-link-list-popup {
     display: none;
     position: absolute;
@@ -164,6 +171,66 @@ table.dataTable.tablemanager-standard tbody td {
 .tm-link-list-popup-item {
     white-space: nowrap;
     line-height: 1.6;
+}
+
+/* ------------------------- */
+/* Reference list modal      */
+/* (referencelist data type) */
+/* ------------------------- */
+
+.tm-reference-modal {
+    width: min(50em, 90vw);
+    max-height: 80vh;
+    padding: 0;
+    border: 1px solid #ccc;
+    border-radius: 4px;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+    text-align: left;
+}
+
+.tm-reference-modal[open] {
+    display: flex;
+    flex-direction: column;
+}
+
+.tm-reference-modal::backdrop {
+    background: rgba(0, 0, 0, 0.4);
+}
+
+.tm-reference-modal-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 8px 15px;
+    border-bottom: 1px solid #e5e5e5;
+}
+
+.tm-reference-modal-title {
+    margin: 0;
+    font-weight: bold;
+}
+
+.tm-reference-modal-close {
+    border: 0;
+    background: none;
+    font-size: 21px;
+    font-weight: bold;
+    line-height: 1;
+    opacity: 0.4;
+    cursor: pointer;
+}
+
+.tm-reference-modal-close:hover {
+    opacity: 0.8;
+}
+
+.tm-reference-modal-body {
+    padding: 15px;
+    overflow-y: auto;
+}
+
+.tm-reference + .tm-reference {
+    margin-top: 1em;
 }
 
 /* ------------------------------ */
