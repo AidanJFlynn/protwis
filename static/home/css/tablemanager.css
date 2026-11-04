@@ -141,6 +141,31 @@ table.dataTable.tablemanager-standard tbody td {
     line-height: 1.4;
 }
 
+/* "more..." popup of the weblinktextlist data type, attached to the document body */
+.tm-link-list-popup {
+    display: none;
+    position: absolute;
+    z-index: 9999;
+    background: #fff;
+    border: 1px solid #ccc;
+    border-radius: 4px;
+    padding: 4px 8px;
+    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.2);
+    max-height: 20em;
+    max-width: 30em;
+    overflow-y: auto;
+    text-align: left;
+}
+
+.tm-link-list-popup.tm-open {
+    display: block;
+}
+
+.tm-link-list-popup-item {
+    white-space: nowrap;
+    line-height: 1.6;
+}
+
 /* ------------------------------ */
 /* Conditional formatting classes */
 /* ------------------------------ */

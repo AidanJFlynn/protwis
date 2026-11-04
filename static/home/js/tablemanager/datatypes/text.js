@@ -9,9 +9,9 @@ const symbolPopups = new Set();
 let outsideClickListenerAdded = false;
 
 /**
- * Registers a symbol popup to be closed by the next click anywhere on the document. The document listener is added
- * once, on first use.
- * @param {HTMLElement} popup - The symbol popup element.
+ * Registers a popup to be closed by the next click anywhere on the document. The document listener is added once, on
+ * first use. Used by the symbol popups and the WebLinkTextList popup.
+ * @param {HTMLElement} popup - The popup element.
  */
 function registerPopupForOutsideClick(popup) {
     if (!outsideClickListenerAdded) {
@@ -229,4 +229,4 @@ class Text extends DataTypeBase {
     }
 }
 
-export { Text };
+export { Text, registerPopupForOutsideClick };
