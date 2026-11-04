@@ -87,7 +87,7 @@ class WebLinkTextList extends WebLinkText {
     }
 
     /**
-     * Opens the popup listing every link when the cell's "more..." link is clicked. The popup is placed below the
+     * Opens the popup listing the links not shown in the cell when the cell's "more..." link is clicked. The popup is placed below the
      * "more..." link.
      * @param {HTMLElement} cell - The rendered table cell.
      * @param {*} cellData - The cell data.
@@ -109,7 +109,8 @@ class WebLinkTextList extends WebLinkText {
 
             const popup = getListPopup();
             popup.replaceChildren();
-            for (const link of this._links(cellData)) {
+            // Only the links hidden from the cell, the first max_list_items are already visible there
+            for (const link of this._links(cellData).slice(this.column.max_list_items)) {
                 const item = document.createElement("div");
                 item.classList.add("tm-link-list-popup-item");
                 item.innerHTML = super.dataTableRenderer(link, "display", rowData, null, tableManagerReference);
