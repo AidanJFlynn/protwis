@@ -1,5 +1,12 @@
 class InjectorTemplates {
 
+    /**
+     * Adds an information icon link to the cell.
+     * @param {Array<HTMLElement>} cellElementArray - An array of the elements currently in the cell
+     * @param {string} href - The URL for information link.
+     * @param {string} tooltipText - The text to display in the tooltip.
+     * @returns {Array<HTMLElement>} - The updated array of elements in the cell, including the new info icon link.
+     */
     static addInfoIconLink(cellElementArray, href, tooltipText="") {
         let anchor = document.createElement('a');
         anchor.href = href;
@@ -16,6 +23,24 @@ class InjectorTemplates {
         return cellElementArray;
     }
 
+    /**
+     * Adds a popover to the cell that shows a chemical structure image when hovered over. The image is generated from SMILES or sequence data, 
+     * or falls back to a provided image URL or a default "No image available" picture.
+     * Requires dependencies: PeptideLayoutEngine.js and openchemlib-full.js 
+     * @param {HTMLElement} cell - The table cell element to attach the popover to.
+     * @param {string|array|null|undefined} cellData - The cell text (not used for rendering the popover).
+     * @param {*} rowData - The full row data for the current DataTables row.
+     * @param {number} rowIndex - The index of the row in the DataTables table.
+     * @param {number} colIndex - The index of the column in the DataTables table.
+     * @param {Object} tableManagerReference - The table manager that owns the table.
+     * @param {Object} configuration - Configuration object with the following keys:
+     *  - noImageUrl: URL to use for the "No image available" fallback.
+     *  - ligand_smiles_json_id: JSON key in rowData for the SMILES string.
+     *  - ligand_sequence_json_id: JSON key in rowData for the peptide sequence.
+     *  - ligand_type_json_id: JSON key in rowData for the ligand type ("Peptide" or other).
+     *  - ligand_image_url_json_id: JSON key in rowData for the ligand image URL (if supplied).
+     * @returns {void}.
+     */
     static addChemicalStructureImagePopOver(cell, cellData, rowData, rowIndex, colIndex, tableManagerReference, configuration) {
         
         const noImageUrl = configuration.noImageUrl
@@ -34,12 +59,12 @@ class InjectorTemplates {
             return;
         }
 
-        if (typeof PeptideLayoutEngine === undefined) {
+        if (typeof PeptideLayoutEngine === 'undefined') {
             console.error("PeptideLayoutEngine is not defined. Please ensure that PeptideLayoutEngine.js is loaded.");
             return;
         }
 
-        if (typeof OCL === undefined) {
+        if (typeof OCL === 'undefined') {
             console.error("OCL is not defined. Please ensure that openchemlib-full.js is loaded.");
             return;
         }
@@ -105,9 +130,7 @@ class InjectorTemplates {
         function mouseEnterHandler(e) {
             let tooltipHtml = "";
 
-            const pictureSource = smiles ? "Generate_from_SMILES" : imageUrl ? imageUrl : "Not_available";
-
-            if (ligandType === 'peptide') {
+            if (ligandType.toLowerCase() === 'peptide') {
                 if (isStandardPeptideSequence(sequence) && typeof PeptideLayoutEngine !== 'undefined') {
                     try {
                         const peptideDrawer = new PeptideLayoutEngine({
@@ -144,6 +167,8 @@ class InjectorTemplates {
                     tooltipHtml = `<img style="max-width: 200px; height: auto" src="${noImageUrl}" alt="Preview not available" />`;
                 }
             } else { // Not 'peptide', so treat as small molecule or other
+                const pictureSource = smiles ? "Generate_from_SMILES" : imageUrl ? imageUrl : "Not_available";
+                
                 if (pictureSource === "Generate_from_SMILES" && smiles && typeof OCL !== 'undefined') {
                     // Explicit request to generate from SMILES (similar to v2.0's primary SMILES condition)
                     try {
