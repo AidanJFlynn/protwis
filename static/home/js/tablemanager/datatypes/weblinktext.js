@@ -51,13 +51,26 @@ class WebLinkText extends Text {
     }
  
     /**
+     * Exports the full link text of a truncated cell, rather than the truncated display text.
+     * @param {{anchor_content?: string}|null|undefined} cellData - The link cell data.
+     * @param {*} rowData - The full row data.
+     * @param {Object} tableManagerReference - The table manager that owns the table.
+     * @returns {string|undefined} The full link text if the cell is truncated, otherwise undefined (export the displayed content).
+     */
+    exportValue(cellData, rowData, tableManagerReference) {
+        return this._isTruncated(cellData?.anchor_content) 
+            ? String(cellData.anchor_content || super._stripHtmlTags(cellData.anchor_html || "") || "") 
+            : undefined;
+    }
+
+    /**
      * Removes HTML tags from the link text, so it can be compared with the filter text. Overrides the Text version, which
      * expects a plain value, by reading anchor_content from the link object. Used by Text.blurHandler.
      * @param {{anchor_content?: string}|null|undefined} v - The link cell data.
      * @returns {string} The link text without tags, or an empty string if there is none.
      */
     _stripHtmlTags(v) {
-        return v?.anchor_content == null ? "" : String(v.anchor_content).replace(/<[^>]*>/g, '');
+        return v?.anchor_content == null && v?.anchor_html == null ? "" : String(v.anchor_content || v.anchor_html || "").replace(/<[^>]*>/g, '');
     }    
 }
 

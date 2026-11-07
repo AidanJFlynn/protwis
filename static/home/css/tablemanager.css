@@ -174,6 +174,24 @@ table.dataTable.tablemanager-standard tbody td {
 }
 
 /* ------------------------- */
+/* Truncated text (max_display_length): the icon shows the full text for a few seconds */
+.tm-text-expand {
+    cursor: pointer;
+}
+
+.tm-truncated.tm-expanded .tm-text-expand {
+    display: none;
+}
+
+.tm-truncated-text.tm-truncated-text-expanded {
+    display: inline-block;
+    /* The table is text-nowrap, which would stop the wrapping below. SMILES/Sequence strings have no spaces, so allow a break anywhere */
+    white-space: normal;
+    overflow-wrap: anywhere;
+    word-break: break-all;
+    hyphens: none;
+}
+
 /* Reference list modal      */
 /* (referencelist data type) */
 /* ------------------------- */

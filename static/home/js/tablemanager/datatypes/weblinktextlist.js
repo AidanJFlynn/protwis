@@ -7,7 +7,7 @@
 import { WebLinkText } from "./weblinktext.js";
 import { registerPopupForOutsideClick } from "./text.js";
 
-const LINK_SEPARATOR = ", ";
+const LINK_SEPARATOR = " / ";
 
 // The "more..." popup is attached to the document body rather than the cell, so the scroll body of a scrollX table does
 // not clip it. One popup is shared by every list cell, as only one can be open at a time. It closes on the next click
@@ -97,6 +97,8 @@ class WebLinkTextList extends WebLinkText {
      * @param {Object} tableManagerReference - The table manager that owns the table.
      */
     eventHookup(cell, cellData, rowData, rowIndex, colIndex, tableManagerReference) {
+        super.eventHookup(cell, cellData, rowData, rowIndex, colIndex, tableManagerReference);
+
         const moreLink = cell.querySelector(".tm-link-list-more");
         if (!moreLink) {
             return;
@@ -114,6 +116,7 @@ class WebLinkTextList extends WebLinkText {
                 const item = document.createElement("div");
                 item.classList.add("tm-link-list-popup-item");
                 item.innerHTML = super.dataTableRenderer(link, "display", rowData, null, tableManagerReference);
+                this._bindTruncationToggles(item);
                 popup.appendChild(item);
             }
 
@@ -122,6 +125,19 @@ class WebLinkTextList extends WebLinkText {
             popup.style.top = (rect.bottom + window.scrollY) + "px";
             popup.classList.add("tm-open");
         });
+    }
+
+    /**
+     * Exports the full text of every link separated by LINK_SEPARATOR, rather than the displayed links, which can be truncated or
+     * limited to max_list_items.
+     * @param {Array<{anchor_href?: string, anchor_content?: string, anchor_html?: string}>|null|undefined} cellData - The link list cell data.
+     * @param {*} rowData - The full row data.
+     * @param {Object} tableManagerReference - The table manager that owns the table.
+     * @returns {string|undefined} The link texts joined, or undefined if there are none (export the displayed content).
+     */
+    exportValue(cellData, rowData, tableManagerReference) {
+        const links = this._links(cellData);
+        return links.length ? links.map((link) => super._stripHtmlTags(link)).join(LINK_SEPARATOR) : undefined;
     }
 
     /**

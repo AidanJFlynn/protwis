@@ -29,6 +29,9 @@ function registerPopupForOutsideClick(popup) {
     symbolPopups.add(popup);
 }
 
+// How long the full text stays shown after its expand icon is clicked
+const EXPAND_DURATION_MS = 5000;
+
 /**
  * Data type for text columns. Displays text, truncated to max_display_length when set, and filters by typed text.
  * Also the base class for the other text-based data types.
@@ -38,7 +41,8 @@ class Text extends DataTypeBase {
 
     /**
      * Renders text for display. Null values show the nullValuePlaceholder. Text longer than max_display_length is
-     * truncated with an ellipsis, and the full text is kept in the title attribute. Other types return the raw data.
+     * truncated with an ellipsis, followed by an icon that shows the full text for a few seconds (the full text is also kept in
+     * the title attribute). Other types return the raw data.
      * @param {string|null|undefined} data - The cell text.
      * @param {string} type - The DataTables render type: "display", "filter", "sort" or "type".
      * @param {*} row - The full row data (unused).
@@ -57,15 +61,104 @@ class Text extends DataTypeBase {
         return data; // Search, order and type return
     } 
 
+    /**
+     * Truncates text to maxDisplayLength with an ellipsis. Truncated text is returned as a span that keeps both versions
+     * in its data-full and data-truncated attributes (the full text is also its title), followed by an expand icon that
+     * shows the full text in the cell for a few seconds (see _bindTruncationToggles).
+     * @param {string} data - The text.
+     * @param {number|undefined} maxDisplayLength - The maximum number of characters to show, or a falsy value for no limit.
+     * @returns {{truncated: boolean, data: string}} Whether the text was truncated, and the text or the span's markup.
+     */
     _truncateText(data, maxDisplayLength) {
         if (maxDisplayLength && data.length > maxDisplayLength) {
-            let truncatedText = data.substring(0, maxDisplayLength) + "...";
+            const truncatedText = data.substring(0, maxDisplayLength) + "...";
             const span = document.createElement("span");
+            span.classList.add("tm-truncated");
             span.setAttribute("title", data);
-            span.textContent = truncatedText;
+            span.setAttribute("data-full", data);
+            span.setAttribute("data-truncated", truncatedText);
+
+            const text = document.createElement("span");
+            text.classList.add("tm-truncated-text");
+            text.textContent = truncatedText;
+
+            // A span rather than an anchor, as the icon can sit inside a web link
+            const expandIcon = document.createElement("span");
+            expandIcon.classList.add("tm-text-expand");
+            expandIcon.innerHTML = "<img width='12px' title='Show full text' height='12px' src='/static/home/images/plus_grey.png'>";
+
+            span.append(text, " ", expandIcon);
             return { truncated: true, data: span.outerHTML };
-        }        
+        }
         return { truncated: false, data: data };
+    }
+
+    /**
+     * Makes the expand icons of the truncated text under an element show the full text. The full text is shown in
+     * place of the truncated text for EXPAND_DURATION_MS, then the truncated text returns. Clicking the icon does not
+     * follow a surrounding link or reach row click handlers.
+     * @param {HTMLElement} root - The element containing the truncated text spans.
+     */
+    _bindTruncationToggles(root) {
+        for (const truncated of root.querySelectorAll(".tm-truncated")) {
+            const icon = truncated.querySelector(".tm-text-expand");
+            if (!icon) {
+                continue;
+            }
+            const text = truncated.querySelector(".tm-truncated-text");
+            let timer = null;
+
+            // Stops a surrounding link taking focus (and its focus outline) when the icon is pressed
+            icon.addEventListener("mousedown", (e) => e.preventDefault());
+
+            icon.addEventListener("click", (e) => {
+                e.preventDefault();
+                e.stopPropagation();
+                text.textContent = truncated.dataset.full;
+                truncated.classList.add("tm-expanded");
+                text.classList.add("tm-truncated-text-expanded");
+                clearTimeout(timer);
+                timer = setTimeout(() => {
+                    text.textContent = truncated.dataset.truncated;
+                    truncated.classList.remove("tm-expanded");
+                    text.classList.remove("tm-truncated-text-expanded");
+                }, EXPAND_DURATION_MS);
+            });
+        }
+    }
+
+    /**
+     * Exports the full text of a truncated cell, rather than the truncated display text.
+     * @param {string|null|undefined} cellData - The cell text.
+     * @param {*} rowData - The full row data.
+     * @param {Object} tableManagerReference - The table manager that owns the table.
+     * @returns {string|undefined} The full text if the cell is truncated, otherwise undefined (export the displayed content).
+     */
+    exportValue(cellData, rowData, tableManagerReference) {
+        return this._isTruncated(cellData) ? String(cellData) : undefined;
+    }
+
+    /**
+     * Checks whether text is longer than the column's max_display_length, so it is displayed truncated.
+     * @param {*} text - The text.
+     * @returns {boolean} True if the text is displayed truncated.
+     */
+    _isTruncated(text) {
+        const maxDisplayLength = this.column.max_display_length;
+        return Boolean(maxDisplayLength) && text !== null && text !== undefined && String(text).length > maxDisplayLength;
+    }
+
+    /**
+     * Hooks up the expand icons of truncated text in the cell.
+     * @param {HTMLElement} cell - The rendered table cell.
+     * @param {*} cellData - The cell data.
+     * @param {*} rowData - The full row data.
+     * @param {number} rowIndex - The index of the row.
+     * @param {number} colIndex - The index of the column.
+     * @param {Object} tableManagerReference - The table manager that owns the table.
+     */
+    eventHookup(cell, cellData, rowData, rowIndex, colIndex, tableManagerReference) {
+        this._bindTruncationToggles(cell);
     }
 
     /**
