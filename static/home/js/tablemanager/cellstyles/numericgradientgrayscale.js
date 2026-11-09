@@ -188,6 +188,11 @@ class NumericGradientGrayscale {
 
         if (grayscaleValue !== null && !isNaN(grayscaleValue)) {            
             cell.style.backgroundColor = "rgb(" + grayscaleValue + "," + grayscaleValue + "," + grayscaleValue + ")";
+            if (grayscaleValue < 150) {
+                cell.style.color = "white";
+            } else {
+                cell.style.color = "black";
+            }
         }
     }
 }
