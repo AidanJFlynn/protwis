@@ -11,8 +11,8 @@ from rest_framework.pagination import LimitOffsetPagination
 
 #Table provider imports
 from table_provider.configuration_provider.configuration_factory import ColumnConfigurationFactory, DataTablesConfigurationFactory
-from table_provider.models import GpcrStructureStatisticsTable, PdbTable
-from table_provider.serializers import GpcrStatisticsSummarySerializer, PdbStructureSummarySerializer
+from table_provider.models import GpcrStructureStatisticsTable, PdbTable, PhysiologicalLigandsTable
+from table_provider.serializers import GpcrStatisticsSummarySerializer, PdbStructureSummarySerializer, PhysiologicalLigandsSerializer
 from table_provider.serverside.filters import FilterSet, FilterError, TextFilter, BooleanFilter
 from table_provider.serverside.querystringprocessing import DatatablesQueryStringProcessor, QueryStringProcessingError
 
@@ -178,6 +178,13 @@ class PdbStructureSummaryTable(DataTablesView):
         if exclude_non_interacting:
             queryset = queryset.filter(BooleanFilter('is_complex', True).format_query())
         return queryset
+
+
+class PhysiologicalLigandsSummaryTable(DataTablesView):
+    """API endpoint for physiological (endogenous) ligand data per ligand-receptor pair"""
+
+    model = PhysiologicalLigandsTable
+    serializer_class = PhysiologicalLigandsSerializer
 
 
 class ConfigurationFactoryView(views.APIView):

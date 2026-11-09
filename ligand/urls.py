@@ -1,6 +1,7 @@
 from django.conf.urls import url
 from django.urls import path
 from django.views.decorators.cache import cache_page
+from django.views.generic import TemplateView
 from ligand import views
 
 urlpatterns = [
@@ -90,7 +91,7 @@ urlpatterns = [
     path('biasedsubtypes/',views.CachedOTFBiasSubtypeBrowser, name='bias_browser-list'),
     path('pathwaypreference/',views.CachedOTFPathwayPrefBrowser, name='bias_browser-list'),
     path('endogenousbrowser/', cache_page(3600*24*7)(views.endogenous_redirect), name='endogenous_browser'),
-    path('physiological_ligands/', cache_page(3600*24*7)(views.PhysiologicalLigands.as_view()), name='physiological_ligands'),
+    path('physiological_ligands/', TemplateView.as_view(template_name='endogenous_browser.html'), name='physiological_ligands'),
     #User selected calculations
     #Biased Family
     path('userselectionbiased', views.UserBiased.as_view(way='Browser'), name='bias_browser-list'),

@@ -6,12 +6,13 @@ import django.apps
 from django.core.management.base import BaseCommand
 
 # Table model imports
-from table_provider.models import GpcrStructureBrowserTable, GpcrStructureStatisticsTable, PdbTable
+from table_provider.models import GpcrStructureBrowserTable, GpcrStructureStatisticsTable, PdbTable, PhysiologicalLigandsTable
 
 # Table query imports
 from structure.tables.structure_browser_table_query import StructureBrowserTableRows
 from structure.tables.structure_coverage_statistics_query import GpcrStructureCoverageStatisticsQuery
 from contactnetwork.tables.pdb_table_query import PdbTableDataSource
+from ligand.tables.physiological_ligands_query import PhysiologicalLigandsTableRows
 
 # Other imports
 from common.tools import test_model_updates
@@ -27,9 +28,10 @@ class Command(BaseCommand):
 
     def handle(self, *args, **options):
         functions = [
-            #'build_structure_browser_table',
+            'build_structure_browser_table',
             'build_pdb_structure_table',
             'build_structure_statistics_table',
+            'build_physiological_ligands_table',
         ]
 
         for f in functions:
@@ -65,6 +67,18 @@ class Command(BaseCommand):
         GpcrStructureStatisticsTable.objects.bulk_create(rows, batch_size=10000)
 
         self.logger.info('COMPLETED BUILDING STRUCTURE STATISTICS TABLE ({} rows)'.format(len(rows)))
+
+    def build_physiological_ligands_table(self):
+        """ Builds table_provider.PhysiologicalLigandsTable, a flat per ligand-receptor pair table
+            consumed by the physiological ligands page."""
+        self.logger.info('BUILDING PHYSIOLOGICAL LIGANDS TABLE')
+
+        PhysiologicalLigandsTable.objects.all().delete()
+
+        rows = [ PhysiologicalLigandsTable(**row) for row in PhysiologicalLigandsTableRows() ]
+        PhysiologicalLigandsTable.objects.bulk_create(rows, batch_size=10000)
+
+        self.logger.info('COMPLETED BUILDING PHYSIOLOGICAL LIGANDS TABLE ({} rows)'.format(len(rows)))
 
 
     def build_pdb_structure_table(self):

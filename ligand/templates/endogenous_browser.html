@@ -3,171 +3,10 @@
 {% csrf_token %}
 
 {% block addon_css %}
-<link rel="stylesheet" href="{% static 'home/css/jquery.dataTables.min.css' %}" type="text/css" />
-<!--<link rel="stylesheet" type="text/css" href="https://cdn.datatables.net/v/dt/jszip-2.5.0/dt-1.10.16/b-1.5.1/b-html5-1.5.1/datatables.min.css" />-->
-<!-- <link rel="stylesheet" href="{% static 'home/css/construct_browser.css' %}" type="text/css" /> -->
-<link rel="stylesheet" href="{% static 'home/css/bootstrap2-toggle.min.css' %}" type="text/css" />
-<link rel="stylesheet" href="{% static 'home/css/yadcf_bootstrap_version.css' %}" type="text/css" />
-<link rel="stylesheet" href="{% static 'home/css/select2.css' %}" type="text/css" />
-<link rel="stylesheet" href="{% static 'home/css/modal.css' %}" type="text/css" />
-<link rel="stylesheet" href="{% static 'home/css/structure_browser.css' %}" type="text/css" />
-<link rel="stylesheet" href="{% static 'home/css/struct_tooltip.css' %}" type="text/css" />
 
-<!-- <link rel="stylesheet" href="{% static 'home/css/signprot-multitabtable.css' %}" type="text/css" /> -->
-
-<style type="text/css">
-    .dataTables_scrollHeadInner {
-        margin-top: 20px;
-    }
-
-    table.dataTable thead th,
-    table.dataTable tbody td {
-        max-width: 65px;
-        word-break: break-all;
-        overflow: hidden;
-        text-overflow: ellipsis;
-        white-space: nowrap;
-    }
-
-    table.dataTable thead .sorting {
-        background-position: right;
-    }
-
-    .select2-container select2-container-multi {
-        width: 75%;
-    }
-
-    .select2-container-multi .select2-choices .select2-search-field input {
-        max-width: 50px;
-    }
-
-    .yadcf-filter-wrapper {
-        position: center;
-        display: flex;
-        white-space: nowrap;
-        margin-top: 7px;
-        width: 50% !important;
-    }
-
-    .yadcf-filter-wrapper-inner {
-        white-space: normal;
-    }
-
-    .select2-results {
-        background-color: white;
-        border: gray;
-        width: 150px !important;
-    }
-
-    .yadcf-filter-range {
-        grid-auto-columns: auto;
-        max-width: 50px !important;
-        font-family: sans-serif;
-        font-size: 80%;
-        font-weight: bold;
-        margin: auto;
-        margin-top: 10%;
-        min-width: 40px;
-    }
-
-    table.dataTable.compact tbody th,
-    table.dataTable.compact tbody td {
-        padding: 5px 10px 5px 0px !important;
-        /* width: 0px; */
-    }
-
-    table.dataTable.compact thead th,
-    table.dataTable.compact thead td {
-        padding: 5px 10px 5px 0px;
-        /* width: 0px; */
-    }
-
-    table.dataTable.compact thead tr.over_header th {
-        border-bottom: 1px solid #ccc;
-    }
-
-    table.dataTable.compact thead th.leftborder {
-        border-left: 1px solid;
-    }
-
-    table.dataTable.compact thead th.rightborder {
-        border-right: 1px solid;
-    }
-
-    .yadcf-filter-range {
-        max-width: 40px !important;
-        font-family: sans-serif;
-        font-size: 80%;
-        font-weight: bold;
-        min-width: 40px;
-    }
-
-    #overlay {
-        top: 0px;
-        position: absolute;
-        background: #f8f8f8;
-        /*border: 1px solid #333;*/
-        -webkit-box-shadow: 5px 0 2px -2px #888;
-        box-shadow: 5px 0 2px -2px #888;
-    }
-
-    .wrapper {
-        overflow-x: scroll;
-        overflow-y: hidden;
-    }
-
-    #overlay tbody tr {
-        background-color: #f8f8f8;
-    }
-
-    #count_row th {
-        font-size: 11px;
-        text-align: center;
-    }
-
-    .border-left {
-        padding-left: 3px;
-    }
-
-    .name {
-        width: 100px;
-        text-overflow: ellipsis;
-        cursor: pointer;
-        word-break: break-all;
-        overflow: hidden;
-        white-space: nowrap;
-    }
-
-    .name:hover {
-        overflow: visible;
-        white-space: normal;
-
-    }
-
-    .toolbar_data_css {
-        width: 250px;
-        margin-right: auto;
-        margin-left: 0px;
-        /* border: 1px solid; */
-        font-family: "Lucida Grande", Tahoma, Verdana, sans-serif;
-        font-weight: normal;
-        font-size: 120%;
-        line-height: 1.625;
-    }
-
-    .toolbar_data_css.td {
-        height: 15px;
-        max-width: 150px;
-        overflow: hidden;
-        white-space: nowrap;
-        text-overflow: ellipsis;
-    }
-
-    #content {
-        height: 100%;
-        overflow-y:hidden;
-    }
-</style>
+  <link rel="stylesheet" href="{% static '/home/css/frameworks/datatables/datatables_bundle-3.1.4_min.css' %}">
+  <link rel="stylesheet" href="{% static '/home/css/frameworks/select2/4.1.0/select2.css' %}">
+  <link rel="stylesheet" href="{% static 'home/css/tablemanager.css' %}">
 
 {% endblock %}
 
@@ -175,176 +14,55 @@
 {% autoescape off %}
 
 <div style='overflow-y:hidden;'>
-  <div style='font-size: 12px;'>
-  <p> Data showed in this table is continously collected from the <a href='https://www.guidetopharmacology.org/' target='_blank'>Guide to Pharmacology</a> database. <a href='https://pubmed.ncbi.nlm.nih.gov/34718737/' target='_blank'>Ref</a></p>
-  </div>
-    <div>
-        <a id="dlink" style="display:none;"></a>
-        <div id="excel_table" style2="display:none;"></div>
-        <button onclick="GlobalTableToExcel('endo_scrollable', 'Families data', 'EndogenousData.xls')" type="button" class="btn btn-primary" style="margin-top:10px;margin-top:3px"> Export to Excel </button>
-        <button id="reset" type="button" class="btn btn-primary" style="margin-top:10px;margin-top:3px"> Reset filters </button>
+    <div style='font-size: 12px;'>
+        <p> Data showed in this table is continously collected from the <a href='https://www.guidetopharmacology.org/' target='_blank'>Guide to Pharmacology</a> database. <a href='https://pubmed.ncbi.nlm.nih.gov/34718737/' target='_blank'>Ref</a></p>
     </div>
     <div>
-        <table class="display compact text-nowrap" id='endo_scrollable' style='width:100%; font-size:10px;'>
-            <thead id="headers">
-                <tr class="header-spans">
-                    <th style="border-left: 1px solid black; text-align:left; padding-left:5px;" colspan="6">RECEPTOR</th>
-                    <th style="border-left: 1px solid black; text-align:left; padding-left:5px;" colspan="6" style="">PHYSIOLOGICAL LIGANDS</th>
-                    <th style="border-left: 1px solid black; text-align:left; padding-left:5px;" colspan="2">STRUCTURE</th>
-                    <th style="border-left: 1px solid black; text-align:left; padding-left:5px;" colspan="3">pEC50</th>
-                    <th style="border-left: 1px solid black; text-align:left; padding-left:5px;" colspan="3">pKi</th>
-                    <th style="border-left: 1px solid black; text-align:left; padding-left:5px;" colspan="1">REFERENCES</th>
-                </tr>
-                <tr class="table-filter-dropdown">
-            <!-- Receptor block -->
-                    <th>Class</th>
-                    <th>Receptor family</th>
-                    <th>UniProt</th>
-                    <th>IUPHAR</th>
-                    <th>Gene</th>
-                    <th>Species</th>
-            <!-- ligand block -->
-                    <th class="pathways">Ligand</th>
-                    <th class="pathways">GtP<br />Classification</th>
-                    <th class="pathways">Potency<br />Ranking</th>
-                    <th class="pathways">Type</th>
-                    <th class="pathways">Smiles</th>
-                    <th class="pathways">Inchikey</th>
-            <!-- Structure block -->
-            <th>Model</th>
-            <th col_type_info='string'>Exp</th>
-                    <!-- pEC50 block  -->
-                    <th class="color-column">Min</th>
-                    <th class="color-column">Mid</th>
-                    <th class="color-column">Max</th>
-            <!-- pKi block -->
-                    <th class="color-column">Min</th>
-                    <th class="color-column">Mid</th>
-                    <th class="color-column">Max</th>
-            <!-- Reference block  -->
-                    <th></th>
-                </tr>
+        <table class="display compact" id='physiological_ligands_table' style='width:100%; font-size:10px;'>
+            <!-- Dependencies for ligand structure popover -->
+                <script src="{% static '/home/js/PeptideLayoutEngine.js' %}"></script> 
+                <script src="{% static 'home/js/openchemlib-full.js' %}"></script> 
+            <!-- End dependencies -->
+            <script type="module">
+                // Populate physiological ligand table using TableManager
+                import { TableManager } from "{% static 'home/js/tablemanager/tablemanager.js' %}";
+                import { InjectorTemplates } from "{% static 'home/js/tablemanager/injectors/injectortemplates.js' %}";
+                
+                let config = null;
+                try {
+                    config = await TableManager.fetchConfiguration(
+                        'physiological_ligands_table', //dataTableConfigName
+                        'clientside', //dataTableConfigVariant
+                        'physiological_ligands_table', //columnConfigName
+                        'basic') //columnConfigVariant
+                
+                } catch(error) {
+                    console.error('Error fetching configuration:', error);
+                }
+                
+                if (config){
+                    // Initialize the table
+                    let physioLigTable = new TableManager(config.columnsSpecifications, 'physiological_ligands_table');
 
-                <tr>
-            <!--      yadcf       -->
+                    const configuration = {
+                        ligand_type_json_id:"ligand_type", 
+                        ligand_sequence_json_id:"sequence",
+                        ligand_smiles_json_id:"smiles_for_image", 
+                        ligand_image_url_json_id:"ligand_image_url",
+                        noImageUrl: "{% static '/home/images/No_image_available.svg' %}"
+                    };
 
-                    <!-- Receptor  -->
-                    <th></th>
-                    <th></th>
-                    <th></th>
-                    <th></th>
-                    <th></th>
-                    <th></th>
+                    physioLigTable.cellInjectors.registerInjector("structurePopover",
+                        (cell, cellData, rowData, rowIndex, colIndex, tableManagerReference) => {
+                        // Requires dependencies: PeptideLayoutEngine.js and openchemlib-full.js
+                        InjectorTemplates.addChemicalStructureImagePopOver(cell, cellData, rowData, rowIndex, colIndex, tableManagerReference, configuration);
+                        }
+                    );
 
-                    <!-- ligand block -->
-                    <th></th>
-                    <th></th>
-                    <th></th>
-                    <th></th>
-                    <th></th>
-                    <th></th>
+                    physioLigTable.initialiseDataTable(config.datatableConfiguration); 
+                }
 
-                    <!-- structure block  -->
-
-                    <th></th>
-                    <th></th>
-
-                    <!-- pEC50 block  -->
-                    <th></th>
-                    <th></th>
-                    <th></th>
-
-                    <!-- pKi block -->
-                    <th></th>
-                    <th></th>
-                    <th></th>
-                    <!-- Reference block  -->
-                    <th></th>
-                </tr>
-            </thead>
-            <tbody id='endo_scrollable_body'>
-                    {% for value in Array %}
-                    <tr>
-
-                        <!-- Receptor block -->
-                        <td style="text-align:right">{{value.0}}</td>
-                        <td style="text-align:right" class="expand">{{value.1}}</td>
-                        <td style="text-align:right"><a target='_blank' href="http://www.uniprot.org/uniprot/{{value.22|safe}}">{{value.2|safe}}</a></td> <!-- UniProt -->
-                        <td style="text-align:right"><a target='_blank' href="/protein/{{value.23|safe}}">{{value.3|safe}}</a></td> <!-- IUPHAR -->
-                        <td style="text-align:right"><a target='_blank' href="{{value.5|safe}}">{{value.4|safe}}</a></td> <!-- Gene -->
-                        <td style="text-align:right">{{value.6}}</td>
-
-                        <!-- ligand block -->
-                        <td style="text-align:left" class="expand">
-
-                            {% with ligand_name_val=value.7 ligand_id_val=value.21 molecule_type_val=value.11 sequence_s_val=value.28 smiles_s_val=value.26 picture_s_val=value.27 %}
-                                {% if molecule_type_val and molecule_type_val|lower == 'peptide' %}
-                                    <a class="struct"
-                                       href='/ligand/{{ ligand_id_val }}/group'  {# Use the Ligand ID from value.21 #}
-                                       target='_blank'
-                                       data-ligand-type="peptide"
-                                       data-sequence="{{ sequence_s_val|default_if_none:''|escapejs }}">
-                                      {{ ligand_name_val|title }}
-                                    </a>
-                                {% else %}
-                                    <a class="struct"
-                                       href='/ligand/{{ ligand_id_val }}/group'  {# Use the Ligand ID from value.21 #}
-                                       target='_blank'
-                                       data-smiles="{{ smiles_s_val|default_if_none:''|escapejs }}"
-                                       rel="{{ picture_s_val|default_if_none:'Not_available' }}">
-                                      {{ ligand_name_val|title }}
-                                    </a>
-                                {% endif %}
-                            {% endwith %}
-                        </td>
-                        <td style="text-align:left">{{value.9|title}}</td>
-                        <td style="text-align:left" class="pathway">{{value.10|floatformat:0}}</td>
-                        <td style="text-align:left" class="pathway">{{value.11}}</td>
-                        <td style="text-align:left" class="pathway expand">{{value.12|safe}}</td>
-                        <td style="text-align:left" class="pathway expand">{{value.13|safe}}</td>
-
-                        <!-- STRUCTURES -->
-                        {% if value.24 %}
-                            {% if value.25 == "af-signprot-peptide" %}
-                                <td style="text-align:center;"><a target="_blank" href="/structure/ligand_complex_models/{{ value.24 }}"><img width="14px" height="20px" class="model-link" src="{% static 'home/images/model-surface.png' %}"></a></div></td>
-                            {% elif value.25 == "af-rfaa-sm" %}
-                            <td style="text-align:center;"><a target="_blank" href="/structure/ligand_complex_models/{{ value.24 }}"><img width="14px" height="20px" class="model-link" src="{% static 'home/images/gpcr_structure_logo.png' %}"></a></div></td>
-                            {% else %}
-                            <td style="text-align: center;"> - </td>
-                            {% endif %}
-                        {% else %}
-                        <td style="text-align: center;"> - </td>
-                        {% endif %}
-
-                        <!-- Experimental structure -->
-                        {% if value.24 and value.25 != "af-signprot-peptide" and value.25 != "af-rfaa-sm" %}
-                        <td style="text-align: center;">
-                            <a href="/structure/{{ value.24 }}" target="_blank">{{ value.24 }}</a>
-                        </td>
-                        {% else %}
-                            <td style="text-align: center;"> - </td>
-                        {% endif %}
-
-                        <!-- pEC50 block  -->
-                        <td style="text-align:right" class="color-column" id="lbf_p2_p1">{{value.14|floatformat:1}}</td>
-                        <td style="text-align:right" class="color-column" id="lbf_p3_p1">{{value.15|floatformat:1}}</td>
-                        <td style="text-align:right" class="color-column" id="lbf_p4_p1">{{value.16|floatformat:1}}</td>
-
-                        <!-- pKi block -->
-                        <td style="text-align:right" class="color-column" id="dee_p2_p1">{{value.17|floatformat:1}}</td>
-                        <td style="text-align:right" class="color-column" id="dee_p3_p1">{{value.18|floatformat:1}}</td>
-                        <td style="text-align:right" class="color-column" id="dee_p4_p1">{{value.19|floatformat:1}}</td>
-
-                        <!-- Reference -->
-                        <!-- <td class="name"><a href='#' onClick="javascript:reference_list('{{value.18}}');">References</a></td> -->
-                        {% if value.20|safe != 'empty' %}
-                            <td class="name" style="text-align:center"><a href="#references" data-toggle="modal" data-book-id="{{value.20|safe}}"> Refs</a></td>
-                        {% else %}
-                            <td class="name" style="text-align:center"></td>
-                        {% endif %}
-                    </tr>
-                    {% endfor %}
-            </tbody>
+            </script>            
         </table>
     </div>
 </div>
@@ -368,158 +86,9 @@
 {% endblock %}
 {% block addon_js %}
 
-<script src="{% static 'home/js/datatables.min.js' %}"> </script>
-<script src="{% static 'home/js/bootstrap2-toggle.min.js' %}"></script>
-<script src="{% static 'home/js/jquery.dataTables.yadcf.js' %}"> </script>
-<script src="{% static 'home/js/dataTables.buttons.min.js' %}"> </script>
-<script src="{% static 'home/js/select2.js' %}"> </script>
-<script src="{% static 'home/js/grayscale.js' %}"></script>
-<script src="{% static 'home/js/gpcrdb.js' %}"></script>
-<script src="{% static 'home/js/signprot-multitabtable.js' %}"></script>
-<script src="{% static 'home/js/xlsx.full.min.js' %}"></script>
-<script src="{% static 'home/js/openchemlib-full.js' %}"></script> <!-- for rendering ligand images -->
-<script src="{% static 'home/js/PeptideLayoutEngine.js' %}"></script> <!-- For rendering peptide structures -->
-<script src="{% static 'home/js/compoundPreviewTooltip.js' %}"></script>
+  <!-- jQuery + DataTables -->
+  
+  <script src="{% static '/home/js/frameworks/datatables/datatables_3.1.4_bundle.js' %}"></script> 
+  <script src="{% static '/home/js/frameworks/select2/4.1.0/select2.min.js' %}"></script> 
 
-<script type="text/javascript">
-    window.NO_IMAGE_URL = "{% static 'home/images/No_image_available.svg' %}";
-</script>
-
-<script type="text/javascript">
-    $(document).ready(function() {
-        compoundPreview("a.struct");
-    });
-</script>
-
-<script>
-  //triggered when modal is about to be shown
-$('#references').on('show.bs.modal', function(e) {
-
-    //get data-id attribute of the clicked element
-    var bookId = $(e.relatedTarget).data('book-id');
-    $("#references .modal-body p").html(bookId);
-    //populate the textbox
-    // $(e.currentTarget).find('.modal-body p').val(bookId);
-});
-</script>
-<script>
-
-    ////////////////////////////
-    //// Column definitions ////
-    ////////////////////////////
-
-    ///// Filter Types /////
-
-    //Initialisation of basic defaults for a null filter column
-    const base_defaults = {
-        filter_type: 'none',
-        select_type: null,
-        filter_default_label: "",
-        filter_reset_button_text: null,
-        filter_match_mode: null,
-        column_data_type: null,
-        html5_data: null,
-        ignore_char: null,
-        html_data_type: null,
-        width: null,
-    }
-
-    //Columns definitions for a multiselect text based filter
-    const multiselect_defaults = {
-        ...base_defaults,
-        filter_type: "multi_select",
-        select_type: 'select2',
-        column_data_type: "text",
-        filter_default_label: 'Select',
-        filter_reset_button_text: false,
-        width: '80px',
-    }
-
-    //Columns definitions for a numeric range filter
-    const range_number_defaults = {
-        ...base_defaults,
-        filter_type: "range_number",
-        filter_default_label: ['Min', 'Max'],
-        filter_reset_button_text: false,
-        width: '30px',
-    }
-
-    /// Table Column Definitions ///
-
-    //Endogenous browser table column definitions
-    const endo_col_defs = {
-        receptor_class           : { column_number: 0,  ...multiselect_defaults, },
-        receptor_receptor_family : { column_number: 1,  ...multiselect_defaults, },
-        receptor_uniprot         : { column_number: 2,  ...multiselect_defaults, column_data_type: 'html', },
-        receptor_iuphar          : { column_number: 3,  ...multiselect_defaults, column_data_type: 'html', },
-        receptor_gene            : { column_number: 4,  ...multiselect_defaults, column_data_type: 'html', },
-        receptor_species         : { column_number: 5,  ...multiselect_defaults, },
-        physlig_ligand           : { column_number: 6,  ...multiselect_defaults, },
-        physlig_gtp_class        : { column_number: 7,  ...multiselect_defaults },
-        physlig_potency_rank     : { column_number: 8,  ...multiselect_defaults, },
-        physlig_type             : { column_number: 9,  ...multiselect_defaults, },
-        physlig_smiles           : { column_number: 10, ...multiselect_defaults, filter_match_mode: 'exact', html_data_type: 'text', },
-        physlig_inchikey         : { column_number: 11, ...multiselect_defaults, filter_match_mode: 'exact', },
-        structure_model          : { column_number: 12, ...base_defaults, },
-        structure_exp            : { column_number: 13, ...multiselect_defaults, filter_match_mode: 'exact', filter_default_label: 'PDB ID', },
-        pec50_min                : { column_number: 14, ...range_number_defaults, },
-        pec50_mid                : { column_number: 15, ...range_number_defaults, },
-        pec50_max                : { column_number: 16, ...range_number_defaults, },
-        pki_min                  : { column_number: 17, ...range_number_defaults, },
-        pki_mid                  : { column_number: 18, ...range_number_defaults, },
-        pki_max                  : { column_number: 19, ...range_number_defaults, },
-        references               : { column_number: 20, ...base_defaults, },
-    }
-
-    $(document).ready(function() {
-      $("#endo_scrollable").show();
-      oTable1 = $("#endo_scrollable").DataTable({
-        deferRender: true,
-        scrollY: '65vh',
-        scrollX: true,
-        scrollCollapse: true,
-        scroller: true,
-        paging: false,
-        bSortCellsTop: false, //prevent sort arrows going on bottom row
-        aaSorting: [],
-        autoWidth: false,
-        bInfo: true,
-        order: [[endo_col_defs.receptor_uniprot.column_number, "asc"]],
-      });
-
-        let column_filters = [];
-
-        //Create filters from column definition objects above, and add to table
-        for (let col_def of Object.values(endo_col_defs)) {
-            column_filters = column_filters.concat(
-                createYADCFfilters(col_def.column_number,
-                    1,
-                    col_def.filter_type,
-                    col_def.select_type,
-                    col_def.filter_default_label,
-                    col_def.filter_reset_button_text,
-                    col_def.filter_match_mode,
-                    col_def.column_data_type,
-                    col_def.width,
-                    col_def.html5_data,
-                    col_def.ignore_char,
-                    col_def.html_data_type));
-        }
-
-        // Initialize YADCF with filters_tr_index set to 2
-        yadcf.init(oTable1.draw(), column_filters, {
-            cumulative_filtering: false,
-            filters_tr_index: 2
-        });
-        yadcf.exFilterColumn(oTable1, [[endo_col_defs.receptor_species.column_number, ["Human"]]], true);
-
-        gray_scale_table($("#endo_scrollable"));
-
-        $("#reset").click(function() {
-            yadcf.exResetAllFilters(oTable1);
-        });
-
-        // $(".").hide()
-    });
-</script>
 {% endblock %}

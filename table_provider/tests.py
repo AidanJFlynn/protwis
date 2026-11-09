@@ -426,7 +426,9 @@ class ColumnConfigurationConsistencyTestCase(SimpleTestCase):
     COMPATIBLE = {
         'text': {'text', 'boolean'},
         'textselect': {'text', 'boolean'},
-        'weblinktext': {'text'},
+        'weblinktext': {'text', 'json'},
+        'weblinktextlist': {'json'},
+        'referencelist': {'json'},
         'numeric': {'numeric'},
         'checkbox': {'checkbox'},
     }

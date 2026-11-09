@@ -6,7 +6,7 @@ from django.db import models
 from rest_framework import serializers
 
 from common.models import WebResource, WebLink
-from table_provider.models import GpcrStructureStatisticsTable, PdbTable
+from table_provider.models import GpcrStructureStatisticsTable, PdbTable, PhysiologicalLigandsTable
 
 # Server-side filter datatype for each model field class; checked in order.
 MODEL_FIELD_DATATYPES = (
@@ -219,8 +219,86 @@ class PdbStructureSummarySerializer(DataTablesSerializerMixin, serializers.Seria
             return self.weblink_anchor(obj.pdb_id, None, 'pdb')
 
 
+class PhysiologicalLigandsSerializer(DataTablesSerializerMixin, serializers.Serializer):
+    """Serializer to generate JSON for the physiological ligand data stored in the table_physiological_ligands database table."""
+
+    # Receptor
+    receptor_class = serializers.ReadOnlyField(read_only=True)
+    receptor_family = serializers.ReadOnlyField(read_only=True)
+    uniprot = serializers.SerializerMethodField()
+    protein = serializers.SerializerMethodField()
+    gene = serializers.SerializerMethodField()
+    species_common_name = serializers.ReadOnlyField(read_only=True)
+
+    # Ligand
+    ligand = serializers.SerializerMethodField()
+    gtp_ligand = serializers.SerializerMethodField()
+    gtp_classification = serializers.ReadOnlyField(read_only=True)
+    potency_ranking = serializers.ReadOnlyField(read_only=True)
+    ligand_type = serializers.ReadOnlyField(read_only=True)
+    smiles = serializers.ReadOnlyField(read_only=True)
+    inchikey = serializers.ReadOnlyField(read_only=True)
+
+    # Compound preview data for the ligand column
+    sequence = serializers.ReadOnlyField(read_only=True)
+    smiles_for_image = serializers.ReadOnlyField(read_only=True)
+
+    # Structures, each a list; model_structure_type and model_has_signprot are parallel to structure_model (model icon, signalling protein flag)
+    structure_model = serializers.SerializerMethodField()
+    model_structure_type = serializers.ReadOnlyField(source='model_structure_types', read_only=True)
+    model_has_signprot = serializers.ReadOnlyField(read_only=True)
+    structure_exp = serializers.SerializerMethodField()
+
+    # Potency (null when not measured; the client chooses the placeholder via nullValuePlaceholder)
+    pec50_min = serializers.ReadOnlyField(read_only=True)
+    pec50_mid = serializers.ReadOnlyField(read_only=True)
+    pec50_max = serializers.ReadOnlyField(read_only=True)
+    pki_min = serializers.ReadOnlyField(read_only=True)
+    pki_mid = serializers.ReadOnlyField(read_only=True)
+    pki_max = serializers.ReadOnlyField(read_only=True)
+
+    references = serializers.ReadOnlyField(read_only=True)
+
+    class Meta:
+        model = PhysiologicalLigandsTable
+        serializer_method_to_filter_field_map = {
+            'uniprot': 'uniprot_name', 'protein': 'protein_name', 'gene': 'gene_name', 'ligand': 'ligand_name',
+            'gtp_ligand': 'gtp_ligand_index', 'structure_model': 'model_id_codes',
+            'structure_exp': 'exp_pdb_codes',
+        }
+
+    def get_uniprot(self, obj):
+        return self.weblink_anchor(obj.uniprot_name, obj.uniprot_accession, 'uniprot')
+
+    def get_protein(self, obj):
+        return self.anchor(obj.protein_name, f'/protein/{obj.uniprot_entry_name}')
+
+    def get_gene(self, obj):
+        return self.weblink_anchor(obj.gene_name, obj.gene_entrez_id, 'entrez_gene')
+
+    def get_ligand(self, obj):
+        return self.anchor(obj.ligand_name, f'/ligand/{obj.ligand_id}/group')
+
+    def get_gtp_ligand(self, obj):
+        return self.weblink_anchor(obj.gtp_ligand_index, obj.gtp_ligand_index, 'gtoplig')
+
+    def get_structure_model(self, obj):
+        without_signprot = '<img width="14px" height="20px" class="model-link" src="/static/home/images/gpcr_structure_logo.png">'
+        with_signprot = '<img width="14px" height="20px" class="model-link" src="/static/home/images/model-surface.png">'        
+        return [self.anchor(with_signprot if has_signprot else without_signprot, #Icon for model with or without signalling protein, with the same href
+                            f'/structure/ligand_complex_models/{code}', #Href for the model page
+                            code #The plain text code for filtering and exporting, even though the icon is HTML
+                            ) 
+                            for code, has_signprot in zip(obj.model_id_codes, obj.model_has_signprot)
+               ]
+
+    def get_structure_exp(self, obj):
+        return [self.anchor(code, f'/structure/{code}') for code in obj.exp_pdb_codes]
+
+
 # Serializer behind each table name used in the configuration files (<table_name>__<variant>.json)
 TABLE_SERIALIZERS = {
     'pdb_data_table': PdbStructureSummarySerializer,
     'structure_statistics_table_gpcr': GpcrStatisticsSummarySerializer,
+    'physiological_ligands_table': PhysiologicalLigandsSerializer,
 }

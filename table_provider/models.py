@@ -250,3 +250,76 @@ class PdbTable (models.Model):
             models.Index(fields=["ligand"], name="pdb_ligand_idx"),
             models.Index(fields=["ligand_role"], name="pdb_ligand_role_idx")
         ]
+
+
+class PhysiologicalLigandsTable(models.Model):
+    """Model representing the physiological ligands table, one row per (ligand, receptor) pair, generated from the data retrieved by PhysiologicalLigandsTableRows"""
+
+    # Receptor
+    receptor_class = models.CharField(max_length=100, null=True)
+    receptor_family = models.CharField(max_length=200, null=True)
+    uniprot_entry_name = models.CharField(max_length=100, null=False)
+    uniprot_accession = models.CharField(max_length=100, null=True)
+    uniprot_name = models.CharField(max_length=100, null=False)
+    protein_name = models.CharField(max_length=200, null=False)
+    gene_name = models.CharField(max_length=100, null=True)
+    gene_entrez_id = models.CharField(max_length=20, null=True)
+    species_common_name = models.CharField(max_length=100, null=True)
+
+    # Ligand
+    ligand_id = models.IntegerField(null=False)
+    ligand_name = models.TextField(null=False)
+    gtp_ligand_index = models.CharField(max_length=50, null=True)
+    gtp_classification = models.CharField(max_length=200, null=True)
+    potency_ranking = models.IntegerField(null=True)
+    ligand_type = models.CharField(max_length=100, null=True)
+    smiles = models.TextField(null=True)
+    inchikey = models.CharField(max_length=27, null=True)
+
+    # Compound preview data for the ligand column
+    sequence = models.CharField(max_length=1000, null=True)
+    smiles_for_image = models.TextField(null=True)  # null when no image can be generated from the SMILES
+
+    # Structures, as JSON lists; model_structure_types is parallel to model_id_codes
+    exp_pdb_codes = JSONField(default=list)
+    model_id_codes = JSONField(default=list)
+    model_structure_types = JSONField(default=list)
+    model_has_signprot = JSONField(default=list)
+
+    # Potency
+    pec50_min = models.FloatField(null=True)
+    pec50_mid = models.FloatField(null=True)
+    pec50_max = models.FloatField(null=True)
+    pki_min = models.FloatField(null=True)
+    pki_mid = models.FloatField(null=True)
+    pki_max = models.FloatField(null=True)
+
+    # [{authors, year, title, journal, reference, web_link_index, href}, ...] ordered by year
+    references = JSONField(default=list)
+
+    def __str__(self):
+        return "{} - {}".format(self.ligand_name, self.uniprot_entry_name)
+
+    class Meta:
+        """Index definitions for the PhysiologicalLigandsTable model to optimize query performance during table filtering"""
+
+        db_table = "table_physiological_ligands"
+        indexes = [
+            models.Index(fields=["receptor_class"], name="plt_receptor_class_idx"),
+            models.Index(fields=["receptor_family"], name="plt_receptor_family_idx"),
+            models.Index(fields=["uniprot_name"], name="plt_uniprot_name_idx"),
+            models.Index(fields=["protein_name"], name="plt_protein_name_idx"),
+            models.Index(fields=["gene_name"], name="plt_gene_idx"),
+            models.Index(fields=["species_common_name"], name="plt_species_idx"),
+            models.Index(fields=["ligand_name"], name="plt_ligand_name_idx"),
+            models.Index(fields=["gtp_classification"], name="plt_gtp_classification_idx"),
+            models.Index(fields=["potency_ranking"], name="plt_potency_ranking_idx"),
+            models.Index(fields=["ligand_type"], name="plt_ligand_type_idx"),
+            models.Index(fields=["inchikey"], name="plt_inchikey_idx"),
+            models.Index(fields=["pec50_min"], name="plt_pec50_min_idx"),
+            models.Index(fields=["pec50_mid"], name="plt_pec50_mid_idx"),
+            models.Index(fields=["pec50_max"], name="plt_pec50_max_idx"),
+            models.Index(fields=["pki_min"], name="plt_pki_min_idx"),
+            models.Index(fields=["pki_mid"], name="plt_pki_mid_idx"),
+            models.Index(fields=["pki_max"], name="plt_pki_max_idx"),
+        ]
