@@ -1,3 +1,6 @@
+import re
+
+from django.contrib.postgres.fields import JSONField
 from django.core.exceptions import FieldDoesNotExist, ImproperlyConfigured
 from django.db import models
 from rest_framework import serializers
@@ -10,6 +13,7 @@ MODEL_FIELD_DATATYPES = (
     (models.BooleanField, 'boolean'),
     ((models.IntegerField, models.FloatField, models.DecimalField), 'numeric'),
     ((models.CharField, models.TextField), 'text'),
+    (JSONField, 'json'),
 )
 
 
@@ -72,12 +76,27 @@ class DataTablesSerializerMixin:
             cache[slug] = WebResource.objects.get(slug=slug)
         return cache[slug]
 
+    def anchor(self, content, href, passenger_content=None):
+        """Build the anchor object rendered by the client's weblinktext type.
+
+        Content containing HTML is returned as {anchor_html, anchor_href}, otherwise as {anchor_content, anchor_href}.
+        If passenger_content is given, the return is {anchor_html, anchor_href, anchor_content} even if content contains HTML.
+        This allows plain text content to be sent when the HTML content is a small icon and the client needs a text label for filtering or exporting.
+        """
+        if not content:
+            return None
+        if re.search(r'<[a-zA-Z][^>]*>', str(content)):
+            if passenger_content is not None:
+                return {'anchor_html': content, 'anchor_href': href, 'anchor_content': passenger_content}
+            return {'anchor_html': content, 'anchor_href': href}
+        return {'anchor_content': content, 'anchor_href': href}
+
     def weblink_anchor(self, content, index, slug):
-        """Build the {anchor_content, anchor_href} object rendered by the client's weblinktext type."""
+        """Build a weblinktext object whose href is the WebResource `slug` link for `index`."""
         if not content:
             return None
         href = str(WebLink(index=index, web_resource=self._web_resource(slug))) if index else None
-        return {'anchor_content': content, 'anchor_href': href}
+        return self.anchor(content, href)
 
 
 class GpcrStatisticsSummarySerializer(DataTablesSerializerMixin, serializers.Serializer):

@@ -34,7 +34,7 @@ def _filter_list(spec, key, data_field, item_types=(str,)):
  allowing for flexible and dynamic filtering of data based on user input.
 """
 class FilterSet:
-    ignored_datatypes = ['checkbox']
+    ignored_datatypes = ['checkbox', 'json']
 
     def __init__(self, request, SerializerClass):
         """Initializes a FilterSet instance."""
