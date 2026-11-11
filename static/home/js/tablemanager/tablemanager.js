@@ -208,6 +208,9 @@ class TableManager {
       this.state.masterCheckbox.updateCheckBoxSearchSet(); // Initialise the currentSearchCheckBoxes state once the data is loaded
       this.dataSource.onSearchChange(() => this.state.masterCheckbox.updateCheckBoxSearchSet()); // Update the currentSearchCheckBoxes state whenever the table's search changes
     }
+
+    // Store the DataTable options for later use, e.g. in export
+    this.dataTablesOptions = dataTableOptions; 
   }
 
   _applyFixedAutoTableClass(dataTableOptions, tableId){
@@ -377,7 +380,7 @@ class TableManager {
     let tableHead = this._createTableHeaderSection();
 
     let superHeaderRow = null;
-    if (this._hasSuperHeaders()) {
+    if (this.hasSuperHeaders()) {
       this.superHeaderRowId = this.tableId + "_superHeaders";
       superHeaderRow = this._createSuperHeaderRow(this.superHeaderRowId);
       superHeaderRow.dataset.dtOrder = "disable";
@@ -508,7 +511,7 @@ class TableManager {
    * Checks if all columns have a column_group property defined, indicating that super-headers should be created for the table.
    * @returns {boolean} True if every column has a column_group.
    */
-  _hasSuperHeaders() {
+  hasSuperHeaders() {
     return this.columns.every((col) => col.column_group);
   }
 
@@ -530,7 +533,7 @@ class TableManager {
   **/
   populateSuperHeaders(superHeaderRow) {
     //Add super-header row if all columns have a column groups defined in specifications, otherwise remove super-header row (which would just be empty)
-    if (!this._hasSuperHeaders()) {
+    if (!this.hasSuperHeaders()) {
       console.log(
         "Column groups incomplete or absent in specifications, skipping super-header creation.",
       );

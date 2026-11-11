@@ -1,50 +1,60 @@
-// Buttons' default export settings, used when a cell exports its displayed content
-const STRIP_DATA_CONFIG = { stripHtml: true, stripNewlines: true, decodeEntities: true, trim: true, escapeExcelFormula: false };
+import { runExcelExport } from "./excelexport.js";
 
 class ExcelDefault {
-    
+
     button_config
     tableManagerReference
 
     /**
-     * Creates the Excel export button configuration. The export keeps the super-header and column title rows and drops
-     * the rows below the title row. Each cell exports the value from its column data type's exportValue, falling back to
-     * the displayed content with its HTML stripped.
+     * Creates the Excel export button configuration. The export covers every row matching the current search and
+     * filters, across all pages (on server-side tables the rows are fetched from the server), in the table's current
+     * order. It keeps the super-header and column title rows and drops the rows below the title row. Each cell exports
+     * the value from its column data type's exportValue, falling back to the displayed content with its HTML stripped.
      * @param {Object} tableManagerReference - The TableManager instance that owns the table.
      */
     constructor(tableManagerReference) {
         this.tableManagerReference = tableManagerReference;
+        const self = this;
         this.button_config = {
             extend: 'excel',
             text: 'Export (Excel)',
-            exportOptions: {
-                format: {
-                    body: (data, rowIndex, columnIndex) => {
-                        const dataTable = this.tableManagerReference.dataTableReference;
-                        const column = this.tableManagerReference.columns.find((col) => col.col_idx === columnIndex);
-                        // Apply data formatter defined in the column's data type, if any, to get the value to
-                        // export. If the column has no data type or the data type has no exportValue, 
-                        // fall back to stripping the displayed content.
-                        const value = column?.type.exportValue(
-                            dataTable.cell(rowIndex, columnIndex).data(), dataTable.row(rowIndex).data(), this.tableManagerReference);
-                        return value !== undefined ? value : $.fn.dataTable.Buttons.stripData(data, STRIP_DATA_CONFIG);
-                    }
-                },
-                // Buttons exports every header row DataTables knows about. Keep the super-headers and column titles,
-                // and drop the category count and filter rows below the title row.
-                customizeData: (data) => {
-                    data.headerStructure = data.headerStructure.slice(0, this.tableManagerReference.titleRowIndex + 1);
-                }
-            }
+            // Buttons calls the action with the button API as this, which the excel action needs
+            action: function (e, dt, node, config, cb) {
+                self._export(this, e, dt, node, config, cb);
+            },
         }
     }
-    
+
     /**
      * Adds the Excel export button to the DataTable button bar.
      * @param {number} index - Position at which the button is inserted into the button bar.
      */
     attach(index) {
         this.tableManagerReference.dataTableReference.button().add(index, this.button_config);
+    }
+
+    /**
+     * Gets the rows matching the current search and filters from the data source and runs the Excel export on them.
+     * If the rows can't be fetched the error is logged and no file is produced.
+     * @param {Object} buttonApi - The Buttons API instance for the clicked button.
+     * @param {Event} e - The click event from the button.
+     * @param {DataTables.Api} dt - The DataTables API instance.
+     * @param {HTMLElement} node - The button element.
+     * @param {Object} config - The button configuration.
+     * @param {Function} cb - The Buttons callback, called when the export is done.
+     * @returns {Promise<void>}
+     */
+    async _export(buttonApi, e, dt, node, config, cb) {
+        let rows;
+        try {
+            rows = await this.tableManagerReference.dataSource.getExportRows(true);
+        } catch (error) {
+            console.error('Excel export failed: could not get the rows to export.', error);
+            cb();
+            return;
+        }
+
+        runExcelExport(this.tableManagerReference, rows, buttonApi, e, dt, node, config, cb);
     }
 }
 

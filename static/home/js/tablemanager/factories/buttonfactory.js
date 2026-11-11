@@ -1,4 +1,5 @@
 import { ExcelDefault } from "../buttons/exceldefault.js";
+import { ExcelExtended } from "../buttons/excelextended.js";
 import { ClearFiltersDefault } from "../buttons/clearfiltersdefault.js";
 import { ClearSelectionDefault } from "../buttons/clearselectiondefault.js";
 import { ShowBestResolution } from "../buttons/showbestresolution.js";
@@ -18,6 +19,7 @@ class ButtonFactory {
      */
     constructor() {
         this.registerButtonType("excel_default", ExcelDefault);
+        this.registerButtonType("excel_extended", ExcelExtended);
         this.registerButtonType("clear_filters_default", ClearFiltersDefault);
         this.registerButtonType("clear_selection_default", ClearSelectionDefault);
         this.registerButtonType("best_resolution_toggle", ShowBestResolution);

@@ -183,6 +183,16 @@ class ClientDataSource extends DataSourceBase {
   }
 
   /**
+   * Gets the row data of every row in the table's current order, from the loaded rows.
+   * @param {boolean} applySearch - True for only the rows matching the current search and filters, false for all rows.
+   * @returns {Promise<Array<Object>>} The row data of each row.
+   */
+  async getExportRows(applySearch) {
+    await this.tableManagerReference.ready;
+    return this._dataTable.rows({ search: applySearch ? "applied" : "none", order: "applied" }).data().toArray();
+  }
+
+  /**
    * Builds the DataTables column search for a filter.
    * @param {Object} column - The column (data type instance) to filter.
    * @param {Object} filter - {type: "text", terms: [{value, contains}]} or {type: "range", min, max}.
