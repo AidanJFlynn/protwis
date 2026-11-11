@@ -3926,7 +3926,7 @@ function make_abs_values(e,table) {
     console.log(table);
 
     myVar = setTimeout(function () {
-            var dt_table = $(table).DataTable();
+            var dt_table = initialised_data_tables($(table)).DataTable();
 
             c = 0;
             dt_table.cells('.minus').every(function () {
