@@ -38,6 +38,19 @@ class WebLinkTextSelect extends TextSelect {
     }
 
     /**
+     * Customises the export value to use the anchor content or the stripped HTML.
+     * @param {{anchor_content?: string}|null|undefined} cellData - The link cell data.
+     * @param {*} rowData - The full row data.
+     * @param {Object} tableManagerReference - The table manager that owns the table.
+     * @returns {string|undefined} The full link text if the cell is truncated, otherwise undefined (export the displayed content).
+     */
+    exportValue(cellData, rowData, tableManagerReference) {
+        return this._isTruncated(cellData?.anchor_content) 
+            ? String(cellData.anchor_content || super._stripHtmlTags(cellData.anchor_html || "") || "") 
+            : undefined;
+    }
+
+    /**
      * Adds an option to the select for each distinct link text. Client-side the values are link objects, so they are
      * reduced to their anchor_content; server-side they are already plain values and pass through unchanged.
      * @param {Array<*>|null|undefined} data - The column values. Logs a warning and adds nothing if empty.
