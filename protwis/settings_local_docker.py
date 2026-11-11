@@ -52,7 +52,7 @@ from protwis.settings import *  # noqa: E402, F403
 
 # Re-apply dummy caches: settings.py defines a FileBasedCache CACHES near the
 # bottom that overwrites the dummy CACHES inherited from settings_local_development.
-CACHES = {
-    "default": {"BACKEND": "django.core.cache.backends.dummy.DummyCache"},
-    "alignments": {"BACKEND": "django.core.cache.backends.dummy.DummyCache"},
-}
+# CACHES = {
+#     "default": {"BACKEND": "django.core.cache.backends.dummy.DummyCache"},
+#     "alignments": {"BACKEND": "django.core.cache.backends.dummy.DummyCache"},
+# }

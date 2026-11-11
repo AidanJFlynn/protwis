@@ -85,7 +85,8 @@ class DataTablesSerializerMixin:
         """
         if not content:
             return None
-        if re.search(r'<[a-zA-Z][^>]*>', str(content)):
+        # Simple Regex to check if the content contains HTML tags or HTML entities (character based, not numeric)
+        if re.search(r'<[a-zA-Z][^>]*>', str(content)) or re.search(r'&[a-zA-Z]{2,25};', str(content)):
             if passenger_content is not None:
                 return {'anchor_html': content, 'anchor_href': href, 'anchor_content': passenger_content}
             return {'anchor_html': content, 'anchor_href': href}
@@ -153,7 +154,8 @@ class GpcrStatisticsSummarySerializer(DataTablesSerializerMixin, serializers.Ser
         }
 
     def get_uniprot(self, obj):
-        return self.weblink_anchor(obj.uniprot_entry_name, obj.uniprot_accession, 'uniprot')
+        uniprot_name = obj.uniprot_entry_name.split("_")[0] if "_" in obj.uniprot_entry_name else obj.uniprot_entry_name
+        return self.weblink_anchor(uniprot_name, obj.uniprot_accession, 'uniprot')
 
     def get_gene(self, obj):
         return self.weblink_anchor(obj.gene_name, obj.gene_entrez_id, 'entrez_gene')
@@ -207,7 +209,8 @@ class PdbStructureSummarySerializer(DataTablesSerializerMixin, serializers.Seria
         return {'row_id': obj.id, 'data': {'pdb_id': obj.pdb_id, 'protein_name_short': obj.protein_name_short}}
 
     def get_uniprot(self, obj):
-        return self.weblink_anchor(obj.uniprot_entry_name, obj.uniprot_accession, 'uniprot')
+        uniprot_name = obj.uniprot_entry_name.split("_")[0] if "_" in obj.uniprot_entry_name else obj.uniprot_entry_name
+        return self.weblink_anchor(uniprot_name, obj.uniprot_accession, 'uniprot')
 
     def get_gene(self, obj):
         return self.weblink_anchor(obj.gene_name, obj.gene_entrez_id, 'entrez_gene')
