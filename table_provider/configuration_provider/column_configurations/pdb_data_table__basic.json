@@ -5,6 +5,7 @@
     "title": "",
     "data_type": "checkbox",
     "checkboxMultiSelect": true,
+    "checkboxMinSelectCount": 2,
     "allow_filter": false,
     "orderable": false
   },
@@ -12,9 +13,10 @@
     "column_group": "Structure",
     "json_id": "pdb_id",
     "title": "PDB ID",
-    "data_type": "weblinktext",
+    "data_type": "weblinktextselect",
     "allow_filter": true,
-    "width": "70px"
+    "width": "70px",
+    "max_display_length": 10
   },
    {
     "column_group": "Structure",
@@ -52,7 +54,7 @@
   {
     "column_group": "Receptor",
     "json_id": "uniprot",
-    "title": "Uniprot",
+    "title": "UniProt",
     "data_type": "weblinktext",
     "allow_filter": true,
     "width": "120px"
@@ -108,8 +110,7 @@
         "true": "bestTrue",
         "false": "bestFalse"
       }
-    },
-    "filterHeaderInjector": "show_closest_to_human_toggle"
+    }
   },
     {
     "column_group": "Species",
