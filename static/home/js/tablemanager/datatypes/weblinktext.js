@@ -30,17 +30,17 @@ class WebLinkText extends Text {
             return tableManagerReference.nullValuePlaceholder;
         }
         if (type === "display" && data) {
-            const truncated_content = this._truncateText(data.anchor_content || "", this.column.max_display_length);
+            const truncated_content = this._truncateText(data.anchor_html || data.anchor_content || "", this.column.max_display_length);
             
             if (!data.anchor_href) {
-                return data.anchor_html || truncated_content.data || ""; // fallback to displaying the content unlinked if href is missing
+                return truncated_content.data || ""; // fallback to displaying the content unlinked if href is missing
             }
             
             const link = document.createElement("a");
             link.setAttribute("href", data.anchor_href);
             link.setAttribute("target", "_blank");
             if (data.anchor_html || truncated_content.truncated) {
-                link.innerHTML = data.anchor_html || truncated_content.data;
+                link.innerHTML = truncated_content.data;
             } else {
                 link.textContent = data.anchor_content;
             }
@@ -59,7 +59,7 @@ class WebLinkText extends Text {
      */
     exportValue(cellData, rowData, tableManagerReference) {
         return this._isTruncated(cellData?.anchor_content) 
-            ? String(cellData.anchor_content || super._stripHtmlTags(cellData.anchor_html || "") || "") 
+            ? String(cellData.anchor_content || super._stripHtmlTags(cellData.anchor_html || "", true) || "") 
             : undefined;
     }
 
@@ -67,10 +67,15 @@ class WebLinkText extends Text {
      * Removes HTML tags from the link text, so it can be compared with the filter text. Overrides the Text version, which
      * expects a plain value, by reading anchor_content from the link object. Used by Text.blurHandler.
      * @param {{anchor_content?: string}|null|undefined} v - The link cell data.
+     * @param {boolean} decodeSymbols - Whether to decode HTML entities.
      * @returns {string} The link text without tags, or an empty string if there is none.
      */
-    _stripHtmlTags(v) {
-        return v?.anchor_content == null && v?.anchor_html == null ? "" : String(v.anchor_content || v.anchor_html || "").replace(/<[^>]*>/g, '');
+    _stripHtmlTags(v, decodeSymbols = false) {
+        let result = v?.anchor_content == null && v?.anchor_html == null ? "" : String(v.anchor_content || v.anchor_html || "").replace(/<[^>]*>/g, '');
+        if (decodeSymbols) {
+            result = this.decodeHTMLEntities(result);
+        }
+        return result;
     }    
 }
 

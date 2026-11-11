@@ -65,22 +65,39 @@ class Text extends DataTypeBase {
      * Truncates text to maxDisplayLength with an ellipsis. Truncated text is returned as a span that keeps both versions
      * in its data-full and data-truncated attributes (the full text is also its title), followed by an expand icon that
      * shows the full text in the cell for a few seconds (see _bindTruncationToggles).
-     * @param {string} data - The text.
-     * @param {number|undefined} maxDisplayLength - The maximum number of characters to show, or a falsy value for no limit.
+     * The text may contain HTML tags and entities. The limit applies to the characters as displayed (entities count as
+     * one character, tags as none), and the cut never falls inside a tag or entity. An element whose text would be cut
+     * (e.g. a sub/superscript) is removed whole rather than shortened; plain text is cut as normal.
+     * @param {string} data - The text, optionally containing HTML.
+     * @param {number|undefined} maxDisplayLength - The maximum number of displayed characters to show, or a falsy value for no limit.
      * @returns {{truncated: boolean, data: string}} Whether the text was truncated, and the text or the span's markup.
      */
     _truncateText(data, maxDisplayLength) {
-        if (maxDisplayLength && data.length > maxDisplayLength) {
-            const truncatedText = data.substring(0, maxDisplayLength) + "...";
+        // The displayed length never exceeds the raw length, so short text can skip parsing
+        if (!maxDisplayLength || data.length <= maxDisplayLength) {
+            return { truncated: false, data: data };
+        }
+
+        const fragment = this._parseHtml(data);
+        if (fragment.textContent.length > maxDisplayLength) {
+            const fullContainer = document.createElement("div");
+            fullContainer.append(fragment.cloneNode(true));
+            const fullHtml = fullContainer.innerHTML;
+
+            this._trimToDisplayLength(fragment, maxDisplayLength);
+            const trimmedContainer = document.createElement("div");
+            trimmedContainer.append(fragment);
+            const truncatedHtml = trimmedContainer.innerHTML + "...";
+
             const span = document.createElement("span");
             span.classList.add("tm-truncated");
-            span.setAttribute("title", data);
-            span.setAttribute("data-full", data);
-            span.setAttribute("data-truncated", truncatedText);
+            span.setAttribute("title", fullContainer.textContent);
+            span.setAttribute("data-full", fullHtml);
+            span.setAttribute("data-truncated", truncatedHtml);
 
             const text = document.createElement("span");
             text.classList.add("tm-truncated-text");
-            text.textContent = truncatedText;
+            text.innerHTML = truncatedHtml;
 
             // A span rather than an anchor, as the icon can sit inside a web link
             const expandIcon = document.createElement("span");
@@ -91,6 +108,48 @@ class Text extends DataTypeBase {
             return { truncated: true, data: span.outerHTML };
         }
         return { truncated: false, data: data };
+    }
+
+    /**
+     * Parses HTML into an inert fragment (nothing is loaded or run), with entities decoded into text.
+     * @param {string} html - The HTML (or plain text).
+     * @returns {DocumentFragment} The parsed content.
+     */
+    _parseHtml(html) {
+        const template = document.createElement("template");
+        template.innerHTML = String(html);
+        return template.content;
+    }
+
+    /**
+     * Cuts a parsed fragment in place so no more than maxLength characters of text remain. Text nodes are cut at the
+     * limit. An element that fits is kept whole, and one that would straddle the limit is removed whole. Everything
+     * after the cut is removed. Assumes elements are short and contain only text (e.g. sub/superscripts), so only the
+     * fragment's top-level nodes are examined.
+     * @param {DocumentFragment} fragment - The parsed content to trim.
+     * @param {number} maxLength - The maximum number of displayed characters to keep.
+     */
+    _trimToDisplayLength(fragment, maxLength) {
+        let remaining = maxLength;
+        for (const node of Array.from(fragment.childNodes)) {
+            const length = node.textContent.length;
+            if (remaining <= 0) {
+                node.remove();
+            } else if (node.nodeType === Node.TEXT_NODE && length > remaining) {
+                // Do not split a surrogate pair (multibyte character) in half, 
+                // which would show as a replacement character. The first half of a pair is in the range D800-DBFF.
+                const end = /[\uD800-\uDBFF]/.test(node.data.charAt(remaining - 1)) ? remaining - 1 : remaining;
+                node.data = node.data.slice(0, end);
+                remaining = 0;
+            } else if (node.nodeType !== Node.TEXT_NODE && node.nodeType !== Node.ELEMENT_NODE) {
+                node.remove(); // Comments and the like
+            } else if (length > remaining) {
+                node.remove();
+                remaining = 0;
+            } else {
+                remaining -= length;
+            }
+        }
     }
 
     /**
@@ -114,12 +173,12 @@ class Text extends DataTypeBase {
             icon.addEventListener("click", (e) => {
                 e.preventDefault();
                 e.stopPropagation();
-                text.textContent = truncated.dataset.full;
+                text.innerHTML = truncated.dataset.full;
                 truncated.classList.add("tm-expanded");
                 text.classList.add("tm-truncated-text-expanded");
                 clearTimeout(timer);
                 timer = setTimeout(() => {
-                    text.textContent = truncated.dataset.truncated;
+                    text.innerHTML = truncated.dataset.truncated;
                     truncated.classList.remove("tm-expanded");
                     text.classList.remove("tm-truncated-text-expanded");
                 }, EXPAND_DURATION_MS);
@@ -135,7 +194,13 @@ class Text extends DataTypeBase {
      * @returns {string|undefined} The full text if the cell is truncated, otherwise undefined (export the displayed content).
      */
     exportValue(cellData, rowData, tableManagerReference) {
-        return this._isTruncated(cellData) ? String(cellData) : undefined;
+        if (!cellData) {
+            // Return empty string for null/undefined, so the export has a 
+            // blank cell rather than tableManagerReference.nullValuePlaceholder 
+            // (usually "-") which is only for display.
+            return ""; 
+        }
+        return this._isTruncated(cellData) ? String(this._stripHtmlTags(cellData, true)) : undefined;
     }
 
     /**
@@ -145,7 +210,11 @@ class Text extends DataTypeBase {
      */
     _isTruncated(text) {
         const maxDisplayLength = this.column.max_display_length;
-        return Boolean(maxDisplayLength) && text !== null && text !== undefined && String(text).length > maxDisplayLength;
+        if (!maxDisplayLength || text === null || text === undefined || String(text).length <= maxDisplayLength) {
+            return false;
+        }
+        // Tags and entities make the raw text longer than what is displayed
+        return this._parseHtml(text).textContent.length > maxDisplayLength;
     }
 
     /**
@@ -275,12 +344,60 @@ class Text extends DataTypeBase {
     }
         
     /**
-     * Removes HTML tags from a value, so it can be compared with plain text.
+     * Removes HTML tags from a value, so it can be used as or compared with plain text.
      * @param {*} v - The value to clean.
+     * @param {boolean} decodeSymbols - Whether to decode HTML entities.
      * @returns {string} The value as text, or an empty string if it is null or undefined.
      */
-    _stripHtmlTags(v) {
-        return v == null ? "" : String(v).replace(/<[^>]*>/g, '');
+    _stripHtmlTags(v, decodeSymbols = false) {
+        let result = v == null ? "" : String(v).replace(/<[^>]*>/g, '');
+        if (decodeSymbols) {
+            result = this.decodeHTMLEntities(result);
+        }
+        return result;
+    }
+
+    /**
+     * Decodes HTML entities in a string.
+     * @param {string} text - The text to decode.
+     * @returns {string} The decoded text, or an empty string if the input is null or undefined.
+     */
+    decodeHTMLEntities(text) {
+        if (text === null || text === undefined) return '';
+
+        const greekLetters = {
+            '&Alpha;': 'Α', '&alpha;': 'α',
+            '&Beta;': 'Β', '&beta;': 'β',
+            '&Gamma;': 'Γ', '&gamma;': 'γ',
+            '&Delta;': 'Δ', '&delta;': 'δ',
+            '&Epsilon;': 'Ε', '&epsilon;': 'ε',
+            '&Zeta;': 'Ζ', '&zeta;': 'ζ',
+            '&Eta;': 'Η', '&eta;': 'η',
+            '&Theta;': 'Θ', '&theta;': 'θ',
+            '&Iota;': 'Ι', '&iota;': 'ι',
+            '&Kappa;': 'Κ', '&kappa;': 'κ',
+            '&Lambda;': 'Λ', '&lambda;': 'λ',
+            '&Mu;': 'Μ', '&mu;': 'μ',
+            '&Nu;': 'Ν', '&nu;': 'ν',
+            '&Xi;': 'Ξ', '&xi;': 'ξ',
+            '&Omicron;': 'Ο', '&omicron;': 'ο',
+            '&Pi;': 'Π', '&pi;': 'π',
+            '&Rho;': 'Ρ', '&rho;': 'ρ',
+            '&Sigma;': 'Σ', '&sigma;': 'σ',
+            '&Tau;': 'Τ', '&tau;': 'τ',
+            '&Upsilon;': 'Υ', '&upsilon;': 'υ',
+            '&Phi;': 'Φ', '&phi;': 'φ',
+            '&Chi;': 'Χ', '&chi;': 'χ',
+            '&Psi;': 'Ψ', '&psi;': 'ψ',
+            '&Omega;': 'Ω', '&omega;': 'ω'
+        };
+
+        let decoded = String(text);
+        for (const [entity, unicode] of Object.entries(greekLetters)) {
+        decoded = decoded.replace(new RegExp(entity.replace(/&/, '\\&'), 'g'), unicode);
+        }
+
+        return decoded;
     }
 
     /**
