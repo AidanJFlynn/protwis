@@ -180,8 +180,8 @@ def PdbTableDataSource():
             entry['receptor_class_code'] = shorted.family.parent.parent.parent.shorter()
             entry['species_common_name'] = s.protein_conformation.protein.species.common_name
             gene_obj = shorted.genes.first()
-            entry['gene_name'] = gene_obj.name if gene_obj else "-"
-            entry['gene_entrez_id'] = gene_obj.entrez_id if gene_obj else "-"
+            entry['gene_name'] = gene_obj.name if gene_obj else None
+            entry['gene_entrez_id'] = gene_obj.entrez_id if gene_obj else None
             entry['state'] = s.state.name
 
             entry['closest_to_human'] = s.closest_to_human
@@ -212,10 +212,10 @@ def PdbTableDataSource():
             a_list = []
             for a in s.stabilizing_agents.all():
                 a_list.append(a)
-            g_protein = only_gproteins(a_list)
-            arrestin = only_arrestins(a_list)
             fusion = only_fusions(a_list)
+            fusion = fusion if fusion != '-' else None
             antibody = only_antibodies(a_list)
+            antibody = antibody if antibody != '-' else None
 
             entry['signal_protein'] = ''
             entry['signal_protein_subtype'] = ''
@@ -231,13 +231,7 @@ def PdbTableDataSource():
                         key = '{}_{}_{}'.format(s.protein_conformation.protein.pk, s.protein_conformation.protein.parent.pk, ep[pdb_id]['display_name'])
                     except:
                         key = '{}_{}_{}'.format(s.protein_conformation.protein.pk, s.protein_conformation.protein.parent, ep[pdb_id]['display_name'])
-                    
 
-                # if best_signal_p[key] == ep[pdb_id]['wt_coverage']:
-                #     # this is the best coverage
-                #     entry['signal_protein_seq_cons_color'] = 'green'
-                # else:
-                #     entry['signal_protein_seq_cons_color'] = 'red'
                 if ep[pdb_id]['category'] == "Arrestin":
                     entry['signal_protein'] = ep[pdb_id]['wt_protein__family__parent__parent__name']
                 else:
@@ -263,29 +257,18 @@ def PdbTableDataSource():
                 entry['resolution'] = None
                 entry['resolution_best'] = None
 
-
-            #entry['7tm_distance'] = s.distance
             entry['tm6_angle'] = round(s.tm6_angle) if s.tm6_angle != None else None
             entry['gprot_bound_likeness'] = round(s.gprot_bound_likeness) if s.gprot_bound_likeness != None else None
 
-            #entry['g_protein'] = g_protein
-            #entry['arrestin']  = arrestin
             entry['fusion'] = fusion
-            # if len(antibody) > 20:
-            #     antibody = "<span title='{}'>{}</span>".format(antibody, antibody[:20] + "..")
             entry['antibody'] = antibody
 
-            entry['ligand'] = "-"
-            entry['ligand_role'] = "-"
-            #entry['ligand_type'] = "-"
+            entry['ligand'] = None
+            entry['ligand_role'] = None
 
             for l in s.ligands.all():
                 entry['ligand'] = l.ligand.name
-                # if len(entry['ligand'])>20:
-                #     entry['ligand'] = entry['ligand'][:20] + ".."
                 entry['ligand_role'] = l.ligand_role.name
-                # if l.ligand.ligand_type != None:
-                #     entry['ligand_type'] = l.ligand.ligand_type.name
 
             entry['query_effector'] = effector
             entry['is_complex'] = s.is_complex
