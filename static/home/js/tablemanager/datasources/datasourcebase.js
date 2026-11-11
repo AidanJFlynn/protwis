@@ -86,6 +86,17 @@ class DataSourceBase {
   }
 
   /**
+   * Gets the row data of every row in the table's current order, regardless of pagination. Abstract: implemented by
+   * the subclasses.
+   * @param {boolean} applySearch - True for only the rows matching the current search and filters, false for all rows.
+   * @returns {Promise<Array<Object>>} The row data of each row.
+   * @throws {Error} Always, in the base class.
+   */
+  async getExportRows(applySearch) {
+    throw new Error("getExportRows not implemented");
+  }
+
+  /**
    * Builds the DataTables column search for a filter. Abstract: implemented by the subclasses.
    * @param {Object} column - The column (data type instance) to filter.
    * @param {Object} filter - The filter, in the form described for applyColumnFilter.

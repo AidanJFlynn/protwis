@@ -83,7 +83,10 @@ class DataTypeBase {
    * @returns {*} The value to export, or undefined to export the displayed content.
    */
   exportValue(cellData, rowData, tableManagerReference) {
-    return undefined;
+    // Return empty string for null/undefined, so the export has a blank cell rather 
+    // than tableManagerReference.nullValuePlaceholder (usually "-") which is only for display.
+    // otherwise, return undefined to export the content displayed in the cell.
+    return cellData ? undefined : ""; 
   }
 
   /**

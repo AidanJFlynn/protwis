@@ -31,6 +31,9 @@ class ServerDataSource extends DataSourceBase {
   // Data request parameters that don't affect which rows match the search
   static NON_SEARCH_PARAMS = /^(draw|start|length|order\[.*)$/;
 
+  // Data request parameters holding the global and column search values
+  static SEARCH_VALUE_PARAMS = /^(search|columns\[\d+\]\[search\])\[value\]$/;
+
   /**
    * True for ServerDataSource.
    * @returns {boolean} Always true.
@@ -154,6 +157,30 @@ class ServerDataSource extends DataSourceBase {
     return rows.map((row) => row[column.json_id]);
   }
 
+  /**
+   * Gets the row data of every row in the table's current order from the server, by repeating the table's last data
+   * request without pagination (length=-1). For all rows the global and column searches are cleared; scope parameters
+   * added by ajax.data (such as the PDB table's effector) are kept.
+   * @param {boolean} applySearch - True for only the rows matching the current search and filters, false for all rows.
+   * @returns {Promise<Array<Object>>} The row data of each row.
+   */
+  async getExportRows(applySearch) {
+    await this.tableManagerReference.ready;
+    const query = this._getLatestRequestQueryParams();
+    query.set("start", "0");
+    query.set("length", "-1");
+    if (!applySearch) {
+      for (const key of [...query.keys()]) {
+        if (ServerDataSource.SEARCH_VALUE_PARAMS.test(key)) {
+          query.set(key, "");
+        }
+      }
+    }
+
+    const json = await this._fetchJson(this._url("", query.toString()));
+    return json.data;
+  }
+
   // Server-side filters are JSON objects the server reads directly, so values are matched exactly as given (no regex
   // escaping or parsing). Keys are always present, in a fixed order, so the same filter always gives the same string
   // and can be compared with the current search value. An empty filter gives an empty search (no filter).
@@ -190,18 +217,26 @@ class ServerDataSource extends DataSourceBase {
    * @returns {string} The query string, or an empty string before the first request.
    */
   _currentSearchQuery() {
-    const params = this._dataTable.ajax.params();
-    if (params == null) {
-      return "";
-    }
-
-    const query = new URLSearchParams(typeof params === "string" ? params : $.param(params));
+    const query = this._getLatestRequestQueryParams();
     for (const key of [...query.keys()]) {
       if (ServerDataSource.NON_SEARCH_PARAMS.test(key)) {
         query.delete(key);
       }
     }
     return query.toString();
+  }
+
+  /**
+   * Gets every parameter of the last data request, encoded as DataTables sent them (jQuery's $.param, after any
+   * ajax.data additions).
+   * @returns {URLSearchParams} The parameters, empty before the first request.
+   */
+  _getLatestRequestQueryParams() {
+    const params = this._dataTable.ajax.params();
+    if (params == null) {
+      return new URLSearchParams();
+    }
+    return new URLSearchParams(typeof params === "string" ? params : $.param(params));
   }
 
   /**

@@ -291,6 +291,9 @@ class MasterCheckbox{
             rowCheckbox.checked = isChecked;
         }
         });
+
+        // A single event for the whole search set, so subscribers that read the activeCheckBoxes state stay in step
+        tableManagerReference.eventPubSub.publish('checkboxStateChanged', { master: true, checked: isChecked });
     }
 
     /**
