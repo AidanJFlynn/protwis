@@ -4,7 +4,8 @@
   "deferRender": true,
   "scrollX": true,
   "layout": {
-    "topEnd": null
+    "topEnd": "pageLength",
+    "topStart": "buttons"
   },
   "ajax": {
     "url": "/table_provider/physiological_ligands_table",
@@ -14,5 +15,7 @@
   },
   "order": [[2, "asc"]],
   "nullValuePlaceholder": "-",
-  "lengthMenu": [ [10, 25, 50], [10, 25, 50] ]
+  "lengthMenu": [25, 50, 100, 250, 500],
+  "buttons": [ "clear_filters_default", "column_visibility", "excel_default"],
+  "fixedWidthTable": true
 }

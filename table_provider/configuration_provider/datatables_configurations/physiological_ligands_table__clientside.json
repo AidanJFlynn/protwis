@@ -4,7 +4,7 @@
   "deferRender": true,
   "scrollX": true,
   "layout": {
-    "topEnd": null,
+    "topEnd": "pageLength",
     "topStart": "buttons"
   },
   "ajax": {
