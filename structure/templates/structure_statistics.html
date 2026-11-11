@@ -761,36 +761,30 @@
         <!-- ----------------------------- -->
 
         <div id="table_perreceptorstats" class="tab-pane fade">
-            <table id="structureStatisticsTable" class="display" style="width:100%">
+            <table id="structureStatisticsTable" class="display">
                     <script type="module">
                         // Populate structure model statistics table using TableManager
                         import { TableManager } from "{% static 'home/js/tablemanager/tablemanager.js' %}";
-                        let stattable = null;
-                        TableManager.fetchConfiguration(
-                        'structure_statistics_table_gpcr', //dataTableConfigName
-                        'clientside', //dataTableConfigVariant
-                        'structure_statistics_table_gpcr', //columnConfigName
-                        'basic' //columnConfigVariant
-                        )
-                        .then(config => {
-                        stattable = new TableManager(config.columnsSpecifications, 'structureStatisticsTable');
-                        stattable.initialiseDataTable(config.datatableConfiguration);
-                        }).catch(error => {
-                        console.error('Error fetching configuration:', error);
-                        });
+                        
+                        let config = null;
+                        
+                        try {
+                            config = await TableManager.fetchConfiguration(
+                                        'structure_statistics_table_gpcr', //dataTableConfigName
+                                        'clientside', //dataTableConfigVariant
+                                        'structure_statistics_table_gpcr', //columnConfigName
+                                        'basic' //columnConfigVariant
+                                    );
+                        } catch(error) {
+                            console.error('Error fetching configuration:', error);
+                        }
+                        
+                        if (config){
+                            let stattable = new TableManager(config.columnsSpecifications, 'structureStatisticsTable');
+                            stattable.initialiseDataTable(config.datatableConfiguration);
+                        }        
                     </script>
-            </table>
-            <div style="margin-top: 10px;text-align: right;">
-                <div class="btn-group">
-                    <button type="button" class="btn btn-primary dropdown-toggle" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
-                        <span class="glyphicon glyphicon-download"></span> Download <span class="caret"></span>
-                    </button>
-                    <ul class="dropdown-menu">
-                        <li><a href="#" onclick="exportStructureStatistics('csv'); return false;">CSV (UTF-8)</a></li>
-                        <li><a href="#" onclick="exportStructureStatistics('excel'); return false;">Excel</a></li>
-                    </ul>
-                </div>
-            </div>
+            </table>            
         </div>
     </div>
 
@@ -1311,215 +1305,7 @@
     </script>
     <script src="{% static 'home/js/gpcrome_svg_export.js' %}"></script>
     <script src="{% static 'home/js/gpcrome_wheel_controls.js' %}"></script>
-    <script src="{% static 'home/js/structure/statistics_gpcrome_wheels.js' %}"></script>
-    <script>
-        function exportStructureStatistics(format) {
-          try {
-            const table = stattable.dataTableReference;
-            const ajsonData = table.ajax.json();
-            const columnSpecs = stattable.columnsSpecifications;
-
-            if (!ajsonData || !ajsonData.data || ajsonData.data.length === 0) {
-              alert('No data available to export');
-              return;
-            }
-
-            const allRows = ajsonData.data;
-            const headers = columnSpecs.map(col => col.exportHeaderOverride || col.title);
-            const jsonIds = columnSpecs.map(col => col.json_id);
-
-            const exportData = allRows.map(row => {
-              return jsonIds.map(jsonId => {
-                const value = row[jsonId];
-                if (value && typeof value === 'object' && value.anchor_content !== undefined) {
-                  return value.anchor_content;
-                }
-                return (value === null || value === undefined) ? '' : value;
-              });
-            });
-
-            if (format === 'csv') {
-              exportToCSV(headers, exportData, 'gpcr_structure_statistics.csv');
-            } else if (format === 'excel') {
-              exportToExcel(headers, exportData, columnSpecs, 'gpcr_structure_statistics.xlsx');
-            }
-          } catch (error) {
-            console.error('Export error:', error);
-            alert('Error exporting data: ' + error.message);
-          }
-        }
-
-        function exportToCSV(headers, data, filename) {
-          const csvContent = [];
-          csvContent.push(headers.map(h => escapeCSV(processHTMLForCSV(h))).join(','));
-
-          data.forEach(row => {
-            csvContent.push(row.map(cell => escapeCSV(processHTMLForCSV(cell))).join(','));
-          });
-
-          const blob = new Blob([csvContent.join('\n')], { type: 'text/csv;charset=utf-8;' });
-          downloadFile(blob, filename);
-        }
-
-        function exportToExcel(headers, data, columnSpecs, filename) {
-          const workbook = XLSX.utils.book_new();
-          const worksheetData = [headers, ...data];
-          const worksheet = XLSX.utils.aoa_to_sheet(worksheetData);
-
-          const headerRange = XLSX.utils.decode_range(worksheet['!ref']);
-          for (let C = headerRange.s.c; C <= headerRange.e.c; ++C) {
-            const address = XLSX.utils.encode_col(C) + '1';
-            if (!worksheet[address]) continue;
-            worksheet[address].s = {
-              font: { bold: true },
-              fill: { fgColor: { rgb: 'FFD9D9D9' } },
-              alignment: { horizontal: 'center', vertical: 'center' }
-            };
-          }
-
-          for (let R = 1; R < worksheetData.length; R++) {
-            for (let C = 0; C < worksheetData[R].length; C++) {
-              const address = XLSX.utils.encode_col(C) + (R + 1);
-              const cell = worksheet[address];
-              if (!cell) continue;
-
-              const rawValue = worksheetData[R][C];
-              if (typeof rawValue !== 'string' || (!rawValue.includes('<') && !rawValue.includes('&'))) continue;
-
-              const richText = parseHTMLForExcel(rawValue);
-
-              if (richText && richText.length > 1) {
-                cell.t = 's';
-                cell.v = richText.map(r => r.t).join('');
-                cell.r = richText;
-              } else if (richText && richText.length === 1) {
-                cell.t = 's';
-                cell.v = richText[0].t;
-              }
-            }
-          }
-
-          XLSX.utils.book_append_sheet(workbook, worksheet, 'structure_statistics');
-          XLSX.writeFile(workbook, filename);
-        }
-
-        function downloadFile(blob, filename) {
-          const link = document.createElement('a');
-          const url = URL.createObjectURL(blob);
-
-          link.setAttribute('href', url);
-          link.setAttribute('download', filename);
-          link.style.visibility = 'hidden';
-          document.body.appendChild(link);
-          link.click();
-          document.body.removeChild(link);
-          URL.revokeObjectURL(url);
-        }
-
-        function escapeCSV(value) {
-          if (value === null || value === undefined) return '';
-          const stringValue = String(value);
-          if (stringValue.includes(',') || stringValue.includes('"') || stringValue.includes('\n')) {
-            return '"' + stringValue.replace(/"/g, '""') + '"';
-          }
-          return stringValue;
-        }
-
-        function processHTMLForCSV(value) {
-          if (value === null || value === undefined) return '';
-          let text = String(value);
-          text = text.replace(/<sub>.*?<\/sub>/g, (match) => {
-            return match.replace(/<\/?sub>/g, '');
-          });
-          text = decodeHTMLEntities(text);
-          return text;
-        }
-
-        function parseHTMLForExcel(value) {
-          if (value === null || value === undefined) return [{ t: '' }];
-
-          let text = String(value);
-          const richText = [];
-          let currentPos = 0;
-
-          const subRegex = /<sub>(.*?)<\/sub>/g;
-          let match;
-          const matches = [];
-
-          while ((match = subRegex.exec(text)) !== null) {
-            matches.push({
-              start: match.index,
-              end: match.index + match[0].length,
-              content: match[1]
-            });
-          }
-
-          if (matches.length === 0) {
-            return [{ t: decodeHTMLEntities(text) }];
-          }
-
-          for (const m of matches) {
-            if (currentPos < m.start) {
-              richText.push({
-                t: decodeHTMLEntities(text.substring(currentPos, m.start))
-              });
-            }
-
-            richText.push({
-              t: decodeHTMLEntities(m.content),
-              s: { vertAlign: 'subscript' }
-            });
-
-            currentPos = m.end;
-          }
-
-          if (currentPos < text.length) {
-            richText.push({
-              t: decodeHTMLEntities(text.substring(currentPos))
-            });
-          }
-
-          return richText.length > 0 ? richText : [{ t: '' }];
-        }
-
-        function decodeHTMLEntities(text) {
-          if (text === null || text === undefined) return '';
-
-          const greekLetters = {
-            '&Alpha;': 'Α', '&alpha;': 'α',
-            '&Beta;': 'Β', '&beta;': 'β',
-            '&Gamma;': 'Γ', '&gamma;': 'γ',
-            '&Delta;': 'Δ', '&delta;': 'δ',
-            '&Epsilon;': 'Ε', '&epsilon;': 'ε',
-            '&Zeta;': 'Ζ', '&zeta;': 'ζ',
-            '&Eta;': 'Η', '&eta;': 'η',
-            '&Theta;': 'Θ', '&theta;': 'θ',
-            '&Iota;': 'Ι', '&iota;': 'ι',
-            '&Kappa;': 'Κ', '&kappa;': 'κ',
-            '&Lambda;': 'Λ', '&lambda;': 'λ',
-            '&Mu;': 'Μ', '&mu;': 'μ',
-            '&Nu;': 'Ν', '&nu;': 'ν',
-            '&Xi;': 'Ξ', '&xi;': 'ξ',
-            '&Omicron;': 'Ο', '&omicron;': 'ο',
-            '&Pi;': 'Π', '&pi;': 'π',
-            '&Rho;': 'Ρ', '&rho;': 'ρ',
-            '&Sigma;': 'Σ', '&sigma;': 'σ',
-            '&Tau;': 'Τ', '&tau;': 'τ',
-            '&Upsilon;': 'Υ', '&upsilon;': 'υ',
-            '&Phi;': 'Φ', '&phi;': 'φ',
-            '&Chi;': 'Χ', '&chi;': 'χ',
-            '&Psi;': 'Ψ', '&psi;': 'ψ',
-            '&Omega;': 'Ω', '&omega;': 'ω'
-          };
-
-          let decoded = String(text);
-          for (const [entity, unicode] of Object.entries(greekLetters)) {
-            decoded = decoded.replace(new RegExp(entity.replace(/&/, '\\&'), 'g'), unicode);
-          }
-
-          return decoded;
-        }
-    </script>
+    <script src="{% static 'home/js/structure/statistics_gpcrome_wheels.js' %}"></script>    
 
 {% elif page == 'gprotein' %}
     
