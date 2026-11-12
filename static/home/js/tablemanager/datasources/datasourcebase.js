@@ -113,7 +113,7 @@ class DataSourceBase {
    * (the clear filters button redraws once after all filters have been cleared).
    * @param {Object} column - The column (data type instance) to filter.
    * @param {Object} filter - {type: "text", terms: [{value, contains}]} for exact or "contains" matches, or
-   *   {type: "range", min, max} with null for an open bound. No terms, or no bounds, clears the column's filter.
+   *   {type: "numericrange", min, max} (numbers) or {type: "daterange", min, max} (YYYY-MM-DD strings) with null for an open bound. No terms, or no bounds, clears the column's filter.
    * @returns {boolean} True if the filter changed and the table was redrawn.
    */
   applyColumnFilter(column, filter) {

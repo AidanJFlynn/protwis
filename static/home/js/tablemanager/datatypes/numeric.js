@@ -83,7 +83,7 @@ class Numeric extends DataTypeBase {
         };
         const filterChangeListener = () => tableManagerReference.dataSource.applyColumnFilter(
             column,
-            { type: "range", min: bound(filterInputMin), max: bound(filterInputMax) }
+            { type: "numericrange", min: bound(filterInputMin), max: bound(filterInputMax) }
         );
 
         filterInputMin.addEventListener("blur", filterChangeListener);

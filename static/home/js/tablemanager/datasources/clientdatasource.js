@@ -195,7 +195,7 @@ class ClientDataSource extends DataSourceBase {
   /**
    * Builds the DataTables column search for a filter.
    * @param {Object} column - The column (data type instance) to filter.
-   * @param {Object} filter - {type: "text", terms: [{value, contains}]} or {type: "range", min, max}.
+   * @param {Object} filter - {type: "text", terms: [{value, contains}]} , {type: "numericrange", min, max} or {type: "daterange", min, max}.
    * @returns {{value: *, regex: boolean, key: string}} The column search. key identifies the filter.
    * @throws {Error} If the filter type is unknown.
    */
@@ -204,10 +204,38 @@ class ClientDataSource extends DataSourceBase {
       const search = this._buildTextSearch(filter.terms);
       return { ...search, key: search.value };
     }
-    if (filter.type === "range") {
-      return this._buildRangeSearch(column, filter.min, filter.max);
+    if (filter.type === "numericrange") {
+      return this._buildNumericRangeSearch(column, filter.min, filter.max);
+    }
+    if (filter.type === "daterange") {
+      return this._buildDateRangeSearch(column, filter.min, filter.max);
     }
     throw new Error(`Unknown filter type: ${filter.type}`);
+  }
+
+  /**
+   * Builds a date range search, like {@link ClientDataSource#_buildNumericRangeSearch} but comparing ISO dates (YYYY-MM-DD),
+   * which order correctly as strings. Cells that are not ISO dates (e.g. blank cells) are excluded while a bound is set.
+   * @param {Object} column - The column (data type instance) to filter.
+   * @param {string|null} min - The inclusive lower bound, or null for an open bound.
+   * @param {string|null} max - The inclusive upper bound, or null for an open bound.
+   * @returns {{value: string|Function, regex: boolean, key: string}} The column search. With no bounds, an empty search.
+   */
+  _buildDateRangeSearch(column, min, max) {
+    if (min === null && max === null) {
+      return { value: "", regex: false, key: "" };
+    }
+
+    const rangeSearch = (searchData, rowData) => {
+      const value = rowData[column.json_id];
+      if (typeof value !== "string" || !/^\d{4}-\d{2}-\d{2}$/.test(value)) {
+        return false;
+      }
+      return (min === null || min <= value) && (max === null || value <= max);
+    };
+    rangeSearch.filterKey = JSON.stringify({ min: min, max: max });
+
+    return { value: rangeSearch, regex: false, key: rangeSearch.filterKey };
   }
 
   /**
@@ -245,7 +273,7 @@ class ClientDataSource extends DataSourceBase {
    * @param {number|null} max - The upper bound, or null for an open bound.
    * @returns {{value: string|Function, regex: boolean, key: string}} The column search. With no bounds, an empty search.
    */
-  _buildRangeSearch(column, min, max) {
+  _buildNumericRangeSearch(column, min, max) {
     if (min === null && max === null) {
       return { value: "", regex: false, key: "" };
     }

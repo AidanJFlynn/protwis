@@ -1,4 +1,5 @@
 from table_provider.serverside.querystringprocessing import DatatablesQueryStringProcessor
+import datetime
 import json
 import math
 
@@ -18,6 +19,14 @@ BOOLEAN_STRINGS = {'true': True, 'false': False}
 def _check_filter_keys(spec, allowed_keys, data_field):
     if not isinstance(spec, dict) or not set(spec) <= allowed_keys:
         raise FilterError(f"Invalid filter for field '{data_field}'; expected an object with keys {sorted(allowed_keys)}.")
+
+
+def _date_values(values, data_field):
+    """Validates exact date filter values, which must be ISO dates (YYYY-MM-DD) as the server sends them."""
+    try:
+        return [datetime.date.fromisoformat(v) for v in values]
+    except ValueError:
+        raise FilterError(f"Invalid 'in' filter for field '{data_field}'; expected ISO dates (YYYY-MM-DD).")
 
 
 def _filter_list(spec, key, data_field, item_types=(str,)):
@@ -99,6 +108,18 @@ class FilterSet:
             if field_type == 'text':
                 _check_filter_keys(spec, TEXT_FILTER_KEYS, data_field)
                 filter_req = TextFilter(db_field, _filter_list(spec, 'in', data_field), _filter_list(spec, 'contains', data_field))
+            elif field_type == 'date':
+                if isinstance(spec, dict) and set(spec) & NUMERIC_FILTER_KEYS:
+                    # Date range from the client's date data type: {"min": "YYYY-MM-DD", "max": "YYYY-MM-DD"}, null for an open bound
+                    _check_filter_keys(spec, NUMERIC_FILTER_KEYS, data_field)
+                    if spec.get('min') is None and spec.get('max') is None:
+                        continue
+                    filter_req = DateRangeFilter(db_field, spec.get('min'), spec.get('max'))
+                else:
+                    # Exact ISO dates or contains matches on the ISO text (e.g. "2025" or "2025-01")
+                    _check_filter_keys(spec, TEXT_FILTER_KEYS, data_field)
+                    filter_req = TextFilter(db_field, _date_values(_filter_list(spec, 'in', data_field), data_field),
+                                            _filter_list(spec, 'contains', data_field))
             elif field_type == 'numeric':
                 _check_filter_keys(spec, NUMERIC_FILTER_KEYS, data_field)
                 if spec.get('min') is None and spec.get('max') is None:
@@ -254,6 +275,33 @@ class NumericRangeFilter(FilterRequirement):
 
         Returns an empty Q() if no bounds are set.
         """
+        query = Q()
+        if 'min' in self.filter_values:
+            query &= Q(**{f"{self.db_field_name}__gte": self.filter_values['min']})
+        if 'max' in self.filter_values:
+            query &= Q(**{f"{self.db_field_name}__lte": self.filter_values['max']})
+        return query
+
+class DateRangeFilter(FilterRequirement):
+    """Represents an inclusive date range filter requirement for a specific database field.
+
+    Bounds are ISO dates (YYYY-MM-DD). A bound of None leaves that side of the range open.
+    """
+
+    def __init__(self, db_field_name, filter_min=None, filter_max=None):
+        super().__init__(db_field_name, 'date')
+
+        self.filter_values = {}
+        for key, bound in (('min', filter_min), ('max', filter_max)):
+            if bound is None:
+                continue
+            try:
+                self.filter_values[key] = datetime.date.fromisoformat(bound)
+            except (TypeError, ValueError):
+                raise FilterError(f"Invalid date bound '{bound}' for field '{db_field_name}'; expected an ISO date (YYYY-MM-DD).")
+
+    def format_query(self):
+        """Converts filter values into a Django Q object for querying the database."""
         query = Q()
         if 'min' in self.filter_values:
             query &= Q(**{f"{self.db_field_name}__gte": self.filter_values['min']})

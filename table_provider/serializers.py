@@ -12,6 +12,7 @@ from table_provider.models import GpcrStructureStatisticsTable, PdbTable
 MODEL_FIELD_DATATYPES = (
     (models.BooleanField, 'boolean'),
     ((models.IntegerField, models.FloatField, models.DecimalField), 'numeric'),
+    (models.DateField, 'date'),
     ((models.CharField, models.TextField), 'text'),
     (JSONField, 'json'),
 )
