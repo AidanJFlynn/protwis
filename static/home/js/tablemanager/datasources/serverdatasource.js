@@ -187,7 +187,7 @@ class ServerDataSource extends DataSourceBase {
   /**
    * Builds the column search as a JSON string the server reads directly.
    * @param {Object} column - The column (data type instance) to filter.
-   * @param {Object} filter - {type: "text", terms: [{value, contains}]} or {type: "range", min, max}.
+   * @param {Object} filter - {type: "text", terms: [{value, contains}]} , {type: "numericrange", min, max} or {type: "daterange", min, max}.
    * @returns {{value: string, regex: boolean, key: string}} The column search. An empty filter gives an empty value.
    * @throws {Error} If the filter type is unknown.
    */
@@ -200,7 +200,7 @@ class ServerDataSource extends DataSourceBase {
         filter.terms.forEach(({ value, contains }) => (contains ? textFilter.contains : textFilter.in).push(String(value)));
         value = JSON.stringify(textFilter);
       }
-    } else if (filter.type === "range") {
+    } else if (filter.type === "numericrange" || filter.type === "daterange") {
       if (filter.min !== null || filter.max !== null) {
         value = JSON.stringify({ min: filter.min, max: filter.max });
       }

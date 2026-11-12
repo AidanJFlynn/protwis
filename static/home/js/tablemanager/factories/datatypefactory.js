@@ -1,5 +1,6 @@
 import { Text } from "../datatypes/text.js";
 import { Numeric } from "../datatypes/numeric.js";
+import { DateType } from "../datatypes/date.js";
 import { TextSelect } from "../datatypes/textselect.js";
 import { WebLinkText } from "../datatypes/weblinktext.js";
 import { WebLinkTextSelect } from "../datatypes/weblinktextselect.js";
@@ -26,6 +27,7 @@ class DataTypeFactory {
     constructor() {
         this.registerDataType("text", Text);
         this.registerDataType("numeric", Numeric);
+        this.registerDataType("date", DateType);
         this.registerDataType("textselect", TextSelect);
         this.registerDataType("weblinktext", WebLinkText);
         this.registerDataType("weblinktextselect", WebLinkTextSelect);
