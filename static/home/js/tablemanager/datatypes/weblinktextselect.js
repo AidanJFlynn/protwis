@@ -28,42 +28,28 @@ class WebLinkTextSelect extends TextSelect {
         return WebLinkText.prototype.dataTableRenderer.call(this, data, type, row, meta, tableManagerReference);
     }
 
-    /**
-     * Removes HTML tags from the link text, by reading anchor_content from the link object.
-     * @param {{anchor_content?: string}|null|undefined} v - The link cell data.
-     * @returns {string} The link text without tags, or an empty string if there is none.
-     */
-    _stripHtmlTags(v) {
-        return WebLinkText.prototype._stripHtmlTags.call(this, v);
+    // The link helpers are borrowed from WebLinkText, as this class extends TextSelect. With _plainText handling link
+    // objects, the inherited exportValue, blurHandler and option building (client-side link objects, server-side plain
+    // values) work unchanged.
+
+    /** See WebLinkText._plainText. */
+    _plainText(v) {
+        return WebLinkText.prototype._plainText.call(this, v);
     }
 
-    /**
-     * Customises the export value to use the anchor content or the stripped HTML.
-     * @param {{anchor_content?: string}|null|undefined} cellData - The link cell data.
-     * @param {*} rowData - The full row data.
-     * @param {Object} tableManagerReference - The table manager that owns the table.
-     * @returns {string|undefined} The full link text if the cell is truncated, otherwise undefined (export the displayed content).
-     */
-    exportValue(cellData, rowData, tableManagerReference) {
-        return this._isTruncated(cellData?.anchor_content) 
-            ? String(cellData.anchor_content || super._stripHtmlTags(cellData.anchor_html || "") || "") 
-            : undefined;
+    /** See WebLinkText._linkPlainText. */
+    _linkPlainText(link) {
+        return WebLinkText.prototype._linkPlainText.call(this, link);
     }
 
-    /**
-     * Adds an option to the select for each distinct link text. Client-side the values are link objects, so they are
-     * reduced to their anchor_content; server-side they are already plain values and pass through unchanged.
-     * @param {Array<*>|null|undefined} data - The column values. Logs a warning and adds nothing if empty.
-     * @param {string} ColumnJsonId - The column's json_id, used in the warning message.
-     * @param {HTMLSelectElement} filterInput - The select element to add the options to.
-     */
-    _populateTextSelectFilterOptionsFromData(data, ColumnJsonId, filterInput) {
-        const values = data
-            ? [...new Set(data
-                .map((v) => (v !== null && typeof v === "object" ? v.anchor_content : v))
-                .filter((v) => v !== null && v !== undefined))]
-            : data;
-        super._populateTextSelectFilterOptionsFromData(values, ColumnJsonId, filterInput);
+    /** See WebLinkText._linkHtml. */
+    _linkHtml(data, maxDisplayLength) {
+        return WebLinkText.prototype._linkHtml.call(this, data, maxDisplayLength);
+    }
+
+    /** See WebLinkText._linkDisplayHtml. */
+    _linkDisplayHtml(link) {
+        return WebLinkText.prototype._linkDisplayHtml.call(this, link);
     }
 }
 

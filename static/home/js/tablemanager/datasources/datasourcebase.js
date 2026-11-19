@@ -97,6 +97,41 @@ class DataSourceBase {
   }
 
   /**
+   * Gets the row data of the rows with the given row ids (the row_id of their checkbox cells, e.g. the keys of
+   * state.activeCheckBoxes), in the table's current order, whatever the current search, filters and pagination.
+   * Abstract: implemented by the subclasses.
+   * @param {Iterable<number|string>} rowIds - The row ids.
+   * @param {AbortSignal} [signal] - Aborts the request when the caller no longer needs the result.
+   * @returns {Promise<Array<Object>>} The row data of each row found; ids matching no row are skipped.
+   * @throws {Error} Always, in the base class.
+   */
+  async getRowsById(rowIds, signal) {
+    throw new Error("getRowsById not implemented");
+  }
+
+  /**
+   * The table's checkbox column, whose cells hold each row's row_id.
+   * @returns {Object} The checkbox column.
+   * @throws {Error} If the table has no checkbox column.
+   */
+  _checkboxColumn() {
+    const column = this.tableManagerReference.columns.find((col) => col.data_type === "checkbox");
+    if (!column) {
+      throw new Error("Rows can only be looked up by id in a table with a checkbox column");
+    }
+    return column;
+  }
+
+  /**
+   * Row ids as distinct integers, matching the keys of state.activeCheckBoxes.
+   * @param {Iterable<number|string>} rowIds - The row ids.
+   * @returns {number[]} The distinct integer row ids.
+   */
+  _normaliseRowIds(rowIds) {
+    return [...new Set([...rowIds].map((rowId) => Number.parseInt(rowId)))].filter(Number.isInteger);
+  }
+
+  /**
    * Builds the DataTables column search for a filter. Abstract: implemented by the subclasses.
    * @param {Object} column - The column (data type instance) to filter.
    * @param {Object} filter - The filter, in the form described for applyColumnFilter.

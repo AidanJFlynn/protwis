@@ -1,10 +1,12 @@
+import datetime
 import json
 import pathlib
 
 from django.test import SimpleTestCase, TestCase
 from django.db.models import Q
+from table_provider.models import GpcrStructureBrowserTable
 from table_provider.serializers import (
-    GpcrStatisticsSummarySerializer, PdbStructureSummarySerializer, TABLE_SERIALIZERS,
+    GpcrStatisticsSummarySerializer, GpcrStructureBrowserSerializer, PdbStructureSummarySerializer, TABLE_SERIALIZERS,
 )
 from table_provider.serverside.filters import TextFilter, NumericRangeFilter, BooleanFilter, FilterSet, FilterError
 from table_provider.serverside.querystringprocessing import DatatablesQueryStringProcessor, QueryStringProcessingError
@@ -17,22 +19,22 @@ class TextFilterTestCase(TestCase):
     def test_single_exact_value_only(self):
         """Single exact match value should return exact equality Q."""
         f = TextFilter("state", ["Active"])
-        self.assertEqual(f.format_query(), Q(state__in=["Active"]))
+        self.assertEqual(f.format_query(), Q(state__nfkc__in=["Active"]))
 
     def test_multiple_exact_values_only(self):
         """Multiple exact matches should return __in Q."""
         f = TextFilter("state", ["Active", "Inactive"])
-        self.assertEqual(f.format_query(), Q(state__in=["Active", "Inactive"]))
+        self.assertEqual(f.format_query(), Q(state__nfkc__in=["Active", "Inactive"]))
 
     def test_single_contains_only(self):
         """Single contains value should use icontains."""
         f = TextFilter("state", contains=["inter"])
-        self.assertEqual(f.format_query(), Q(state__icontains="inter"))
+        self.assertEqual(f.format_query(), Q(state__nfkc__icontains="inter"))
 
     def test_multiple_contains_only(self):
         """Multiple contains values should be ORed."""
         f = TextFilter("state", contains=["inter", "act"])
-        self.assertEqual(f.format_query(), Q(state__icontains="inter") | Q(state__icontains="act"))
+        self.assertEqual(f.format_query(), Q(state__nfkc__icontains="inter") | Q(state__nfkc__icontains="act"))
 
     def test_single_exact_plus_single_contains(self):
         """Single exact value AND single contains value should both be included (ORed).
@@ -41,15 +43,15 @@ class TextFilterTestCase(TestCase):
         and at least one tag, both should be in the result.
         """
         f = TextFilter("state", ["Active"], ["inter"])
-        self.assertEqual(f.format_query(), Q(state__in=["Active"]) | Q(state__icontains="inter"))
+        self.assertEqual(f.format_query(), Q(state__nfkc__in=["Active"]) | Q(state__nfkc__icontains="inter"))
 
     def test_multiple_exact_plus_multiple_contains(self):
         """Multiple exact values and multiple contains values should all be ORed."""
         f = TextFilter("state", ["Active", "Inactive"], ["inter", "act"])
         expected = (
-            Q(state__in=["Active", "Inactive"]) |
-            Q(state__icontains="inter") |
-            Q(state__icontains="act")
+            Q(state__nfkc__in=["Active", "Inactive"]) |
+            Q(state__nfkc__icontains="inter") |
+            Q(state__nfkc__icontains="act")
         )
         self.assertEqual(f.format_query(), expected)
 
@@ -61,7 +63,19 @@ class TextFilterTestCase(TestCase):
     def test_special_characters_used_verbatim(self):
         """Values are not parsed as regex, so brackets, pipes and backslashes are matched as given (B2, B5)."""
         f = TextFilter("state", ["(A|B)\\x"], ["^.*$"])
-        self.assertEqual(f.format_query(), Q(state__in=["(A|B)\\x"]) | Q(state__icontains="^.*$"))
+        self.assertEqual(f.format_query(), Q(state__nfkc__in=["(A|B)\\x"]) | Q(state__nfkc__icontains="^.*$"))
+
+    def test_values_nfkc_normalised(self):
+        """Values are NFKC normalised to match the normalised column: subscripts flatten, micro sign becomes Greek mu."""
+        f = TextFilter("name", ["PIP₃"], ["µ-opioid"])
+        self.assertEqual(f.exact_values, ["PIP3"])
+        self.assertEqual(f.contains_values, ["μ-opioid"])
+        self.assertEqual(f.format_query(), Q(name__nfkc__in=["PIP3"]) | Q(name__nfkc__icontains="μ-opioid"))
+
+    def test_values_not_normalised_when_disabled(self):
+        """With normalize=False neither the column nor the values are normalised."""
+        f = TextFilter("name", ["PIP₃"], normalize=False)
+        self.assertEqual(f.format_query(), Q(name__in=["PIP₃"]))
 
 
 class NumericRangeFilterTestCase(TestCase):
@@ -112,11 +126,13 @@ class FilterSetParseFiltersTestCase(TestCase):
         class MockSerializer(serializers.Serializer):
             @staticmethod
             def column_datatypes():
-                return {'resolution': 'numeric', 'state': 'text', 'best': 'boolean', 'checkbox': 'checkbox'}
+                return {'resolution': 'numeric', 'state': 'text', 'best': 'boolean', 'checkbox': 'checkbox',
+                        'published': 'date'}
 
             @staticmethod
             def source_mapping():
-                return {'resolution': 'resolution', 'state': 'state_name', 'best': 'resolution_best', 'checkbox': 'checkbox'}
+                return {'resolution': 'resolution', 'state': 'state_name', 'best': 'resolution_best', 'checkbox': 'checkbox',
+                        'published': 'publication_date'}
 
         return MockSerializer
 
@@ -132,10 +148,18 @@ class FilterSetParseFiltersTestCase(TestCase):
 
     def test_text_filter_uses_source_mapping(self):
         self.assertEqual(self._queries('state', {'in': ['A|B'], 'contains': ['(x']}),
-                         [Q(state_name__in=['A|B']) | Q(state_name__icontains='(x')])
+                         [Q(state_name__nfkc__in=['A|B']) | Q(state_name__nfkc__icontains='(x')])
+
+    def test_date_filter_as_text(self):
+        self.assertEqual(self._queries('published', {'in': ['2025-01-30'], 'contains': ['2025']}),
+                         [Q(publication_date__in=[datetime.date(2025, 1, 30)]) | Q(publication_date__icontains='2025')])
+
+    def test_date_filter_invalid_exact_value_raises(self):
+        with self.assertRaises(FilterError):
+            self._queries('published', {'in': ['2025']})
 
     def test_text_filter_keys_optional(self):
-        self.assertEqual(self._queries('state', {'contains': ['x']}), [Q(state_name__icontains='x')])
+        self.assertEqual(self._queries('state', {'contains': ['x']}), [Q(state_name__nfkc__icontains='x')])
 
     def test_numeric_filter(self):
         self.assertEqual(self._queries('resolution', {'min': 2, 'max': None}), [Q(resolution__gte=2)])
@@ -159,8 +183,20 @@ class FilterSetParseFiltersTestCase(TestCase):
         with self.assertRaises(FilterError):
             self._queries('best', {'in': ['yes']})
 
-    def test_checkbox_column_ignored(self):
-        self.assertEqual(self._queries('checkbox', 'anything'), [])
+    def test_checkbox_empty_is_no_filter(self):
+        self.assertEqual(self._queries('checkbox', ''), [])
+
+    def test_checkbox_filter_matches_row_ids(self):
+        self.assertEqual(self._queries('checkbox', {'in': [3, 1, 3]}), [Q(pk__in=[1, 3])])
+
+    def test_checkbox_filter_empty_ids_matches_nothing(self):
+        self.assertEqual(self._queries('checkbox', {'in': []}), [Q(pk__in=[])])
+
+    def test_checkbox_filter_invalid_ids_raise(self):
+        for spec in ({'in': ['1']}, {'in': [True]}, {'in': 1}, {'contains': [1]}, {'in': [1], 'contains': []}, [1]):
+            with self.subTest(spec=spec):
+                with self.assertRaises(FilterError):
+                    self._queries('checkbox', spec)
 
 
 class FilterSetOrderingTestCase(TestCase):
@@ -409,6 +445,27 @@ class SerializerColumnMetadataTestCase(SimpleTestCase):
         expected.update({name: 'numeric' for name in numeric})
         self.assertEqual(GpcrStatisticsSummarySerializer.column_datatypes(), expected)
 
+    def test_structure_browser_datatypes(self):
+        expected = {name: 'text' for name in [
+            'gpcrdb', 'uniprot', 'gene', 'protein', 'receptor_family', 'receptor_class', 'species_common_name',
+            'method', 'pdb', 'refined_structure', 'preferred_chain', 'state', 'signal_protein_family',
+            'signal_protein_subtype', 'signal_protein_note', 'sodium_site', 'sodium', 'authors', 'reference',
+        ]}
+        expected.update({name: 'numeric' for name in
+                         ['resolution', 'coverage', 'gprot_bound_likeness', 'signal_protein_pcntseq']})
+        expected.update({name: 'json' for name in [
+            'ligand', 'ligand_type', 'ligand_role', 'fusion', 'antibody', 'auxiliary_molecule',
+            'auxiliary_molecule_type', 'auxiliary_molecule_function', 'endo_ligand', 'endo_ligand_type',
+        ]})
+        expected.update({'checkbox': 'checkbox', 'representative': 'boolean', 'publication_date': 'date'})
+        self.assertEqual(GpcrStructureBrowserSerializer.column_datatypes(), expected)
+
+    def test_structure_browser_checkbox_fields_are_model_fields(self):
+        # GpcrStructureBrowserSummaryTable loads only these fields when serving the checkbox column
+        for field in GpcrStructureBrowserSerializer.CHECKBOX_DATA_FIELDS:
+            with self.subTest(field=field):
+                GpcrStructureBrowserTable._meta.get_field(field)
+
     def test_method_fields_map_to_database_columns(self):
         mapping = PdbStructureSummarySerializer.source_mapping()
         self.assertEqual(mapping['uniprot'], 'uniprot_entry_name')
@@ -424,12 +481,13 @@ class ColumnConfigurationConsistencyTestCase(SimpleTestCase):
     # Client data_type -> server datatypes it can filter correctly.
     # text/textselect accept boolean because the client sends "true"/"false" search strings.
     COMPATIBLE = {
-        'text': {'text', 'boolean'},
-        'textselect': {'text', 'boolean'},
+        'text': {'text', 'boolean', 'date'},
+        'textselect': {'text', 'boolean', 'date'},
         'weblinktext': {'text', 'json'},
         'weblinktextlist': {'json'},
         'referencelist': {'json'},
         'numeric': {'numeric'},
+        'date': {'date'},
         'checkbox': {'checkbox'},
     }
 

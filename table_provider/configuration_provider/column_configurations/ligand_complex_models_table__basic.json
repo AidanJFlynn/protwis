@@ -1,0 +1,184 @@
+[
+  {
+    "column_group": "Model",
+    "json_id": "checkbox",
+    "title": "",
+    "data_type": "checkbox",
+    "allow_filter": false,
+    "checkboxMultiSelect": true,
+    "orderable": false
+  },
+  {
+    "column_group": "Model",
+    "json_id": "model",
+    "title": "Model",
+    "data_type": "weblinktext",
+    "allow_filter": false,
+    "orderable": false,
+    "width": "34px",
+    "exportHeaderOverride": "Model PDB code"
+  },
+  {
+    "column_group": "Ligand",
+    "json_id": "ligand",
+    "title": "Name",
+    "data_type": "weblinktext",
+    "allow_filter": true,
+    "width": "160px",
+    "max_display_length": 20,
+    "cellInjectors": [
+      "structurePopover"
+    ],
+    "exportHeaderOverride": "Ligand"
+  },
+  {
+    "column_group": "Ligand",
+    "json_id": "mol_modality",
+    "title": "Mol. modality",
+    "data_type": "textselect",
+    "allow_filter": true,
+    "width": "80px"
+  },
+  {
+    "column_group": "Ligand",
+    "json_id": "pharm_modality",
+    "title": "Pharm. modality",
+    "data_type": "textselect",
+    "allow_filter": true,
+    "width": "90px",
+    "max_display_length": 20
+  },
+  {
+    "column_group": "Ligand",
+    "json_id": "physiological",
+    "title": "Physiological",
+    "data_type": "textselect",
+    "allow_filter": true,
+    "width": "70px"
+  },
+  {
+    "column_group": "Ligand",
+    "json_id": "clinical",
+    "title": "Clinical",
+    "data_type": "textselect",
+    "allow_filter": true,
+    "width": "90px"
+  },
+  {
+    "column_group": "Receptor",
+    "json_id": "gene",
+    "title": "Gene",
+    "data_type": "weblinktext",
+    "allow_filter": true,
+    "width": "90px"
+  },
+  {
+    "column_group": "Receptor",
+    "json_id": "protein",
+    "title": "Protein",
+    "data_type": "weblinktext",
+    "allow_filter": true,
+    "width": "140px",
+    "max_display_length": 20
+  },
+  {
+    "column_group": "Receptor",
+    "json_id": "receptor_family",
+    "title": "Family",
+    "data_type": "textselect",
+    "allow_filter": true,
+    "width": "140px",
+    "max_display_length": 20
+  },
+  {
+    "column_group": "Receptor",
+    "json_id": "receptor_class",
+    "title": "Class",
+    "data_type": "textselect",
+    "allow_filter": true,
+    "width": "110px",
+    "max_display_length": 20
+  },
+  {
+    "column_group": "Receptor",
+    "json_id": "receptor_modality",
+    "title": "Modality",
+    "data_type": "textselect",
+    "allow_filter": true,
+    "width": "140px",
+    "max_display_length": 20,
+    "exportHeaderOverride": "Receptor modality"
+  },
+  {
+    "column_group": "Receptor",
+    "json_id": "receptor_chemotype",
+    "title": "Chemotype",
+    "data_type": "textselect",
+    "allow_filter": true,
+    "width": "120px",
+    "max_display_length": 20
+  },
+  {
+    "column_group": "Structure",
+    "json_id": "state",
+    "title": "State",
+    "data_type": "textselect",
+    "allow_filter": true,
+    "width": "70px"
+  },
+  {
+    "column_group": "Structure",
+    "json_id": "signal_protein_family",
+    "title": "Signal protein family",
+    "data_type": "textselect",
+    "allow_filter": true,
+    "width": "90px"
+  },
+  {
+    "column_group": "Structure",
+    "json_id": "signal_protein_subtype",
+    "title": "Signal protein subtype",
+    "data_type": "textselect",
+    "allow_filter": true,
+    "width": "90px"
+  },
+  {
+    "column_group": "Ligand model score",
+    "json_id": "af2_score",
+    "title": "AF2 (PAE mean)",
+    "data_type": "numeric",
+    "allow_filter": true,
+    "precision": 2,
+    "width": "70px",
+    "exportHeaderOverride": "AF2 score (PAE mean)"
+  },
+  {
+    "column_group": "Ligand model score",
+    "json_id": "boltz2_score",
+    "title": "Boltz2 (Ligand pLDDT)",
+    "data_type": "numeric",
+    "allow_filter": true,
+    "precision": 2,
+    "width": "70px",
+    "exportHeaderOverride": "Boltz2 score (Ligand pLDDT)"
+  },
+  {
+    "column_group": "Ligand model score",
+    "json_id": "rfaa_score",
+    "title": "RFAA (pLDDT mean)",
+    "data_type": "numeric",
+    "allow_filter": true,
+    "precision": 2,
+    "width": "70px",
+    "exportHeaderOverride": "RFAA score (pLDDT mean)"
+  },
+  {
+    "column_group": "Date",
+    "json_id": "publication_date",
+    "title": "Date",
+    "data_type": "date",
+    "allow_filter": true,
+    "width": "90px",
+    "exportHeaderOverride": "Date"
+  }
+]

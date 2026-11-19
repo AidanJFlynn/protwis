@@ -1,4 +1,5 @@
 from decimal import Decimal
+import json as JSON
 
 from django.conf import settings
 from django.db.models import Q, Prefetch, ExpressionWrapper, Sum, Case, When, IntegerField, Max, Min, BooleanField, Count, FloatField, Value
@@ -9,6 +10,8 @@ from protein.models import Protein, ProteinConformation, ProteinSegment
 from interaction.models import StructureLigandInteraction
 from signprot.models import SignprotComplex
 from structure.templatetags.structure_extras import only_gproteins, only_arrestins, only_fusions, only_antibodies
+from common.tools import HTMLRemover
+
 Alignment = getattr(__import__('common.alignment_' + settings.SITE_NAME, fromlist=['Alignment']), 'Alignment')
 
 def get_best_resolutions(resolutions):
@@ -240,7 +243,7 @@ def PdbTableDataSource():
                 # Slight reformatting along the lines of the structure browser
                 entry['signal_protein_subtype'] = ep[pdb_id]['display_name']
                 if ep[pdb_id]['category'] == "G alpha" and entry['signal_protein_subtype'][0] == 'G':
-                    entry['signal_protein_subtype'] = '&alpha;' + entry['signal_protein_subtype'][1:]
+                    entry['signal_protein_subtype'] = 'α' + entry['signal_protein_subtype'][1:]
 
                 entry['signal_protein_note'] = ep[pdb_id]['note']
                 try:
@@ -263,12 +266,15 @@ def PdbTableDataSource():
             entry['fusion'] = fusion
             entry['antibody'] = antibody
 
-            entry['ligand'] = None
-            entry['ligand_role'] = None
+            entry['ligand_ids'] = []
+            entry['ligand_names'] = []
+            entry['ligand_roles'] = []
+            entry['ligand_names_formatting'] = []
 
             for l in s.ligands.all():
-                entry['ligand'] = l.ligand.name
-                entry['ligand_role'] = l.ligand_role.name
+                entry['ligand_ids'].append(l.ligand.id)
+                entry['ligand_names'].append(l.ligand.name)
+                entry['ligand_roles'].append(l.ligand_role.name)
 
             entry['query_effector'] = effector
             entry['is_complex'] = s.is_complex

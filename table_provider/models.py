@@ -6,7 +6,9 @@ class GpcrStructureStatisticsTable(models.Model):
     uniprot_entry_name = models.CharField(max_length=20, null=False)
     uniprot_accession = models.CharField(max_length=20, null=False)
     protein_name = models.CharField(max_length=100, null=False)
+    protein_name_formatting = JSONField(default=list, null=True)
     receptor_family = models.CharField(max_length=100, null=True)
+    receptor_family_formatting = JSONField(default=list, null=True)
     receptor_class = models.CharField(max_length=100, null=True)
     gene_name = models.CharField(max_length=100, null=True)
     gene_entrez_id = models.CharField(max_length=100, null=True)
@@ -132,55 +134,108 @@ class GpcrStructureStatisticsTable(models.Model):
 
 
 class GpcrStructureBrowserTable(models.Model):
-    """Flat, per-structure table backing the structure browser (and, from round 2,
-    the ligand-interaction PDB selection page). Built by
-    `manage.py build_structure_browser_table` from structure.tables.structure_browser_table_query.
+    """Model representing the structure browser table, one row per experimental structure, generated from the data
+    retrieved by StructureBrowserTableRows. Also backs the ligand interaction structure selection page, which is
+    limited to the rows with has_ligand_interactions."""
 
-    Only fields that need real per-row computation (regex classification, picking
-    the arrestin/G-alpha row, list-building, subqueries) are stored here — plain
-    FK-chain scalars (family, class, species, state, pdb, resolution, ...) are read
-    live via select_related off `structure` at request time instead, since a join
-    over this table's row count (a few thousand) is effectively free.
-    """
-
-    structure = models.OneToOneField('structure.Structure', on_delete=models.CASCADE,
-                                      primary_key=True, related_name='browser_row')
-    arrestin_extra_protein = models.ForeignKey('structure.StructureExtraProteins', null=True,
-                                                on_delete=models.SET_NULL, related_name='+')
-
+    # Structure (plain ids, no foreign keys, so the table can be rebuilt independently)
+    structure_id = models.IntegerField(null=False)
+    pdb_code = models.CharField(max_length=20, null=False)
+    method = models.CharField(max_length=50, null=True)
+    refined_structure = models.CharField(max_length=30, null=True)  # e.g. "6KPF_refined", null when not refined
+    resolution = models.FloatField(null=True)
+    representative = models.BooleanField(null=False, default=False)
+    preferred_chain = models.CharField(max_length=20, null=True)
+    state = models.CharField(max_length=30, null=True)
+    gprot_bound_likeness = models.FloatField(null=True)
     coverage = models.IntegerField(null=True)
-    sodium_site = models.BooleanField(default=False)
 
-    fusions = models.TextField(null=True)
-    antibodies = models.TextField(null=True)
-
-    auxiliary_molecules = models.TextField(null=True)
-    auxiliary_molecule_type = models.TextField(null=True)
-    auxiliary_molecule_function = models.TextField(null=True)
-
-    ligands = JSONField(default=list)
-    ligand_type = models.TextField(null=True)
-    ligand_role = models.TextField(null=True)
-
-    endo_ligands = JSONField(default=list)
-    endo_type = models.TextField(null=True)
-
-    gene_name = models.CharField(max_length=100, null=True)
-    gene_entrez_url = models.TextField(null=True)
-    iuphar_link = models.TextField(null=True)
+    # Receptor
+    uniprot_entry_name = models.CharField(max_length=100, null=False)
+    uniprot_accession = models.CharField(max_length=100, null=True)
+    uniprot_name = models.CharField(max_length=100, null=False)
+    protein_name = models.CharField(max_length=200, null=True)  # plain text, filtered and ordered on
+    protein_name_formatting = JSONField(default=list, null=True)
     iuphar_index = models.CharField(max_length=50, null=True)
+    gene_name = models.CharField(max_length=100, null=True)
+    gene_entrez_id = models.CharField(max_length=20, null=True)
+    receptor_family = models.CharField(max_length=200, null=True)
+    receptor_family_formatting = JSONField(default=list, null=True)
+    receptor_class = models.CharField(max_length=100, null=True)
+    species_common_name = models.CharField(max_length=100, null=True)
 
-    # forward-looking, for the round-2 ligand-interaction selection page
-    has_ligand_interactions = models.BooleanField(default=False)
-    num_annotated_ligands = models.IntegerField(default=0)
-    num_interactions = models.IntegerField(default=0)
+    # Signalling protein (the G alpha or arrestin chain)
+    signal_protein_family = models.CharField(max_length=100, null=True)
+    signal_protein_subtype = models.CharField(max_length=100, null=True)
+    signal_protein_subtype_formatting = JSONField(default=list, null=True)
+    signal_protein_entry_name = models.CharField(max_length=100, null=True)
+    signal_protein_note = models.CharField(max_length=100, null=True)
+    signal_protein_pcntseq = models.IntegerField(null=True)
+
+    # Structure ligands, as JSON lists; ligand_ids is parallel to ligand_names. Apo structures have no ligands.
+    ligand_ids = JSONField(default=list)
+    ligand_names = JSONField(default=list)
+    ligand_names_formatting = JSONField(default=list, null=True)
+    ligand_type = JSONField(default=list)
+    ligand_role = JSONField(default=list)
+
+    # Auxiliary proteins and small molecules, as JSON lists
+    fusion = JSONField(default=list)
+    antibody = JSONField(default=list)
+    auxiliary_molecule = JSONField(default=list)
+    auxiliary_molecule_type = JSONField(default=list)
+    auxiliary_molecule_function = JSONField(default=list)
+
+    # Natural (endogenous) ligands of the receptor; endo_ligand_ids is parallel to endo_ligand_names
+    endo_ligand_ids = JSONField(default=list)
+    endo_ligand_names = JSONField(default=list)
+    endo_ligand_names_formatting = JSONField(default=list, null=True)
+    endo_ligand_type = JSONField(default=list)
+
+    # Sodium ion sites ("Yes" / "No")
+    sodium_site = models.CharField(max_length=10, null=False)
+    sodium = models.CharField(max_length=10, null=False)
+
+    # Reference
+    authors = models.TextField(null=True)
+    reference_index = models.CharField(max_length=100, null=True)
+    reference_web_resource = models.CharField(max_length=50, null=True)  # WebResource slug the index links to
+    publication_date = models.DateField(null=True)
+
+    # Ligand interactions, used to scope the ligand interaction selection page
+    has_ligand_interactions = models.BooleanField(null=False, default=False)
+    num_annotated_ligands = models.IntegerField(null=False, default=0)
+    num_interactions = models.IntegerField(null=False, default=0)
 
     def __str__(self):
-        return "{}".format(self.structure_id)
+        return "{} - {}".format(self.pdb_code, self.uniprot_entry_name)
 
     class Meta:
+        """Index definitions for the GpcrStructureBrowserTable model to optimize query performance during table filtering"""
+
         db_table = "table_gpcr_structure_browser"
         indexes = [
+            models.Index(fields=["pdb_code"], name="gsbt_pdb_code_idx"),
+            models.Index(fields=["method"], name="gsbt_method_idx"),
+            models.Index(fields=["resolution"], name="gsbt_resolution_idx"),
+            models.Index(fields=["representative"], name="gsbt_representative_idx"),
+            models.Index(fields=["state"], name="gsbt_state_idx"),
+            models.Index(fields=["gprot_bound_likeness"], name="gsbt_gprot_bound_idx"),
+            models.Index(fields=["coverage"], name="gsbt_coverage_idx"),
+            models.Index(fields=["uniprot_name"], name="gsbt_uniprot_name_idx"),
+            models.Index(fields=["protein_name"], name="gsbt_protein_name_idx"),
+            models.Index(fields=["gene_name"], name="gsbt_gene_idx"),
+            models.Index(fields=["receptor_family"], name="gsbt_receptor_family_idx"),
+            models.Index(fields=["receptor_class"], name="gsbt_receptor_class_idx"),
+            models.Index(fields=["species_common_name"], name="gsbt_species_idx"),
+            models.Index(fields=["signal_protein_family"], name="gsbt_sig_prot_family_idx"),
+            models.Index(fields=["signal_protein_subtype"], name="gsbt_sig_prot_subtype_idx"),
+            models.Index(fields=["signal_protein_pcntseq"], name="gsbt_sig_prot_pcntseq_idx"),
+            models.Index(fields=["ligand_type"], name="gsbt_ligand_type_idx"),
+            models.Index(fields=["ligand_role"], name="gsbt_ligand_role_idx"),
+            models.Index(fields=["sodium_site"], name="gsbt_sodium_site_idx"),
+            models.Index(fields=["sodium"], name="gsbt_sodium_idx"),
+            models.Index(fields=["publication_date"], name="gsbt_publication_date_idx"),
             models.Index(fields=["has_ligand_interactions"], name="gsbt_has_li_idx"),
         ]
 
@@ -188,7 +243,9 @@ class PdbTable (models.Model):
     uniprot_entry_name = models.CharField(max_length=30, null=False)
     uniprot_accession = models.CharField(max_length=10, null=False)
     protein_name_short = models.CharField(max_length=30, null=False)
+    protein_name_short_formatting = JSONField(default=list, null=True)
     receptor_family_short = models.CharField(max_length=50, null=True)
+    receptor_family_short_formatting = JSONField(default=list, null=True)
     receptor_class_code = models.CharField(max_length=15, null=True)
     gene_name = models.CharField(max_length=30, null=True)
     gene_entrez_id = models.CharField(max_length=20, null=True)
@@ -206,12 +263,15 @@ class PdbTable (models.Model):
     tm6_angle = models.DecimalField(max_digits=5, decimal_places=2, null=True)
     signal_protein = models.CharField(max_length=20, null=True)
     signal_protein_subtype = models.CharField(max_length=30, null=True)
+    signal_protein_subtype_formatting = JSONField(default=list, null=True)
     signal_protein_note = models.CharField(max_length=100, null=True)
     signal_protein_pcntseq = models.DecimalField(max_digits=5, decimal_places=2, null=True)
     fusion = models.CharField(max_length=100, null=True)
     antibody = models.CharField(max_length=100, null=True)
-    ligand = models.CharField(max_length=250, null=True)
-    ligand_role = models.CharField(max_length=30, null=True)
+    ligand_ids = JSONField(default=list, null=True)
+    ligand_names = JSONField(default=list, null=True)
+    ligand_names_formatting = JSONField(default=list, null=True)
+    ligand_roles = JSONField(default=list, null=True)
     query_effector = models.CharField(max_length=20, null=True)
     is_complex = models.BooleanField(null=False, default=False)
 
@@ -247,8 +307,8 @@ class PdbTable (models.Model):
             models.Index(fields=["signal_protein_pcntseq"], name="pdb_sig_prot_pcntseq_idx"),
             models.Index(fields=["fusion"], name="pdb_fusion_idx"),
             models.Index(fields=["antibody"], name="pdb_antibody_idx"),
-            models.Index(fields=["ligand"], name="pdb_ligand_idx"),
-            models.Index(fields=["ligand_role"], name="pdb_ligand_role_idx")
+            models.Index(fields=["ligand_names"], name="pdb_ligand_idx"),
+            models.Index(fields=["ligand_roles"], name="pdb_ligand_role_idx")
         ]
 
 
@@ -261,14 +321,16 @@ class PhysiologicalLigandsTable(models.Model):
     uniprot_entry_name = models.CharField(max_length=100, null=False)
     uniprot_accession = models.CharField(max_length=100, null=True)
     uniprot_name = models.CharField(max_length=100, null=False)
-    protein_name = models.CharField(max_length=200, null=False)
+    protein_name = models.CharField(max_length=200, null=False)  # plain text, filtered and ordered on
+    protein_name_formatting = JSONField(default=list, null=True)
     gene_name = models.CharField(max_length=100, null=True)
     gene_entrez_id = models.CharField(max_length=20, null=True)
     species_common_name = models.CharField(max_length=100, null=True)
 
     # Ligand
     ligand_id = models.IntegerField(null=False)
-    ligand_name = models.TextField(null=False)
+    ligand_name = models.TextField(null=False)  # plain text, filtered and ordered on
+    ligand_name_formatting = JSONField(default=list, null=True)
     gtp_ligand_index = models.CharField(max_length=50, null=True)
     gtp_classification = models.CharField(max_length=200, null=True)
     potency_ranking = models.IntegerField(null=True)
@@ -322,4 +384,78 @@ class PhysiologicalLigandsTable(models.Model):
             models.Index(fields=["pki_min"], name="plt_pki_min_idx"),
             models.Index(fields=["pki_mid"], name="plt_pki_mid_idx"),
             models.Index(fields=["pki_max"], name="plt_pki_max_idx"),
+        ]
+
+
+class LigandComplexModelsTable(models.Model):
+    """Model representing the ligand complex models table, one row per model structure, generated from the data retrieved by LigandComplexModelsTableRows"""
+
+    # Model
+    structure_id = models.IntegerField(null=False)
+    pdb_code = models.CharField(max_length=100, null=True)
+    has_signprot = models.BooleanField(null=False, default=False)
+
+    # Ligand
+    ligand_id = models.IntegerField(null=False)
+    ligand_name = models.TextField(null=True)  # plain text, filtered and ordered on
+    ligand_name_formatting = JSONField(default=list)
+    mol_modality = models.CharField(max_length=100, null=True)
+    pharm_modality = models.CharField(max_length=200, null=True)
+    physiological = models.CharField(max_length=10, null=False)
+    clinical = models.CharField(max_length=30, null=False)
+
+    # Compound preview data for the ligand column
+    sequence = models.TextField(null=True)
+    smiles_for_image = models.TextField(null=True)  # null when no image can be generated from the SMILES
+
+    # Receptor
+    gene_name = models.CharField(max_length=100, null=True)
+    gene_entrez_id = models.CharField(max_length=20, null=True)
+    uniprot_entry_name = models.CharField(max_length=100, null=False)
+    protein_name = models.CharField(max_length=200, null=True)  # plain text, filtered and ordered on
+    protein_name_formatting = JSONField(default=list, null=True)
+    receptor_family = models.CharField(max_length=200, null=True)
+    receptor_class = models.CharField(max_length=100, null=True)
+    receptor_modality = models.CharField(max_length=100, null=True)
+    receptor_chemotype = models.CharField(max_length=100, null=True)
+
+    # Structure
+    state = models.CharField(max_length=50, null=True)
+    signal_protein_family = models.CharField(max_length=100, null=True)
+    signal_protein_subtype = models.CharField(max_length=100, null=True)
+
+    # Ligand model scores (null when not available for the model's structure type)
+    af2_score = models.FloatField(null=True)
+    boltz2_score = models.FloatField(null=True)
+    rfaa_score = models.FloatField(null=True)
+
+    publication_date = models.DateField(null=True)
+
+    def __str__(self):
+        return "{} - {}".format(self.pdb_code, self.ligand_name)
+
+    class Meta:
+        """Index definitions for the LigandComplexModelsTable model to optimize query performance during table filtering"""
+
+        db_table = "table_ligand_complex_models"
+        indexes = [
+            models.Index(fields=["pdb_code"], name="lcm_pdb_code_idx"),
+            models.Index(fields=["ligand_name"], name="lcm_ligand_name_idx"),
+            models.Index(fields=["mol_modality"], name="lcm_mol_modality_idx"),
+            models.Index(fields=["pharm_modality"], name="lcm_pharm_modality_idx"),
+            models.Index(fields=["physiological"], name="lcm_physiological_idx"),
+            models.Index(fields=["clinical"], name="lcm_clinical_idx"),
+            models.Index(fields=["gene_name"], name="lcm_gene_idx"),
+            models.Index(fields=["protein_name"], name="lcm_protein_name_idx"),
+            models.Index(fields=["receptor_family"], name="lcm_receptor_family_idx"),
+            models.Index(fields=["receptor_class"], name="lcm_receptor_class_idx"),
+            models.Index(fields=["receptor_modality"], name="lcm_receptor_modality_idx"),
+            models.Index(fields=["receptor_chemotype"], name="lcm_receptor_chemotype_idx"),
+            models.Index(fields=["state"], name="lcm_state_idx"),
+            models.Index(fields=["signal_protein_family"], name="lcm_sig_prot_family_idx"),
+            models.Index(fields=["signal_protein_subtype"], name="lcm_sig_prot_subtype_idx"),
+            models.Index(fields=["af2_score"], name="lcm_af2_score_idx"),
+            models.Index(fields=["boltz2_score"], name="lcm_boltz2_score_idx"),
+            models.Index(fields=["rfaa_score"], name="lcm_rfaa_score_idx"),
+            models.Index(fields=["publication_date"], name="lcm_publication_date_idx"),
         ]

@@ -1,7 +1,7 @@
 from django.conf.urls import url
 from django.views.decorators.cache import cache_page
 from django.views.generic import TemplateView
-from table_provider.views import GpcrStructureStatisticsSummaryTable, PdbStructureSummaryTable, PhysiologicalLigandsSummaryTable, ConfigurationFactoryView
+from table_provider.views import GpcrStructureBrowserSummaryTable, GpcrStructureStatisticsSummaryTable, PdbStructureSummaryTable, PhysiologicalLigandsSummaryTable, LigandComplexModelsSummaryTable, ConfigurationFactoryView
 
 
 def datatable_urls(path, view_class, name, cached_path=None):
@@ -32,6 +32,10 @@ urlpatterns = [
                     cached_path='pdb_data_table_cached'),
     *datatable_urls('physiological_ligands_table', PhysiologicalLigandsSummaryTable, 'physiological_ligands_table',
                     cached_path='physiological_ligands_table_cached'),
+    *datatable_urls('ligand_complex_models_table', LigandComplexModelsSummaryTable, 'ligand_complex_models_table',
+                    cached_path='ligand_complex_models_table_cached'),
+    *datatable_urls('structure_browser_table', GpcrStructureBrowserSummaryTable, 'structure_browser_table',
+                    cached_path='structure_browser_table_cached'),
 
     ######################################
     # TableManager configuration factory #

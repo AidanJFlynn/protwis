@@ -9,8 +9,6 @@ from django.views.decorators.cache import cache_page
 
 urlpatterns = [
     url(r'^$', StructureBrowser.as_view(), name='structure_browser'),
-    url(r'^data/$', cache_page(60 * 60 * 24)(StructureDataJsonView.as_view()), name='structure_data_json'),
-    # url(r'^data/$', StructureDataJsonView.as_view(), name='structure_data_json'),
     # url(r'^$', StructureBrowser.as_view(), name='structure_browser'),
     url(r'^g_protein_structure_browser$', cache_page(60*60*24)(EffectorStructureBrowser.as_view(effector='gprot')), name='g_protein_structure_browser'),
     url(r'^arrestin_structure_browser$', cache_page(60*60*24)(EffectorStructureBrowser.as_view(effector='arrestin')), name='arrestin_structure_browser'),
@@ -30,7 +28,6 @@ urlpatterns = [
     url(r'^structure_models/receptor/(?P<modelname>\w+)_(?P<state>[a-z]+)_(?P<fullness>full|noloops)/download_pdb$', SingleModelDownload, name='single_model_download_state'),
     url(r'^structure_models/receptor/(?P<modelname>\w+)_(?P<fullness>full|noloops)/download_pdb$', SingleModelDownload, name='single_model_download_receptor'),
     path('ligand_complex_models', LigandComplexModels.as_view(), name='ligand_complex_models'),
-    url(r'^ligand_complex_models/data/$', cache_page(60 * 60 * 24)(LigandComplexModelsDataJsonView.as_view()), name='ligand_complex_models_data_json'),
     url(r'^ligand_complex_models/(?P<header>[^/]+)$', LigandComplexDetails, name='ligand_complex_details'),
     url(r'^ligand_complex_models/view/(?P<modelname>[^/]+)$', ServeComplexModDiagram, name='complexmod_serve_view'),
     path('lig_complexmod_download', LigComplexmodDownload, name='lig_complexmod_download'),

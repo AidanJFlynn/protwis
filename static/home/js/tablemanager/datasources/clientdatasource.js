@@ -79,7 +79,7 @@ class ClientDataSource extends DataSourceBase {
   async getOptions(column) {
     await this.tableManagerReference.ready;
     const data = this._dataTable.column(column.col_idx).data().toArray();
-    return Array.from(new Set(data)).sort();
+    return Array.from(new Set(data.map((value) => value?.content ?? value))).sort();
   }
 
   /**
@@ -190,6 +190,24 @@ class ClientDataSource extends DataSourceBase {
   async getExportRows(applySearch) {
     await this.tableManagerReference.ready;
     return this._dataTable.rows({ search: applySearch ? "applied" : "none", order: "applied" }).data().toArray();
+  }
+
+  /**
+   * Gets the row data of the rows with the given row ids, in the table's current order, from the loaded rows
+   * (including rows hidden by the current search and filters).
+   * @param {Iterable<number|string>} rowIds - The row ids.
+   * @param {AbortSignal} [signal] - Not used: client-side rows are already loaded, so there is no request to abort.
+   * @returns {Promise<Array<Object>>} The row data of each row found.
+   */
+  async getRowsById(rowIds, signal) {
+    await this.tableManagerReference.ready;
+    const column = this._checkboxColumn();
+    const ids = new Set(this._normaliseRowIds(rowIds));
+    if (ids.size === 0) {
+      return [];
+    }
+    return this._dataTable.rows({ search: "none", order: "applied" }).data().toArray()
+      .filter((rowData) => ids.has(Number.parseInt(rowData[column.json_id]?.row_id)));
   }
 
   /**

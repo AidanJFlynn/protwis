@@ -2,8 +2,11 @@ from table_provider.serverside.querystringprocessing import DatatablesQueryStrin
 import datetime
 import json
 import math
+import unicodedata
 
 from django.db.models import Q
+
+import common.db_functions  # registers the `nfkc` lookup transform
 
 
 class FilterError(ValueError):
@@ -43,7 +46,7 @@ def _filter_list(spec, key, data_field, item_types=(str,)):
  allowing for flexible and dynamic filtering of data based on user input.
 """
 class FilterSet:
-    ignored_datatypes = ['checkbox', 'json']
+    ignored_datatypes = ['checkbox']  # not orderable; checkbox filters are row id filters (see parse_filters)
 
     def __init__(self, request, SerializerClass):
         """Initializes a FilterSet instance."""
@@ -93,16 +96,18 @@ class FilterSet:
             if not field_type:
                 raise FilterError(f"Unknown column '{data_field}'.")
 
-            if field_type in self.ignored_datatypes:
-                continue
-
             if not search_value:
                 continue
 
-            try:
-                spec = json.loads(search_value)
-            except (TypeError, ValueError):
-                raise FilterError(f"Invalid filter for field '{data_field}'; expected a JSON object.")
+            # The checkbox pseudo-column has no database field, but filters by row id: its cells' row_id is the pk
+            if field_type == 'checkbox':
+                self.add_filter(RowIdFilter(self._row_ids(self._parse_spec(search_value, data_field), data_field)))
+                continue
+
+            if field_type in self.ignored_datatypes:
+                continue
+
+            spec = self._parse_spec(search_value, data_field)
 
             db_field = self.field_mappings.get(data_field)
             if field_type == 'text':
@@ -116,10 +121,11 @@ class FilterSet:
                         continue
                     filter_req = DateRangeFilter(db_field, spec.get('min'), spec.get('max'))
                 else:
-                    # Exact ISO dates or contains matches on the ISO text (e.g. "2025" or "2025-01")
+                    # Exact ISO dates or contains matches on the ISO text (e.g. "2025" or "2025-01").
+                    # Not normalised: the nfkc transform does not exist on DateField, and ISO dates are ASCII.
                     _check_filter_keys(spec, TEXT_FILTER_KEYS, data_field)
                     filter_req = TextFilter(db_field, _date_values(_filter_list(spec, 'in', data_field), data_field),
-                                            _filter_list(spec, 'contains', data_field))
+                                            _filter_list(spec, 'contains', data_field), normalize=False)
             elif field_type == 'numeric':
                 _check_filter_keys(spec, NUMERIC_FILTER_KEYS, data_field)
                 if spec.get('min') is None and spec.get('max') is None:
@@ -130,10 +136,32 @@ class FilterSet:
                 if values is None:
                     continue
                 filter_req = BooleanFilter(db_field, values)
+            elif field_type == 'json':
+                _check_filter_keys(spec, TEXT_FILTER_KEYS, data_field)
+                filter_req = JsonFilter(db_field, _filter_list(spec, 'in', data_field), _filter_list(spec, 'contains', data_field))
             else:
                 continue
 
             self.add_filter(filter_req)
+
+    @staticmethod
+    def _parse_spec(search_value, data_field):
+        """The JSON filter object in a column's search value."""
+        try:
+            return json.loads(search_value)
+        except (TypeError, ValueError):
+            raise FilterError(f"Invalid filter for field '{data_field}'; expected a JSON object.")
+
+    @staticmethod
+    def _row_ids(spec, data_field):
+        """Row ids of a checkbox column filter, {"in": [id, ...]}. An empty list matches no rows."""
+        if not isinstance(spec, dict) or set(spec) != {'in'}:
+            raise FilterError(f"Invalid filter for field '{data_field}'; expected an object with the key 'in'.")
+        ids = spec['in']
+        # bool is an int subclass, so reject it explicitly
+        if not isinstance(ids, list) or not all(isinstance(i, int) and not isinstance(i, bool) for i in ids):
+            raise FilterError(f"Invalid 'in' filter for field '{data_field}'; expected a list of integer row ids.")
+        return ids
 
     @staticmethod
     def _boolean_filter_values(spec, data_field):
@@ -221,12 +249,23 @@ class TextFilter(FilterRequirement):
     contains values. The two lists correspond to the "in" and "contains" keys of the JSON filter the client
     sends (exact values are chosen Select2 options, contains values are typed-in Select2 tags), and are used
     as given: no regex parsing or escaping is involved.
+
+    With normalize=True (the default) the column is compared in its NFKC-normalised form via the `nfkc`
+    transform, which only exists on CharField and TextField. Pass normalize=False for other column types
+    (e.g. dates filtered as text) and for internal filters on plain ASCII values.
     """
 
-    def __init__(self, db_field_name, exact=(), contains=()):
+    def __init__(self, db_field_name, exact=(), contains=(), normalize=True):
         super().__init__(db_field_name, 'text')
+        if normalize:
+            # Normalise the values as well as the column, whichever client path produced them (chosen options,
+            # typed or pasted text, direct requests). NFKC is idempotent, so already normalised values are unchanged.
+            exact = [unicodedata.normalize('NFKC', v) for v in exact]
+            contains = [unicodedata.normalize('NFKC', v) for v in contains]
         self.exact_values = list(exact)
         self.contains_values = [v for v in contains if v]  # an empty contains term would match every row
+        # Apply NFKC normalization to the field for text comparisons by default
+        self.lookup_prefix = f"{db_field_name}__nfkc" if normalize else db_field_name
 
     def format_query(self):
         """Converts filter values into a Django Q object for querying the database.
@@ -237,14 +276,31 @@ class TextFilter(FilterRequirement):
 
         # Exact-match values (works for 1 or many; __in ORs them internally)
         if self.exact_values:
-            query |= Q(**{f"{self.db_field_name}__in": self.exact_values})
+            query |= Q(**{f"{self.lookup_prefix}__in": self.exact_values})
 
         # Contains matches, ORed with exact matches and each other
         for value in self.contains_values:
-            query |= Q(**{f"{self.db_field_name}__icontains": value})
+            query |= Q(**{f"{self.lookup_prefix}__icontains": value})
 
         return query
 
+
+
+class JsonFilter(TextFilter):
+    """A text filter for JSONField columns.
+
+    NOTE: THIS IS ONLY A STOP-GAP SOLUTION UNTIL DJANGO IS UPGRADED TO A VERSION THAT SUPPORTS JSON SEARCHES
+
+    Behaves like TextFilter, but searches the JSON serialised as text (via the `astext` transform, a
+    `::text` cast in PostgreSQL). Note that the text includes JSON syntax, e.g. '["A", "B"]', so
+    exact ("in") matches only succeed against the complete serialised value; "contains" is the
+    useful lookup. Normalisation (NFKC) is applied on the text unless normalize=False.
+    """
+
+    def __init__(self, db_field_name, exact=(), contains=(), normalize=True):
+        super().__init__(db_field_name, exact, contains, normalize)
+        self.filter_type = 'json'
+        self.lookup_prefix = f"{db_field_name}__astext" + ("__nfkc" if normalize else "")
 
 
 class NumericRangeFilter(FilterRequirement):
@@ -308,6 +364,20 @@ class DateRangeFilter(FilterRequirement):
         if 'max' in self.filter_values:
             query &= Q(**{f"{self.db_field_name}__lte": self.filter_values['max']})
         return query
+
+class RowIdFilter(FilterRequirement):
+    """Matches the rows whose primary key is one of the given row ids (the row_id of the checkbox column's cells).
+    An empty list matches no rows.
+    """
+
+    def __init__(self, row_ids):
+        super().__init__('pk', 'rowid')
+        self.filter_values = sorted(set(row_ids))
+
+    def format_query(self):
+        """Converts the row ids into a Django Q object for querying the database"""
+        return Q(pk__in=self.filter_values)
+
 
 class BooleanFilter(FilterRequirement):
     """Represents a boolean filter requirement for a specific database field.

@@ -1,175 +1,258 @@
 ﻿{% extends "home/base.html" %}
 {% load static %}
-{% load structure_extras %}
 
 {% block addon_css %}
-  <link rel="stylesheet" href="{% static 'home/css/construct_browser.css' %}" type="text/css" />
-  <link rel="stylesheet" href="{% static 'home/css/structure_browser.css' %}" type="text/css" />
-  <link href="{% static 'home/css/sequenceviewer.css' %}" rel="stylesheet">
-  <link href="{% static 'home/css/modal.css' %}" rel="stylesheet">
-  <link rel="stylesheet" type="text/css" href="{% static 'home/css/jquery.powertip.css' %}" />
-  <link rel="stylesheet" href="{% static 'home/css/NewDrugsBrowser_datatables.min.css' %}" type="text/css"/>
-  <link rel="stylesheet" href="{% static 'home/css/select2_4.1.0-rc.0._full.css' %}" type="text/css">
-  <link rel="stylesheet" href="{% static 'home/css/BusyLoad.css' %}" type="text/css">
-  <link rel="stylesheet" href="{% static 'home/css/structure/structure_browser_modern.css' %}" type="text/css">
+    <link rel="stylesheet" href="{% static '/home/css/frameworks/datatables/datatables_bundle-3.1.4_min.css' %}">
+    <link rel="stylesheet" href="{% static '/home/css/frameworks/select2/4.1.0/select2.css' %}">
+    <link rel="stylesheet" href="{% static 'home/css/tablemanager.css' %}">
+    <link href="{% static 'home/css/modal.css' %}" rel="stylesheet">
+    <style type="text/css">
+        @media (min-width: 1600px){
+            #content {
+                width: 1570px;
+            }
+        }
+        @media (min-width: 1800px){
+            #content {
+                width: 1770px;
+            }
+        }
+        #structure-browser-actions {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 6px;
+            margin-bottom: 10px;
+        }
+        #superposition_modal_table tbody tr {
+            cursor: pointer;
+        }
+    </style>
 {% endblock %}
 
 {% block content %}
-<div id="browser">
-  <div class="container" id="StructureBrowserContainer" style="margin-top: 15px; position: absolute; left: 0px; width: 100%;">
-    <div id="Init_loader"></div>
-
-    <div class="col-md-12" id="StructureBrowserTableContainer" style="display: none">
-      <div>
-        <table width="100%" class="display compact" id="StructureBrowserTable">
-          <thead>
-            <!-- Dummy Header Row for Complex Header Fix -->
-            <tr>
-              <th colspan="36" style="text-align: center" data-dt-order="disable"></th>
-            </tr>
-
-            <!-- Super Header Row -->
-            <tr style="padding-top: 10px; font-size: 14px; white-space: nowrap;">
-              <th colspan="6" style="text-align:center;" data-dt-order="disable">RECEPTORS</th>
-              <th colspan="3" style="text-align:center;border-left: 1px solid #cccccc;" data-dt-order="disable">CLASSIFICATIONS</th>
-              <th colspan="8" style="text-align:center;border-left: 1px solid #cccccc;" data-dt-order="disable">STRUCTURES</th>
-              <th colspan="4" style="text-align:center;border-left: 1px solid #cccccc;" data-dt-order="disable">SIGNAL PROTEINS</th>
-              <th colspan="3" style="text-align:center;border-left: 1px solid #cccccc;" data-dt-order="disable">STRUCTURE LIGANDS</th>
-              <th colspan="2" style="text-align:center;border-left: 1px solid #cccccc;" data-dt-order="disable">AUXILIARY PROTEINS</th>
-              <th colspan="3" style="text-align:center;border-left: 1px solid #cccccc;" data-dt-order="disable">AUXILIARY SMALL-MOLECULES</th>
-              <th colspan="2" style="text-align:center;border-left: 1px solid #cccccc;min-width: 220px;" data-dt-order="disable">NATURAL LIGANDS</th>
-              <th colspan="2" style="text-align:center;border-left: 1px solid #cccccc;" data-dt-order="disable">SODIUM ION SITES</th>
-              <th colspan="3" style="text-align:center;border-left: 1px solid #cccccc;" data-dt-order="disable">REFERENCES</th>
-            </tr>
-
-            <!-- Titles Row -->
-            <tr>
-              <th style="text-align: center;" data-dt-order="disable"><input type="checkbox" id="select-all"></th>
-              <th class="gpcrdb-col text-center" data-dt-order="disable">GPCRdb</th>
-              <th style="text-align: center;">
-                <div style="display: flex; flex-direction: column; align-items: center; gap: 2px;">
-                  <div>UniProt</div>
-                  <div><button class="icon-button" type="button" id="uniprot_copy"><i class="glyphicon glyphicon-export uniprot-export"></i></button></div>
-                </div>
-              </th>
-              <th style="text-align: center;">Gene</th>
-              <th style="text-align: center;">IUPHAR</th>
-              <th style="text-align: center;">ID</th>
-
-              <th style="text-align: center;">Receptor family</th>
-              <th style="text-align: center;">Class</th>
-              <th style="text-align: center;">Species</th>
-
-              <th style="text-align: center;">Method</th>
-              <th style="text-align: center;">
-                <div style="display: flex; flex-direction: column; align-items: center; gap: 2px;">
-                  <div>PDB</div>
-                  <div><button class="icon-button" type="button" id="pdb_copy"><i class="glyphicon glyphicon-export pdb-export"></i></button></div>
-                </div>
-              </th>
-              <th style="text-align: center;">Refined<br>structure <a href="https://docs.gpcrdb.org/structures.html#refined-structures" target="_blank" class="icon-button" title="Read more"><i class="glyphicon glyphicon-book"></i></a></th>
-              <th style="text-align: center;">Res <br>(Å)</th>
-              <th style="text-align: center;">Preferred<br>chain</th>
-              <th style="text-align: center;">State<br>
-                <span class="glyphicon glyphicon-info-sign"
-                      data-html="true" data-toggle="popover" data-trigger="hover" data-placement="bottom"
-                      data-content="<b>GPCR structure state classification</b><br>GPCRdb calculates a ‘degree active’ percent value for each structure. Fully inactive state structures (0% active) are defined based on a maximum Cα atom distance between class-specific residue pairs A: 11.9Å between 2x46 and 6x37, B1: 13.0Å between 2x53 and 6x42, C: 14.5Å between 2x43 and 6x39, and F: 13.0Å between 2x43 and 6x30. These distance cut-offs were defined based on the best correlation with structures reported as inactive in their publications. Fully active state structures (100% active) are defined as G protein or arrestin bound. These fully inactive and active state reference structures are used to measure the conformational similarity of and to classify all other structures into the same categories or to an intermediate state category for classes A and B1 (classes C and F have no intermediate state structures). The conformational similarity measure is based on all-to-all Cα atom distances between class-specific generic residue pairs. A few outlier structures that have a very low similarity to both inactive and active state reference structures are classified as 'Other' e.g., the structure of the platelet-activating receptor binding the antagonist foropafant."></span>
-                <a href="https://docs.gpcrdb.org/structures.html#structure-descriptors" target="_blank"><span class="glyphicon glyphicon-book icon-button"></span></a>
-              </th>
-              <th style="text-align: center;">Degree<br>active (%) <a href="https://docs.gpcrdb.org/structures.html#structure-descriptors" target="_blank" class="icon-button" title="Read more"><i class="glyphicon glyphicon-book"></i></a></th>
-              <th style="text-align: center;">% of Seq</th>
-
-              <th style="text-align: center;">Family</th>
-              <th style="text-align: center;">Subtype</th>
-              <th style="text-align: center;">Note</th>
-              <th style="text-align: center;">% of Seq</th>
-
-              <th style="text-align: center;">Name</th>
-              <th style="text-align: center;">Type</th>
-              <th style="text-align: center;">Modality</th>
-
-              <th style="text-align: center;">Fusion</th>
-              <th style="text-align: center;">Antibodies</th>
-
-              <th style="text-align: center;">Name</th>
-              <th style="text-align: center;">Type</th>
-              <th style="text-align: center;">Function</th>
-
-              <th style="text-align: center;">Name</th>
-              <th style="text-align: center;">Type</th>
-
-              <th style="text-align: center;">D2x50<br>S3x39</th>
-              <th style="text-align: center;">Sodium in<br>structure</th>
-
-              <th style="text-align: center;">Authors</th>
-              <th style="text-align: center;">Reference</th>
-              <th style="text-align: center;">Publication date</th>
-            </tr>
-
-            <!-- Filter Row (empty; filled by filter builder) -->
-            <tr>
-                <!-- 36 empty <th> cells -->
-                <th data-dt-order="disable"></th><th data-dt-order="disable"></th><th data-dt-order="disable"></th>
-                <th data-dt-order="disable"></th><th data-dt-order="disable"></th><th data-dt-order="disable"></th>
-                <th data-dt-order="disable"></th><th data-dt-order="disable"></th><th data-dt-order="disable"></th>
-                <th data-dt-order="disable"></th><th data-dt-order="disable"></th><th data-dt-order="disable"></th>
-                <th data-dt-order="disable"></th><th data-dt-order="disable"></th><th data-dt-order="disable"></th>
-                <th data-dt-order="disable"></th><th data-dt-order="disable"></th><th data-dt-order="disable"></th>
-                <th data-dt-order="disable"></th><th data-dt-order="disable"></th><th data-dt-order="disable"></th>
-                <th data-dt-order="disable"></th><th data-dt-order="disable"></th><th data-dt-order="disable"></th>
-                <th data-dt-order="disable"></th><th data-dt-order="disable"></th><th data-dt-order="disable"></th>
-                <th data-dt-order="disable"></th><th data-dt-order="disable"></th><th data-dt-order="disable"></th>
-                <th data-dt-order="disable"></th><th data-dt-order="disable"></th><th data-dt-order="disable"></th>
-                <th data-dt-order="disable"></th><th data-dt-order="disable"></th><th data-dt-order="disable"></th>
-                </tr>
-          </thead>
-          <tbody></tbody>
-        </table>
-      </div>
-    </div>
-  </div>
+<!-- Workflows on the selected structures; enabled while at least one structure is selected -->
+<div id="structure-browser-actions">
+    <button type="button" class="btn btn-default btn-sm selection-action" id="align-button" disabled>Align sequences</button>
+    <button type="button" class="btn btn-default btn-sm selection-action" id="download-button" disabled>Download PDBs</button>
+    <button type="button" class="btn btn-default btn-sm selection-action" id="superpose-button" disabled>Superposition</button>
+    <button type="button" class="btn btn-default btn-sm selection-action" id="copy-uniprot-button" disabled>Copy UniProt IDs</button>
+    <button type="button" class="btn btn-default btn-sm selection-action" id="copy-pdb-button" disabled>Copy PDB IDs</button>
+    <span id="structure-browser-selection-count">0 structure(s) selected</span>
 </div>
 
-<div id="superposition-modal" class="modal">
-  <div class="modal-content">
-    <button id="close_superposition_modal" style="float:right;display:inline;" aria-hidden="true" aria-label="Close" class="close" data-dismiss="superposition-modal">&times;</button>
-    <h3>Pick reference from selection</h3>
-    <p>Superpositions structures selected in the browser to the reference checked in this table</p>
-    <br>
-    <table id="superposition_modal_table" class="display compact" width="100%">
-      <thead>
-        <tr>
-          <th></th>
-          <th>PDB</th>
-          <th>UniProt</th>
-          <th>Gene</th>
-          <th>IUPHAR</th>
-          <th>Rec. family</th>
-          <th>Class</th>
-          <th>Species</th>
-          <th>State</th>
-          <th>PDB Date</th>
-        </tr>
-      </thead>
-      <tbody><!-- populated by JS --></tbody>
+<div style='overflow-y:hidden;'>
+    <table class="display compact" id="structure_browser_table">
+        <script type="module">
+            // Populate structure browser table using TableManager
+            import { TableManager } from "{% static 'home/js/tablemanager/tablemanager.js' %}";
+            import { InjectorTemplates } from "{% static 'home/js/tablemanager/injectors/injectortemplates.js' %}";
+
+            const MAX_DOWNLOAD = 100;
+            const MAX_SUPERPOSE = 50;
+
+            let config = null;
+            try {
+                config = await TableManager.fetchConfiguration(
+                    'structure_browser_table', //dataTableConfigName
+                    'clientside', //dataTableConfigVariant
+                    'structure_browser_table', //columnConfigName
+                    'basic') //columnConfigVariant
+            } catch(error) {
+                console.error('Error fetching configuration:', error);
+            }
+
+            if (config) {
+                // Initialize the table
+                const structureBrowserTable = new TableManager(config.columnsSpecifications, 'structure_browser_table');
+
+                // Register a super header injector to add info-icon to "Receptor State" header
+                structureBrowserTable.superHeaderInjectors.registerInjector("Receptor State", function(cellElementArray) {
+                    return InjectorTemplates.addInfoIconLink(cellElementArray, "https://docs.gpcrdb.org/structures.html#structure-descriptors");
+                });
+                structureBrowserTable.superHeaderInjectors.registerInjector("Structure", function(cellElementArray) {
+                    return InjectorTemplates.addInfoIconLink(cellElementArray, "https://docs.gpcrdb.org/structures.html#refined-structures");
+                });
+
+                structureBrowserTable.initialiseDataTable(config.datatableConfiguration);
+                window.tableManagers = window.tableManagers || {};
+                window.tableManagers.structureBrowserTable = structureBrowserTable;
+
+                //-------------------------------------//
+                //  Workflows on the selected structures //
+                //-------------------------------------//
+
+                // Checkbox data ({pdb_code, uniprot_entry_name}) of the selected structures (see GpcrStructureBrowserSerializer.CHECKBOX_DATA_FIELDS)
+                const selectedStructures = () =>
+                    [...structureBrowserTable.state.activeCheckBoxes.values()].map((checkbox) => checkbox.data);
+                const selectedPdbCodes = () => selectedStructures().map((structure) => structure.pdb_code);
+
+                // The superposition workflow can return here to pick its reference or targets (see superposition_workflow_index)
+                const superpositionMode = window.location.hash === "#keepselectionreference" ? "reference"
+                                        : window.location.hash === "#keepselectiontargets" ? "targets"
+                                        : "default";
+                const superposeButton = document.getElementById("superpose-button");
+                if (superpositionMode === "reference") {
+                    superposeButton.textContent = "Add reference to superposition";
+                } else if (superpositionMode === "targets") {
+                    superposeButton.textContent = "Add targets to superposition";
+                }
+
+                structureBrowserTable.eventPubSub.subscribe("checkboxStateChanged", function() {
+                    const count = structureBrowserTable.state.activeCheckBoxes.size;
+                    document.querySelectorAll("#structure-browser-actions .selection-action").forEach((button) => button.disabled = count === 0);
+                    document.getElementById("structure-browser-selection-count").textContent = `${count} structure(s) selected`;
+                });
+
+                document.getElementById("align-button").addEventListener("click", function() {
+                    ClearSelection("targets");
+                    selectedPdbCodes().forEach((pdbCode) => AddToSelection("targets", "structure", pdbCode));
+                    window.location.href = "/structure/selection_convert";
+                });
+
+                document.getElementById("download-button").addEventListener("click", function() {
+                    const pdbCodes = selectedPdbCodes();
+                    if (pdbCodes.length > MAX_DOWNLOAD) {
+                        showAlert(`Maximum number of selected entries is ${MAX_DOWNLOAD}`, "warning");
+                        return;
+                    }
+                    ClearSelection("targets");
+                    AddToSelection("targets", "structure_many", pdbCodes.join(","));
+                    window.location.href = "/structure/pdb_download";
+                });
+
+                superposeButton.addEventListener("click", function() {
+                    const pdbCodes = selectedPdbCodes();
+                    if (pdbCodes.length > MAX_SUPERPOSE) {
+                        showAlert(`Maximum number of selected entries is ${MAX_SUPERPOSE}`, "warning");
+                        return;
+                    }
+
+                    if (superpositionMode === "reference") {
+                        if (pdbCodes.length !== 1) {
+                            showAlert("Please select exactly one entry as reference", "danger");
+                            return;
+                        }
+                        AddToSelection("reference", "structure", pdbCodes[0]);
+                        window.location.href = "/structure/superposition_workflow_index#keepselection";
+                    } else if (superpositionMode === "targets") {
+                        AddToSelection("targets", "structure_many", pdbCodes.join(","));
+                        window.location.href = "/structure/superposition_workflow_index#keepselection";
+                    } else {
+                        openSuperpositionModal();
+                    }
+                });
+
+                // Plain text of a row's cell, as its column's data type reads it (link text, formatted names, ...)
+                function cellText(rowData, jsonId) {
+                    const value = rowData[jsonId];
+                    if (value === null || value === undefined) {
+                        return structureBrowserTable.nullValuePlaceholder;
+                    }
+                    const type = structureBrowserTable.columns.find((col) => col.json_id === jsonId)?.type;
+                    const text = typeof type?._plainText === "function" ? type._plainText(value) : String(value);
+                    return text || structureBrowserTable.nullValuePlaceholder;
+                }
+
+                // Lists the selected structures; clicking one makes it the reference and the others the targets.
+                // The checkboxes only carry the PDB code, so the rows shown are fetched by their row ids.
+                async function openSuperpositionModal() {
+                    let rows;
+                    try {
+                        rows = await structureBrowserTable.dataSource.getRowsById(structureBrowserTable.state.activeCheckBoxes.keys());
+                    } catch (error) {
+                        console.error("Fetching the selected structures failed:", error);
+                        showAlert("Could not load the selected structures", "danger");
+                        return;
+                    }
+
+                    ClearSelection("targets");
+                    ClearSelection("reference");
+
+                    const modal = document.getElementById("superposition-modal");
+                    const tbody = document.querySelector("#superposition_modal_table tbody");
+                    tbody.replaceChildren();
+
+                    // json ids of the modal's columns, after its checkbox column
+                    const columns = ["pdb", "uniprot", "gene", "protein", "receptor_family", "receptor_class",
+                                     "species_common_name", "state", "publication_date"];
+                    const pdbCodes = rows.map((rowData) => rowData.checkbox.data.pdb_code);
+                    rows.forEach((rowData, index) => {
+                        const tr = document.createElement("tr");
+                        const checkboxCell = document.createElement("td");
+                        const checkbox = document.createElement("input");
+                        checkbox.type = "checkbox";
+                        checkboxCell.appendChild(checkbox);
+                        tr.appendChild(checkboxCell);
+                        for (const jsonId of columns) {
+                            const td = document.createElement("td");
+                            td.textContent = cellText(rowData, jsonId);
+                            tr.appendChild(td);
+                        }
+                        tr.addEventListener("click", () => {
+                            checkbox.checked = true;
+                            const reference = pdbCodes[index];
+                            const targets = pdbCodes.filter((pdbCode) => pdbCode !== reference);
+                            AddToSelection("reference", "structure", reference);
+                            AddToSelection("targets", "structure_many", targets.join(","));
+                            window.location.href = "/structure/superposition_workflow_index#keepselection";
+                        });
+                        tbody.appendChild(tr);
+                    });
+
+                    modal.style.display = "block";
+                    document.getElementById("close_superposition_modal").onclick = () => modal.style.display = "none";
+                    window.addEventListener("click", (e) => { if (e.target === modal) modal.style.display = "none"; });
+                }
+
+                // Copies one value per selected structure to the clipboard, one per line
+                function copySelected(field, label) {
+                    const values = selectedStructures().map((structure) => structure[field]).filter((value) => value);
+                    if (values.length === 0) {
+                        showAlert(`No ${label} available for the selected structures`, "warning");
+                        return;
+                    }
+                    navigator.clipboard.writeText(values.join("\n"))
+                        .then(() => showAlert(`${label} copied to clipboard!`, "success"))
+                        .catch(() => showAlert(`Could not copy ${label} to the clipboard`, "danger"));
+                }
+                document.getElementById("copy-uniprot-button").addEventListener("click", () => copySelected("uniprot_entry_name", "UniProt IDs"));
+                document.getElementById("copy-pdb-button").addEventListener("click", () => copySelected("pdb_code", "PDB IDs"));
+            }
+        </script>
     </table>
-  </div>
+</div>
+<br>
+
+<div id="superposition-modal" class="modal">
+    <div class="modal-content">
+        <button id="close_superposition_modal" style="float:right;display:inline;" aria-label="Close" class="close">&times;</button>
+        <h3>Pick reference from selection</h3>
+        <p>Superposes the structures selected in the browser to the reference clicked in this table</p>
+        <br>
+        <table id="superposition_modal_table" class="display compact" width="100%">
+            <thead>
+                <tr>
+                    <th></th>
+                    <th>PDB</th>
+                    <th>UniProt</th>
+                    <th>Gene</th>
+                    <th>IUPHAR</th>
+                    <th>Rec. family</th>
+                    <th>Class</th>
+                    <th>Species</th>
+                    <th>State</th>
+                    <th>PDB Date</th>
+                </tr>
+            </thead>
+            <tbody><!-- populated from the selected structures --></tbody>
+        </table>
+    </div>
 </div>
 {% endblock %}
 
 {% block addon_js %}
-  <!-- vendor deps -->
-  <script src="{% static 'home/js/gpcrdb.js' %}"></script>
-  <script src="{% static 'home/js/alignment.js' %}"></script>
-  <script src="{% static 'home/js/browser_functions.js' %}"></script>
-  <script src="{% static 'home/js/jquery.powertip.js' %}"></script>
-  <!-- xlsx.full.min.js (~930KB) is loaded lazily on first Export-Excel click, see structure_browser_modern.js -->
-  <script>window.XLSX_STATIC_URL = "{% static 'home/js/xlsx.full.min.js' %}";</script>
-  <script src="{% static 'home/js/select2_4.1.0-rc.0_full.js' %}"></script>
-  <script src="{% static 'home/js/NewDrugsBrowser_datatables.min.js' %}"></script>
-  <script src="{% static 'home/js/NorgesDTFilterBuilder.js' %}"></script>
-  <script src="{% static 'home/js/BusyLoad.js' %}"></script>
-
-  <!-- our page logic (everything moved here) -->
-  <script src="{% static 'home/js/structure/structure_browser_modern.js' %}"></script>
+    <script src="{% static 'home/js/gpcrdb.js' %}"></script>
+    <script src="{% static 'home/js/browser_functions.js' %}"></script>
+    <script src="{% static '/home/js/frameworks/datatables/datatables_3.1.4_bundle.js' %}"></script>
+    <script src="{% static '/home/js/frameworks/select2/4.1.0/select2.min.js' %}"></script>
 {% endblock %}

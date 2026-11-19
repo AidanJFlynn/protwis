@@ -181,6 +181,48 @@ class ServerDataSource extends DataSourceBase {
     return json.data;
   }
 
+  /**
+   * Gets the row data of the rows with the given row ids, in the table's current order, from the server. Repeats the
+   * table's last data request without pagination, with every search cleared and the checkbox column filtered to the
+   * row ids (the server matches them against the primary key). Scope parameters added by ajax.data (such as the PDB
+   * table's effector) are kept.
+   * @param {Iterable<number|string>} rowIds - The row ids.
+   * @param {AbortSignal} [signal] - Aborts the request when the caller no longer needs the result.
+   * @returns {Promise<Array<Object>>} The row data of each row found.
+   */
+  async getRowsById(rowIds, signal) {
+    await this.tableManagerReference.ready;
+    const column = this._checkboxColumn();
+    const ids = this._normaliseRowIds(rowIds);
+    if (ids.length === 0) {
+      return [];
+    }
+
+    const query = this._getLatestRequestQueryParams();
+    query.set("start", "0");
+    query.set("length", "-1");
+    for (const key of [...query.keys()]) {
+      if (ServerDataSource.SEARCH_VALUE_PARAMS.test(key)) {
+        query.set(key, "");
+      }
+    }
+
+    // The checkbox column's index in the request, or a new column entry if it was not sent
+    const columnIndexes = [...query.keys()]
+      .map((key) => key.match(/^columns\[(\d+)\]\[data\]$/))
+      .filter((match) => match)
+      .map((match) => Number.parseInt(match[1]));
+    let index = columnIndexes.find((i) => query.get(`columns[${i}][data]`) === column.json_id);
+    if (index === undefined) {
+      index = columnIndexes.length > 0 ? Math.max(...columnIndexes) + 1 : 0;
+      query.set(`columns[${index}][data]`, column.json_id);
+    }
+    query.set(`columns[${index}][search][value]`, JSON.stringify({ in: ids }));
+
+    const json = await this._fetchJson(this._url("", query.toString()), signal);
+    return json.data;
+  }
+
   // Server-side filters are JSON objects the server reads directly, so values are matched exactly as given (no regex
   // escaping or parsing). Keys are always present, in a fixed order, so the same filter always gives the same string
   // and can be compared with the current search value. An empty filter gives an empty search (no filter).

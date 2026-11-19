@@ -5,6 +5,7 @@ import { TextSelect } from "../datatypes/textselect.js";
 import { WebLinkText } from "../datatypes/weblinktext.js";
 import { WebLinkTextSelect } from "../datatypes/weblinktextselect.js";
 import { WebLinkTextList } from "../datatypes/weblinktextlist.js";
+import { TextList } from "../datatypes/textlist.js";
 import { ReferenceList } from "../datatypes/referencelist.js";
 import { Checkbox } from "../datatypes/checkbox.js"
 
@@ -32,6 +33,7 @@ class DataTypeFactory {
         this.registerDataType("weblinktext", WebLinkText);
         this.registerDataType("weblinktextselect", WebLinkTextSelect);
         this.registerDataType("weblinktextlist", WebLinkTextList);
+        this.registerDataType("textlist", TextList);
         this.registerDataType("referencelist", ReferenceList);
         this.registerDataType("checkbox", Checkbox);
     }

@@ -5,7 +5,7 @@
 
 // It extends Text, inheriting its display rendering (null placeholder, truncation).
 
-import { Text } from "./text.js";
+import { Text, normalizeForSearch } from "./text.js";
 
 /**
  * Data type for text columns filtered with a select2 multi-select. The options are the column's values. Typed-in
@@ -115,9 +115,9 @@ class TextSelect extends Text {
         // Use the event target element directly instead of looking it up by id.
         // Typed-in tags are "contains" matches, chosen options are exact matches.
         const terms = $(e.target).select2('data').map((o) => ({
-          // Server-side uses the id/value (the raw column data, needed to match the database). Client-side uses the text,
-          // which has been processed for display and matches the internal filter data DataTables keeps (settings.aoData[rowIndex]._aFilterData[columnIndex]).
-          value: dataSource.isServerSide ? o.id : o.text,
+          // NFKC normalised so chosen options and typed tags match the normalised filter data
+          // (client-side) and the normalised database column (server-side) in the same way
+          value: normalizeForSearch(o.text),
           contains: o.element?.dataset?.select2Tag === 'true'
         }));
 
@@ -149,66 +149,11 @@ class TextSelect extends Text {
     }
 
     /**
-     * Converts a value to plain text for an option label. Removes the sub tags and decodes Greek letter entities.
-     * @param {*} value - The value to convert.
-     * @returns {string} The display text, or an empty string if the value is null or undefined.
-     */
-    _processHTMLForDisplay(value) {
-          if (value === null || value === undefined) return '';
-          let text = String(value);
-          text = text.replace(/<sub>.*?<\/sub>/g, (match) => {
-            return match.replace(/<\/?sub>/g, '');
-          });
-          text = this._decodeHTMLEntities(text);
-          return text;
-        }
-
-    /**
-     * Replaces Greek letter HTML entities (for example the alpha entity) with the matching Unicode characters.
-     * @param {*} text - The text to decode.
-     * @returns {string} The decoded text, or an empty string if the text is null or undefined.
-     */
-    _decodeHTMLEntities(text) {
-      if (text === null || text === undefined) return '';
-
-      const greekLetters = {
-        '&Alpha;': 'Α', '&alpha;': 'α',
-        '&Beta;': 'Β', '&beta;': 'β',
-        '&Gamma;': 'Γ', '&gamma;': 'γ',
-        '&Delta;': 'Δ', '&delta;': 'δ',
-        '&Epsilon;': 'Ε', '&epsilon;': 'ε',
-        '&Zeta;': 'Ζ', '&zeta;': 'ζ',
-        '&Eta;': 'Η', '&eta;': 'η',
-        '&Theta;': 'Θ', '&theta;': 'θ',
-        '&Iota;': 'Ι', '&iota;': 'ι',
-        '&Kappa;': 'Κ', '&kappa;': 'κ',
-        '&Lambda;': 'Λ', '&lambda;': 'λ',
-        '&Mu;': 'Μ', '&mu;': 'μ',
-        '&Nu;': 'Ν', '&nu;': 'ν',
-        '&Xi;': 'Ξ', '&xi;': 'ξ',
-        '&Omicron;': 'Ο', '&omicron;': 'ο',
-        '&Pi;': 'Π', '&pi;': 'π',
-        '&Rho;': 'Ρ', '&rho;': 'ρ',
-        '&Sigma;': 'Σ', '&sigma;': 'σ',
-        '&Tau;': 'Τ', '&tau;': 'τ',
-        '&Upsilon;': 'Υ', '&upsilon;': 'υ',
-        '&Phi;': 'Φ', '&phi;': 'φ',
-        '&Chi;': 'Χ', '&chi;': 'χ',
-        '&Psi;': 'Ψ', '&psi;': 'ψ',
-        '&Omega;': 'Ω', '&omega;': 'ω'
-      };
-
-      let decoded = String(text);
-      for (const [entity, unicode] of Object.entries(greekLetters)) {
-        decoded = decoded.replace(new RegExp(entity.replace(/&/, '\\&'), 'g'), unicode);
-      }
-
-      return decoded;
-    }
-
-    /**
-     * Adds an option to the select for each value. Option labels are processed for display, and option values are the raw values.
-     * @param {Array<*>|null|undefined} data - The distinct column values. Logs a warning and adds nothing if empty.
+     * Adds one option to the select per distinct normalised value, labelled with its plain text (e.g. "PIP₃"). Values
+     * that are equal once normalised (e.g. "PIP₃" and "PIP3") share one option, as they match the same rows. Null and
+     * empty values get no option. Options are ordered by their normalised text.
+     * @param {Array<*>|null|undefined} data - The column values: raw cell data client-side, database values
+     *   server-side. Logs a warning and adds nothing if empty.
      * @param {string} ColumnJsonId - The column's json_id, used in the warning message.
      * @param {HTMLSelectElement} filterInput - The select element to add the options to.
      */
@@ -219,11 +164,20 @@ class TextSelect extends Text {
         return;
       }
 
-      data.forEach(value => {
-        let option = document.createElement("option");
-        option.textContent = this._processHTMLForDisplay(value);
-        // set option value to empty string for placeholder option to allow clearing the filter when selected
-        option.value = value; 
+      const labels = new Map(); // normalised text -> label, first label seen wins
+      for (const value of data) {
+        const label = this._plainText(value);
+        const key = normalizeForSearch(label);
+        if (key !== "" && !labels.has(key)) {
+          labels.set(key, label);
+        }
+      }
+
+      [...labels.keys()].sort().forEach((key) => {
+        const option = document.createElement("option");
+        // onSelectChangeHandler normalises the label, so the option value only needs to be unique
+        option.value = labels.get(key);
+        option.textContent = labels.get(key);
         filterInput.appendChild(option);
       });
     }

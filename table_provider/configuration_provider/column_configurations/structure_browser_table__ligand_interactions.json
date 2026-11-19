@@ -1,0 +1,153 @@
+[
+  {
+    "column_group": "Receptor",
+    "json_id": "checkbox",
+    "title": "",
+    "data_type": "checkbox",
+    "checkboxMultiSelect": false,
+    "checkboxMinSelectCount": 1,
+    "allow_filter": false,
+    "orderable": false
+  },
+  {
+    "column_group": "Receptor",
+    "json_id": "gpcrdb",
+    "title": "GPCRdb",
+    "data_type": "weblinktext",
+    "allow_filter": false,
+    "orderable": false,
+    "exportHeaderOverride": "GPCRdb entry name"
+  },
+  {
+    "column_group": "Receptor",
+    "json_id": "uniprot",
+    "title": "UniProt",
+    "data_type": "weblinktext",
+    "allow_filter": true,
+    "width": "90px"
+  },
+  {
+    "column_group": "Receptor",
+    "json_id": "gene",
+    "title": "Gene",
+    "data_type": "weblinktext",
+    "allow_filter": true
+  },
+  {
+    "column_group": "Receptor",
+    "json_id": "protein",
+    "title": "IUPHAR",
+    "data_type": "weblinktext",
+    "max_display_length": 20,
+    "allow_filter": true
+  },
+  {
+    "column_group": "Classification",
+    "json_id": "receptor_family",
+    "title": "Receptor Family",
+    "data_type": "textselect",
+    "max_display_length": 20,
+    "allow_filter": true,
+    "width": "150px"
+  },
+  {
+    "column_group": "Classification",
+    "json_id": "receptor_class",
+    "title": "Class",
+    "data_type": "textselect",
+    "allow_filter": true
+  },
+  {
+    "column_group": "Classification",
+    "json_id": "species_common_name",
+    "title": "Species",
+    "data_type": "textselect",
+    "allow_filter": true
+  },
+  {
+    "column_group": "Structure Ligands",
+    "json_id": "ligand",
+    "title": "Name",
+    "data_type": "weblinktextlist",
+    "max_list_items": 1,
+    "max_display_length": 15,
+    "allow_filter": true
+  },
+  {
+    "column_group": "Structure Ligands",
+    "json_id": "ligand_type",
+    "title": "Type",
+    "data_type": "textselect",
+    "max_display_length": 15,
+    "allow_filter": true
+  },
+  {
+    "column_group": "Structure Ligands",
+    "json_id": "ligand_role",
+    "title": "Modality",
+    "data_type": "textselect",
+    "max_display_length": 15,
+    "allow_filter": true
+  },
+  {
+    "column_group": "Structure",
+    "json_id": "method",
+    "title": "Method",
+    "data_type": "textselect",
+    "allow_filter": true
+  },
+  {
+    "column_group": "Structure",
+    "json_id": "pdb",
+    "title": "PDB",
+    "data_type": "weblinktext",
+    "allow_filter": true,
+    "width": "70px"
+  },
+  {
+    "column_group": "Structure",
+    "json_id": "resolution",
+    "title": "Res (Å)",
+    "data_type": "numeric",
+    "precision": 1,
+    "allow_filter": true,
+    "width": "70px"
+  },
+  {
+    "column_group": "Receptor State",
+    "json_id": "state",
+    "title": "State",
+    "data_type": "textselect",
+    "allow_filter": true
+  },
+  {
+    "column_group": "Receptor State",
+    "json_id": "gprot_bound_likeness",
+    "title": "Degree Active (%)",
+    "data_type": "numeric",
+    "precision": 0,
+    "allow_filter": true
+  },
+  {
+    "column_group": "Signalling Protein",
+    "json_id": "signal_protein_family",
+    "title": "Family",
+    "data_type": "textselect",
+    "allow_filter": true
+  },
+  {
+    "column_group": "Signalling Protein",
+    "json_id": "signal_protein_subtype",
+    "title": "Subtype",
+    "data_type": "weblinktext",
+    "allow_filter": true
+  },
+  {
+    "column_group": "References",
+    "json_id": "reference",
+    "title": "Reference",
+    "data_type": "weblinktext",
+    "max_display_length": 20,
+    "allow_filter": true
+  }
+]

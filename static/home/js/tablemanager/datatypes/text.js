@@ -29,8 +29,53 @@ function registerPopupForOutsideClick(popup) {
     symbolPopups.add(popup);
 }
 
+// The list "more" popup is attached to the document body rather than the cell, so the scroll body of a scrollX table does
+// not clip it. One popup is shared by every list cell (weblinktextlist and textlist), as only one can be open at a time.
+// It closes on the next click anywhere (via the shared outside-click listener) or when anything scrolls.
+let listPopup = null;
+
+/**
+ * Returns the shared list popup, creating it and its close listeners on first use.
+ * @returns {HTMLDivElement} The popup element.
+ */
+function getListPopup() {
+    if (listPopup === null) {
+        listPopup = document.createElement("div");
+        listPopup.classList.add("tm-link-list-popup");
+        document.body.appendChild(listPopup);
+        registerPopupForOutsideClick(listPopup);
+        window.addEventListener("scroll", (e) => {
+            // Scrolling a long list inside the popup itself keeps it open
+            if (!listPopup.contains(e.target)) {
+                listPopup.classList.remove("tm-open");
+            }
+        }, true);
+    }
+    return listPopup;
+}
+
 // How long the full text stays shown after its expand icon is clicked
 const EXPAND_DURATION_MS = 5000;
+
+/**
+ * Normalises text for searching and filtering. NFKC folds compatibility characters onto their plain forms (e.g. "PIP₃"
+ * to "PIP3", the micro sign to Greek mu), so typed text, chosen options and cell data compare equal. Must match the
+ * server, which applies the same form to filter values and database columns (TextFilter and the `nfkc` lookup).
+ * @param {*} text - The text to normalise.
+ * @returns {string} The normalised text.
+ */
+function normalizeForSearch(text) {
+    return String(text).normalize("NFKC");
+}
+
+/**
+ * Escapes the characters that are special in HTML text, so plain text can be inserted as markup.
+ * @param {string} text - The plain text.
+ * @returns {string} The escaped text.
+ */
+function escapeHtml(text) {
+    return text.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
+}
 
 /**
  * Data type for text columns. Displays text, truncated to max_display_length when set, and filters by typed text.
@@ -42,24 +87,25 @@ class Text extends DataTypeBase {
     /**
      * Renders text for display. Null values show the nullValuePlaceholder. Text longer than max_display_length is
      * truncated with an ellipsis, followed by an icon that shows the full text for a few seconds (the full text is also kept in
-     * the title attribute). Other types return the raw data.
-     * @param {string|null|undefined} data - The cell text.
+     * the title attribute). Other types return the normalised plain text (see _searchText), so searching and ordering
+     * treat e.g. "PIP₃" and "PIP3" the same. Numbers and booleans are returned as they are, keeping their type.
+     * @param {string|{content: string, formatting?: Array}|null|undefined} data - The cell text, or a formatted value.
      * @param {string} type - The DataTables render type: "display", "filter", "sort" or "type".
      * @param {*} row - The full row data (unused).
      * @param {Object} meta - The DataTables cell metadata (unused).
      * @param {Object} tableManagerReference - The table manager that owns the table.
-     * @returns {string|null|undefined} The rendered value for the render type.
+     * @returns {*} The rendered value for the render type.
      */
     dataTableRenderer(data, type, row, meta, tableManagerReference) {
-        if (type === "display" && (data === null || data === undefined)) {
-            return tableManagerReference.nullValuePlaceholder;
+        const isText = typeof data === "string" || (data !== null && typeof data === "object");
+        if (type === "display") {
+            if (data === null || data === undefined) {
+                return tableManagerReference.nullValuePlaceholder;
+            }
+            return isText ? this._truncateText(this._displayHtml(data), this.column.max_display_length).content : data;
         }
-        if (type === "display" && data) {
-            const truncated_data = this._truncateText(data, this.column.max_display_length);
-            return truncated_data.data;
-        }
-        return data; // Search, order and type return
-    } 
+        return isText ? this._searchText(data) : data; // Search, order and type return
+    }
 
     /**
      * Truncates text to maxDisplayLength with an ellipsis. Truncated text is returned as a span that keeps both versions
@@ -70,12 +116,12 @@ class Text extends DataTypeBase {
      * (e.g. a sub/superscript) is removed whole rather than shortened; plain text is cut as normal.
      * @param {string} data - The text, optionally containing HTML.
      * @param {number|undefined} maxDisplayLength - The maximum number of displayed characters to show, or a falsy value for no limit.
-     * @returns {{truncated: boolean, data: string}} Whether the text was truncated, and the text or the span's markup.
+     * @returns {{truncated: boolean, content: string}} Whether the text was truncated, and the text or the span's markup.
      */
     _truncateText(data, maxDisplayLength) {
         // The displayed length never exceeds the raw length, so short text can skip parsing
         if (!maxDisplayLength || data.length <= maxDisplayLength) {
-            return { truncated: false, data: data };
+            return { truncated: false, content: data };
         }
 
         const fragment = this._parseHtml(data);
@@ -105,9 +151,9 @@ class Text extends DataTypeBase {
             expandIcon.innerHTML = "<img width='12px' title='Show full text' height='12px' src='/static/home/images/plus_grey.png'>";
 
             span.append(text, " ", expandIcon);
-            return { truncated: true, data: span.outerHTML };
+            return { truncated: true, content: span.outerHTML };
         }
-        return { truncated: false, data: data };
+        return { truncated: false, content: data };
     }
 
     /**
@@ -188,33 +234,33 @@ class Text extends DataTypeBase {
 
     /**
      * Exports the full text of a truncated cell, rather than the truncated display text.
-     * @param {string|null|undefined} cellData - The cell text.
+     * @param {*} cellData - The cell data.
      * @param {*} rowData - The full row data.
      * @param {Object} tableManagerReference - The table manager that owns the table.
-     * @returns {string|undefined} The full text if the cell is truncated, otherwise undefined (export the displayed content).
+     * @returns {string|undefined} The full plain text if the cell is truncated, otherwise undefined (export the displayed content).
      */
     exportValue(cellData, rowData, tableManagerReference) {
         if (!cellData) {
-            // Return empty string for null/undefined, so the export has a 
-            // blank cell rather than tableManagerReference.nullValuePlaceholder 
+            // Return empty string for null/undefined, so the export has a
+            // blank cell rather than tableManagerReference.nullValuePlaceholder
             // (usually "-") which is only for display.
-            return ""; 
+            return "";
         }
-        return this._isTruncated(cellData) ? String(this._stripHtmlTags(cellData, true)) : undefined;
+        return this._isTruncated(cellData) ? this._plainText(cellData) : undefined;
     }
 
     /**
-     * Checks whether text is longer than the column's max_display_length, so it is displayed truncated.
-     * @param {*} text - The text.
+     * Checks whether a cell's text is longer than the column's max_display_length, so it is displayed truncated. The
+     * plain text is what is displayed, as tags take no space and entities show as one character.
+     * @param {*} data - The cell data.
      * @returns {boolean} True if the text is displayed truncated.
      */
-    _isTruncated(text) {
+    _isTruncated(data) {
         const maxDisplayLength = this.column.max_display_length;
-        if (!maxDisplayLength || text === null || text === undefined || String(text).length <= maxDisplayLength) {
+        if (!maxDisplayLength || data === null || data === undefined) {
             return false;
         }
-        // Tags and entities make the raw text longer than what is displayed
-        return this._parseHtml(text).textContent.length > maxDisplayLength;
+        return this._plainText(data).length > maxDisplayLength;
     }
 
     /**
@@ -343,61 +389,119 @@ class Text extends DataTypeBase {
         return { symbolBtn, popup };
     }
         
+    //------------------------------------------------------------------------------//
+    //  Cell value helpers. Subclasses with other data shapes (e.g. links) override  //
+    //  _plainText; everything that needs text, search text or markup goes through  //
+    //  these rather than reading the data directly.                                //
+    //------------------------------------------------------------------------------//
+
     /**
-     * Removes HTML tags from a value, so it can be used as or compared with plain text.
-     * @param {*} v - The value to clean.
-     * @param {boolean} decodeSymbols - Whether to decode HTML entities.
-     * @returns {string} The value as text, or an empty string if it is null or undefined.
+     * The text of a cell value as the user reads it: a formatted value's content, or a string with any markup removed
+     * and entities decoded (e.g. "&alpha;" to "α"). Used for exports, option labels and truncation lengths.
+     * @param {*} v - The cell value: a string, a {content, formatting} object, or another primitive.
+     * @returns {string} The plain text, or an empty string if the value is null or undefined.
      */
-    _stripHtmlTags(v, decodeSymbols = false) {
-        let result = v == null ? "" : String(v).replace(/<[^>]*>/g, '');
-        if (decodeSymbols) {
-            result = this.decodeHTMLEntities(result);
+    _plainText(v) {
+        if (v === null || v === undefined) {
+            return "";
         }
-        return result;
+        if (typeof v === "object") {
+            // Formatted values hold plain text, with the formatting kept separately
+            return v.content === null || v.content === undefined ? "" : String(v.content);
+        }
+        return this._htmlToText(String(v));
     }
 
     /**
-     * Decodes HTML entities in a string.
-     * @param {string} text - The text to decode.
-     * @returns {string} The decoded text, or an empty string if the input is null or undefined.
+     * The normalised plain text of a cell value, used wherever values are searched or compared (see normalizeForSearch).
+     * @param {*} v - The cell value.
+     * @returns {string} The normalised plain text.
      */
-    decodeHTMLEntities(text) {
-        if (text === null || text === undefined) return '';
+    _searchText(v) {
+        return normalizeForSearch(this._plainText(v));
+    }
 
-        const greekLetters = {
-            '&Alpha;': 'Α', '&alpha;': 'α',
-            '&Beta;': 'Β', '&beta;': 'β',
-            '&Gamma;': 'Γ', '&gamma;': 'γ',
-            '&Delta;': 'Δ', '&delta;': 'δ',
-            '&Epsilon;': 'Ε', '&epsilon;': 'ε',
-            '&Zeta;': 'Ζ', '&zeta;': 'ζ',
-            '&Eta;': 'Η', '&eta;': 'η',
-            '&Theta;': 'Θ', '&theta;': 'θ',
-            '&Iota;': 'Ι', '&iota;': 'ι',
-            '&Kappa;': 'Κ', '&kappa;': 'κ',
-            '&Lambda;': 'Λ', '&lambda;': 'λ',
-            '&Mu;': 'Μ', '&mu;': 'μ',
-            '&Nu;': 'Ν', '&nu;': 'ν',
-            '&Xi;': 'Ξ', '&xi;': 'ξ',
-            '&Omicron;': 'Ο', '&omicron;': 'ο',
-            '&Pi;': 'Π', '&pi;': 'π',
-            '&Rho;': 'Ρ', '&rho;': 'ρ',
-            '&Sigma;': 'Σ', '&sigma;': 'σ',
-            '&Tau;': 'Τ', '&tau;': 'τ',
-            '&Upsilon;': 'Υ', '&upsilon;': 'υ',
-            '&Phi;': 'Φ', '&phi;': 'φ',
-            '&Chi;': 'Χ', '&chi;': 'χ',
-            '&Psi;': 'Ψ', '&psi;': 'ψ',
-            '&Omega;': 'Ω', '&omega;': 'ω'
-        };
+    /**
+     * The markup to display for a cell value, before truncation. Formatted values get their format tags with the text
+     * escaped. Strings are server-built and may hold markup, so they are used as given.
+     * @param {string|{content: string, formatting?: Array}} v - The cell value.
+     * @returns {string} The markup.
+     */
+    _displayHtml(v) {
+        if (v !== null && typeof v === "object") {
+            return this.applyFormatTags(v.content, v.formatting);
+        }
+        return String(v);
+    }
 
-        let decoded = String(text);
-        for (const [entity, unicode] of Object.entries(greekLetters)) {
-        decoded = decoded.replace(new RegExp(entity.replace(/&/, '\\&'), 'g'), unicode);
+    /**
+     * Converts markup to the text it displays: tags removed and entities decoded. Text without "<" or "&" is returned
+     * as it is, as parsing every cell would be slow.
+     * @param {string} html - The markup (or plain text).
+     * @returns {string} The displayed text.
+     */
+    _htmlToText(html) {
+        return /[<&]/.test(html) ? this._parseHtml(html).textContent : html;
+    }
+
+    /**
+     * Rebuilds HTML from plain text and the format ranges made by the server's HTMLRemover.HTMLtoFormatTags. Ranges
+     * are 0-indexed with an exclusive end and all refer to the plain text, so no offsets need adjusting as tags are
+     * added. The text is cut at every range boundary and walked left to right. Tags are kept open across segments
+     * where they continue, so nested and overlapping ranges come out as correctly nested HTML.
+     * @param {string|null|undefined} value - The plain text.
+     * @param {string|Array<{start: number, end: number, type: string}>|null|undefined} format - The ranges, as a JSON
+     * string or an array. Unknown types and ranges that are empty or fall outside the text are ignored.
+     * @returns {string} The text as HTML, with its special characters escaped.
+     */
+    applyFormatTags(value, format) {
+        const text = value === null || value === undefined ? "" : String(value);
+        const tagNames = { italics: "i", bold: "b", superscript: "sup", subscript: "sub" };
+        const escape = escapeHtml;
+
+        let parsed = format;
+        if (typeof format === "string") {
+            try {
+                parsed = JSON.parse(format);
+            } catch (e) {
+                parsed = [];
+            }
+        }
+        // Outer ranges first: start ascending, then end descending
+        const ranges = (Array.isArray(parsed) ? parsed : [])
+            .filter((r) => r && tagNames[r.type] && r.start >= 0 && r.end <= text.length && r.end > r.start)
+            .sort((a, b) => a.start - b.start || b.end - a.end);
+        if (ranges.length === 0) {
+            return escape(text);
         }
 
-        return decoded;
+        const bounds = [...new Set([0, text.length, ...ranges.flatMap((r) => [r.start, r.end])])].sort((a, b) => a - b);
+
+        let html = "";
+        let open = []; // ranges whose tags are currently open, outermost first
+        for (let i = 0; i < bounds.length - 1; i++) {
+            const from = bounds[i];
+            const to = bounds[i + 1];
+            const active = ranges.filter((r) => r.start <= from && r.end >= to);
+
+            // Keep the tags that stay open, close the rest (innermost first) and open the new ones
+            let keep = 0;
+            while (keep < open.length && keep < active.length && open[keep] === active[keep]) {
+                keep++;
+            }
+            for (let j = open.length - 1; j >= keep; j--) {
+                html += "</" + tagNames[open[j].type] + ">";
+            }
+            for (let j = keep; j < active.length; j++) {
+                html += "<" + tagNames[active[j].type] + ">";
+            }
+            open = active;
+            html += escape(text.slice(from, to));
+        }
+        for (let j = open.length - 1; j >= 0; j--) {
+            html += "</" + tagNames[open[j].type] + ">";
+        }
+        return html;
     }
 
     /**
@@ -418,20 +522,19 @@ class Text extends DataTypeBase {
         }
 
         const dataSource = tableManagerReference.dataSource;
-        const newSearchValue = e.target.value.trim();
+        const newSearchValue = normalizeForSearch(e.target.value.trim());
 
         // An empty input gives no terms, which clears the filter
         const terms = [];
         if (newSearchValue !== "") {
-            // Get the list of unique values for the column. Client-side these are the raw cell data, so compare
-            // against their text; server-side they are the values the server matches on, so compare them as given.
-            let dataOptions = await dataSource.getOptions(column);
-            if (!dataSource.isServerSide) {
-                dataOptions = dataOptions.map((item) => this._stripHtmlTags(item));
-            }
+            // Get the column's unique values as normalised plain text, comparable with the normalised search value.
+            // Client-side these are the raw cell data (strings, {content, formatting} objects or links), server-side
+            // the raw database values.
+            const dataOptions = await dataSource.getOptions(column);
+            const plainOptions = new Set(dataOptions.map((item) => this._searchText(item)));
 
             //if the search value is not in the list of unique values, use a "contains" search to allow for partial matches
-            terms.push({ value: newSearchValue, contains: !dataOptions.includes(newSearchValue) });
+            terms.push({ value: newSearchValue, contains: !plainOptions.has(newSearchValue) });
         }
 
         // Redraws only if the filter has changed
@@ -439,4 +542,4 @@ class Text extends DataTypeBase {
     }
 }
 
-export { Text, registerPopupForOutsideClick };
+export { Text, registerPopupForOutsideClick, getListPopup, EXPAND_DURATION_MS, normalizeForSearch, escapeHtml };

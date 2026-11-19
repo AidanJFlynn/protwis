@@ -5,34 +5,9 @@
 // "more..." link that opens a popup listing every link.
 
 import { WebLinkText } from "./weblinktext.js";
-import { registerPopupForOutsideClick } from "./text.js";
+import { getListPopup } from "./text.js";
 
 const LINK_SEPARATOR = " / ";
-
-// The "more..." popup is attached to the document body rather than the cell, so the scroll body of a scrollX table does
-// not clip it. One popup is shared by every list cell, as only one can be open at a time. It closes on the next click
-// anywhere (via the shared outside-click listener) or when anything scrolls, as it would otherwise drift from its link.
-let listPopup = null;
-
-/**
- * Returns the shared list popup, creating it and its close listeners on first use.
- * @returns {HTMLDivElement} The popup element.
- */
-function getListPopup() {
-    if (listPopup === null) {
-        listPopup = document.createElement("div");
-        listPopup.classList.add("tm-link-list-popup");
-        document.body.appendChild(listPopup);
-        registerPopupForOutsideClick(listPopup);
-        window.addEventListener("scroll", (e) => {
-            // Scrolling a long list inside the popup itself keeps it open
-            if (!listPopup.contains(e.target)) {
-                listPopup.classList.remove("tm-open");
-            }
-        }, true);
-    }
-    return listPopup;
-}
 
 /**
  * Data type for columns holding a list of web links. Cell data is an array of WebLinkText link objects. The cell shows
@@ -62,15 +37,31 @@ class WebLinkTextList extends WebLinkText {
 
         const renderLinks = (items) =>
             items.map((link) => super.dataTableRenderer(link, type, row, meta, tableManagerReference)).join(LINK_SEPARATOR);
-
+        
+        // Search, order and type return
         if (type !== "display") {
-            return renderLinks(links); // Search, order and type return
-        }
-
-        const maxItems = this.column.max_list_items;
-        if (!maxItems || links.length <= maxItems) {
             return renderLinks(links);
         }
+
+        // Display type: show the first max_list_items links. A list gets one "more" icon, opening the popup with every
+        // link, if links are hidden or if any shown link is truncated (as the icon on the truncated text would
+        // otherwise be a second icon). A single link just keeps the expand icon of its truncated text.
+        const maxItems = this.column.max_list_items;
+        const maxLength = this.column.max_display_length;
+        const visible = maxItems ? links.slice(0, maxItems) : links;
+        const anyTruncated = links.length > 1 && maxLength > 0 &&
+            visible.some((link) => this._linkPlainText(link).length > maxLength);
+        if (links.length === visible.length && !anyTruncated) {
+            return renderLinks(links);
+        }
+
+        // Shown links keep their "..." but lose their own expand icons
+        const visibleHtml = visible.map((link) => {
+            const template = document.createElement("template");
+            template.innerHTML = this._linkHtml(link, maxLength);
+            template.content.querySelectorAll(".tm-text-expand").forEach((icon) => icon.remove());
+            return template.innerHTML;
+        }).join(LINK_SEPARATOR);
 
         const moreLink = document.createElement("a");
         moreLink.setAttribute("href", "#");
@@ -81,7 +72,7 @@ class WebLinkTextList extends WebLinkText {
         // link is always on the same line as the last visible link.
         let no_wrap_span = document.createElement("span");
         no_wrap_span.classList.add("tm-link-list-no-wrap");
-        no_wrap_span.innerHTML =  renderLinks(links.slice(0, maxItems)) + LINK_SEPARATOR + moreLink.outerHTML;
+        no_wrap_span.innerHTML =  visibleHtml + LINK_SEPARATOR + moreLink.outerHTML;
         no_wrap_span.style.whiteSpace = "nowrap";
         return no_wrap_span.outerHTML;
     }
@@ -111,12 +102,11 @@ class WebLinkTextList extends WebLinkText {
 
             const popup = getListPopup();
             popup.replaceChildren();
-            // Only the links hidden from the cell, the first max_list_items are already visible there
-            for (const link of this._links(cellData).slice(this.column.max_list_items)) {
+            // Every link, in full: the cell may show some of them truncated
+            for (const link of this._links(cellData)) {
                 const item = document.createElement("div");
                 item.classList.add("tm-link-list-popup-item");
-                item.innerHTML = super.dataTableRenderer(link, "display", rowData, null, tableManagerReference);
-                this._bindTruncationToggles(item);
+                item.innerHTML = this._linkHtml(link, 0);
                 popup.appendChild(item);
             }
 
@@ -137,17 +127,17 @@ class WebLinkTextList extends WebLinkText {
      */
     exportValue(cellData, rowData, tableManagerReference) {
         const links = this._links(cellData);
-        return links.length ? links.map((link) => super._stripHtmlTags(link)).join(LINK_SEPARATOR) : undefined;
+        return links.length ? this._plainText(links) : undefined;
     }
 
     /**
-     * Removes HTML tags from the link texts, so they can be compared with the filter text. Overrides the WebLinkText
-     * version, which expects a single link object, by joining the texts of every link. Used by Text.blurHandler.
-     * @param {Array<{anchor_content?: string}>|null|undefined} v - The link list cell data.
-     * @returns {string} The link texts without tags, or an empty string if there are none.
+     * The link texts joined with LINK_SEPARATOR. Overrides the WebLinkText version, which expects a single link
+     * object. Used by Text.blurHandler and option building.
+     * @param {Array<Object>|null|undefined} v - The link list cell data.
+     * @returns {string} The joined link texts, or an empty string if there are none.
      */
-    _stripHtmlTags(v) {
-        return this._links(v).map((link) => super._stripHtmlTags(link)).join(LINK_SEPARATOR);
+    _plainText(v) {
+        return this._links(v).map((link) => this._linkPlainText(link)).join(LINK_SEPARATOR);
     }
 
     /**

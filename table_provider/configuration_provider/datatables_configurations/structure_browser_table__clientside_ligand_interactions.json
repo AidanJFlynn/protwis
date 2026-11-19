@@ -1,0 +1,32 @@
+{
+  "serverSide": false,
+  "processing": true,
+  "deferRender": true,
+  "scrollX": true,
+  "layout": {
+    "topEnd": "pageLength",
+    "topStart": "buttons"
+  },
+  "fixedColumns": { "left": 3 },
+  "ajax": {
+    "url": "/table_provider/structure_browser_table_cached?has_ligand_interactions=true",
+    "type": "GET",
+    "cache": false,
+    "dataSrc":  "data"
+  },
+  "search": {
+    "regex": true,
+    "caseInsensitive": true
+  },
+  "order": {
+    "name": "uniprot",
+    "dir": "asc"
+  },
+  "lengthMenu": [10, 25, 50, 100],
+  "nullValuePlaceholder": "-",
+  "showCategoryCounts": false,
+  "buttons": [ "clear_selection_default", "clear_filters_default", "column_visibility"],
+  "localStorageKey": "structure_browser_table_clientside_ligand_interactions",
+  "localStorageDurationDays": 7,
+  "fixedWidthTable": true
+}

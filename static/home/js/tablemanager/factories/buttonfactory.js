@@ -4,6 +4,7 @@ import { ClearFiltersDefault } from "../buttons/clearfiltersdefault.js";
 import { ClearSelectionDefault } from "../buttons/clearselectiondefault.js";
 import { ShowBestResolution } from "../buttons/showbestresolution.js";
 import { ShowClosestToHuman } from "../buttons/showclosesttohuman.js";
+import { ShowRepresentatives } from "../buttons/showrepresentatives.js";
 import { ColumnVisibility } from "../buttons/columnvisibility.js";
 
 
@@ -24,6 +25,7 @@ class ButtonFactory {
         this.registerButtonType("clear_selection_default", ClearSelectionDefault);
         this.registerButtonType("best_resolution_toggle", ShowBestResolution);
         this.registerButtonType("closest_to_human_toggle", ShowClosestToHuman);
+        this.registerButtonType("representative_toggle", ShowRepresentatives);
         this.registerButtonType("column_visibility", ColumnVisibility);
     }
 

@@ -255,7 +255,7 @@ def recreate3Dorder(distance_matrix, gn_grouping, mirror = False):
         # Grab points from same group
         ref_points = [x for x in range(0,len(gn_grouping)) if gn_grouping[x] == group]
         for ref_point in ref_points:
-            tm_centroids[group] += np.array(tms[ref_point])/np.float(len(ref_points))
+            tm_centroids[group] += np.array(tms[ref_point])/float(len(ref_points))
 
     # DEBUG centroid distances
     # for i in range(0,len(tm_centroids)-1):

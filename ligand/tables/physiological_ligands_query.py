@@ -232,6 +232,7 @@ def PhysiologicalLigandsTableRows():
 
         exp_pdb_codes, model_pdb_codes, model_structure_type_slugs, model_has_signprot = _split_structures(data, model_structure_types)
         receptor_class = data['receptor__family__parent__parent__parent__name']
+        protein_name = data['receptor__name'].replace(" receptor", "").replace("-adrenoceptor", "")
         ligand_type = data['ligand__ligand_type__name']
 
         rows.append({
@@ -241,7 +242,7 @@ def PhysiologicalLigandsTableRows():
             'uniprot_entry_name': data['receptor__entry_name'],
             'uniprot_accession': data['receptor__accession'],
             'uniprot_name': data['receptor__entry_name'].split('_')[0].upper(),
-            'protein_name': data['receptor__name'].replace(" receptor", "").replace("-adrenoceptor", ""),
+            'protein_name': protein_name,
             'gene_name': data['gene_name'],
             'gene_entrez_id': data['gene_entrez_id'],
             'species_common_name': data['receptor__species__common_name'],

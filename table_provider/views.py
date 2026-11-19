@@ -11,8 +11,8 @@ from rest_framework.pagination import LimitOffsetPagination
 
 #Table provider imports
 from table_provider.configuration_provider.configuration_factory import ColumnConfigurationFactory, DataTablesConfigurationFactory
-from table_provider.models import GpcrStructureStatisticsTable, PdbTable, PhysiologicalLigandsTable
-from table_provider.serializers import GpcrStatisticsSummarySerializer, PdbStructureSummarySerializer, PhysiologicalLigandsSerializer
+from table_provider.models import GpcrStructureBrowserTable, GpcrStructureStatisticsTable, LigandComplexModelsTable, PdbTable, PhysiologicalLigandsTable
+from table_provider.serializers import GpcrStatisticsSummarySerializer, GpcrStructureBrowserSerializer, LigandComplexModelsSerializer, PdbStructureSummarySerializer, PhysiologicalLigandsSerializer
 from table_provider.serverside.filters import FilterSet, FilterError, TextFilter, BooleanFilter
 from table_provider.serverside.querystringprocessing import DatatablesQueryStringProcessor, QueryStringProcessingError
 
@@ -174,9 +174,24 @@ class PdbStructureSummaryTable(DataTablesView):
         effector = request.GET.get('effector', 'no_effector')
         exclude_non_interacting = request.GET.get('exclude_non_interacting') == 'true'
 
-        queryset = PdbTable.objects.filter(TextFilter('query_effector', [effector]).format_query())
+        queryset = PdbTable.objects.filter(TextFilter('query_effector', [effector], normalize=False).format_query())
         if exclude_non_interacting:
             queryset = queryset.filter(BooleanFilter('is_complex', True).format_query())
+        return queryset
+
+
+class GpcrStructureBrowserSummaryTable(DataTablesView):
+    """API endpoint for the structure browser (one row per experimental structure)"""
+
+    model = GpcrStructureBrowserTable
+    serializer_class = GpcrStructureBrowserSerializer
+    checkbox_fields = ('id',) + GpcrStructureBrowserSerializer.CHECKBOX_DATA_FIELDS
+
+    def scope_queryset(self, request):
+        """All structures, or with has_ligand_interactions=true only those with ligand interactions (no user filters)."""
+        queryset = GpcrStructureBrowserTable.objects.all()
+        if request.GET.get('has_ligand_interactions') == 'true':
+            queryset = queryset.filter(BooleanFilter('has_ligand_interactions', True).format_query())
         return queryset
 
 
@@ -185,6 +200,14 @@ class PhysiologicalLigandsSummaryTable(DataTablesView):
 
     model = PhysiologicalLigandsTable
     serializer_class = PhysiologicalLigandsSerializer
+
+
+class LigandComplexModelsSummaryTable(DataTablesView):
+    """API endpoint for ligand complex model structures (one row per model)"""
+
+    model = LigandComplexModelsTable
+    serializer_class = LigandComplexModelsSerializer
+    checkbox_fields = ('id', 'structure_id', 'pdb_code')
 
 
 class ConfigurationFactoryView(views.APIView):
