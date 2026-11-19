@@ -261,14 +261,13 @@ class ClientDataSource extends DataSourceBase {
    * "|") or any contains match need a regex. No terms gives an empty search (no filter).
    * @param {Array<{value: string, contains: boolean}>} terms - The terms to match.
    * @returns {{value: string, regex: boolean}} The DataTables search value and whether it is a regex.
+   * Exact terms are anchored (^...$) so "D₄" does not also match "FZD₄".
    */
   _buildTextSearch(terms) {
     if (terms.length === 0) {
       return { value: "", regex: false };
     }
-    if (terms.length === 1 && !terms[0].contains) {
-      return { value: terms[0].value, regex: false };
-    }
+    // Note: a plain (non-regex) DataTables search is a substring match, so even a single exact term needs an anchored regex.
 
     /** Helper function to escape regex special characters in a value */    
     const escape = (value) => String(value).replace(/[.*+?^${}()|[\]\\]/g, '\\$&');

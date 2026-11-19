@@ -23,9 +23,6 @@ class Checkbox extends DataTypeBase {
      */
     dataTableRenderer(data, type, row, meta, tableManagerReference) {
         if (type === "display" && data) {
-            let id_property = '';
-            let data_properties = '';
-
             const newCheckBox = document.createElement("input");
             newCheckBox.type = "checkbox";
             
@@ -169,20 +166,20 @@ class Checkbox extends DataTypeBase {
      * @param {Object} tableManagerReference - The table manager that owns the table.
      */
     static synchroniseVisibleCheckState(tableManagerReference) {
-    const checkboxCol = tableManagerReference.columns.find((col) => col.data_type === "checkbox");
-    if (!checkboxCol) {
-      return;
-    }
+        const checkboxCol = tableManagerReference.columns.find((col) => col.data_type === "checkbox");
+        if (!checkboxCol) {
+            return;
+        }
 
-    // Sync the check state of the checkboxes in the rendered rows with the activeCheckBoxes state    
-    tableManagerReference.dataTableReference.cells(null, checkboxCol.col_idx, { search: "applied" }).nodes().each((cell) => {
-      const rowCheckbox = cell.querySelector('input[type="checkbox"]');
-      if (rowCheckbox) {
-        tableManagerReference.state.activeCheckBoxes.has(Number.parseInt(rowCheckbox.dataset.row_id)) ? rowCheckbox.checked = true : rowCheckbox.checked = false;
-      }
-    });
-  }
-    
+        // Sync the check state of the checkboxes in the rendered rows with the activeCheckBoxes state
+        const activeCheckboxes = tableManagerReference.state.activeCheckBoxes;
+        tableManagerReference.dataTableReference.cells(null, checkboxCol.col_idx, { search: "applied" }).nodes().each((cell) => {
+            const rowCheckbox = cell.querySelector('input[type="checkbox"]');
+            if (rowCheckbox) {
+                rowCheckbox.checked = activeCheckboxes.has(Number.parseInt(rowCheckbox.dataset.row_id));
+            }
+        });
+    }
 }
 
 /**
@@ -353,76 +350,18 @@ class MasterCheckbox{
 
     /**
      * Sets the master checkbox to checked, unchecked or indeterminate, depending on how many rows in the current
-     * search set are active.
+     * search set are active. Checked means every row in the search set is active, unchecked means none is, and
+     * anything in between is indeterminate. While nothing is active the checkbox is always unchecked.
      */
     synchroniseCheckedState() {
+        const activeCheckboxes = this.tableManagerReference.state.activeCheckBoxes;
+        const searchRowIds = [...this.tableManagerReference.state.currentSearchCheckBoxes.keys()];
 
-        // Create a set from the currently checked checkboxes
-        const activeRowIds = new Set(this.tableManagerReference.state.activeCheckBoxes.keys());
-        // Create a set from the checkboxes that are captured in the current search results
-        const currentSearchRowIds = new Set(this.tableManagerReference.state.currentSearchCheckBoxes.keys());
+        const allChecked = activeCheckboxes.size > 0 && searchRowIds.every((rowId) => activeCheckboxes.has(rowId));
+        const noneChecked = !searchRowIds.some((rowId) => activeCheckboxes.has(rowId));
 
-        const allChecked = activeRowIds.size > 0 && 
-                            (this.setsAreEqual(activeRowIds, currentSearchRowIds) || //Search set and active set are equal
-                            this.setContains(activeRowIds, currentSearchRowIds)); //Search set is a subset of active set
-        const allUnchecked = activeRowIds.size == 0 || this.setDoesNotContain(activeRowIds, currentSearchRowIds); //Search set has no overlap with the active set
-
-        // Mixed state shows as indeterminate; otherwise checked only if every rendered row is checked
-        const isIndeterminate = !allChecked && !allUnchecked;
-        this.checkboxElement.indeterminate = isIndeterminate;
-        this.checkboxElement.checked = allChecked && !isIndeterminate;
-    }
-
-    /**
-     * @param {Set<*>} a - The first set.
-     * @param {Set<*>} b - The second set.
-     * @returns {boolean} True if both sets hold the same values.
-     */
-    setsAreEqual(a, b) {
-        try {
-            return a.size === b.size && a.symmetricDifference(b).size === 0;
-        } catch (error) { // Older browsers may not support Set methods like symmetricDifference, so we fall back to a manual comparison
-            if (a === b) return true;
-            if (a.size !== b.size) return false;
-            for (const value of a) if (!b.has(value)) return false;
-            return true;
-        }
-    }
-
-    /**
-     * @param {Set<*>} setA - The containing set.
-     * @param {Set<*>} setB - The set that should be contained in setA.
-     * @returns {boolean} True if every value in setB is also in setA.
-     */
-    setContains(setA, setB) {
-        try {
-            return setB.isSubsetOf(setA);
-        } catch (error) { // Older browsers may not support Set methods like isSubsetOf, so we fall back to a manual comparison
-        for (const value of setB) {
-                if (!setA.has(value)) {
-                    return false;
-                }
-            }
-            return true;
-        }
-    }
-
-    /**
-     * @param {Set<*>} setA - The first set.
-     * @param {Set<*>} setB - The second set.
-     * @returns {boolean} True if setA and setB have no values in common.
-     */
-    setDoesNotContain(setA, setB) {
-        try {
-            return setB.isDisjointFrom(setA);
-        } catch (error) { // Older browsers may not support Set methods like isSubsetOf, so we fall back to a manual comparison
-            for (const value of setB) {
-                if (setA.has(value)) {
-                    return false;
-                }
-            }
-            return true;
-        }
+        this.checkboxElement.indeterminate = !allChecked && !noneChecked;
+        this.checkboxElement.checked = allChecked;
     }
 }
 

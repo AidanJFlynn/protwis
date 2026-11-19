@@ -3,60 +3,89 @@
 // that can be overridden by subclasses to provide specific functionality for each data type.
 // Each column owns one data type instance (column.type). The column specification is read through this.column;
 // "this" inside a data type is always the data type instance.
+// The column's filter is a separate object (this.filter, see filters/filterbase.js), chosen with the data type in the
+// data type factory, so the same data type can be filtered in different ways.
+
+import { normalizeForSearch } from "./textutils.js";
 
 /**
  * Base class for the data types used by the table manager. Each column owns one instance, which controls how the
- * column's cells are rendered, formatted and interacted with, and how its filter is built. Subclasses override the
- * methods they need.
+ * column's cells are rendered, formatted and interacted with. Filtering is handed to the filter the instance owns.
+ * Subclasses override the methods they need.
  */
 class DataTypeBase {
-  // class methods
   /**
    * @param {Object} column - The column specification this data type belongs to.
+   * @param {Function|null} [filterClass=null] - The filter class for the column (a FilterBase subclass), or null for
+   * no filter. It is constructed with this data type.
    */
-  constructor(column) {
+  constructor(column, filterClass = null) {
     this.column = column;
+    this.filter = filterClass ? new filterClass(this) : null;
   }
-  
+
   /**
-   * Creates the filter control for the column header. Runs while the header is built, before the DataTable exists,
-   * so it should only create elements.
+   * Creates the filter control for the column header, using the column's filter. Runs while the header is built,
+   * before the DataTable exists.
    * @param {Object} tableManagerReference - The table manager that owns the table.
-   * @returns {HTMLElement|HTMLElement[]|null|false} The filter element(s). The default returns false, which builds no filter.
+   * @returns {HTMLElement|HTMLElement[]|false} The filter element(s), or false if the column has no filter or does
+   * not allow filtering.
    */
   createFilterInterface(tableManagerReference) {
-    // This method should be overridden by subclasses to create the appropriate filter interface for the data type.
-    // It runs while the table header is built, before the DataTable exists, so it should only create elements.
-    // Work that needs the DataTable or its data belongs in afterTableCreated or afterDataLoaded.
-    // Default implementation returns null, indicating no filter interface is provided, resulting in no filter controls being added/built.
-    return false;
+    if (!this.column.allow_filter || !this.filter) {
+      return false;
+    }
+    return this.filter.createInterface(tableManagerReference);
   }
 
   /**
    * Hook for setup that needs the DataTable but not its data, such as initialising filter plugins. Runs right after the
-   * DataTable is created, with the header in the DOM.
+   * DataTable is created, with the header in the DOM. The default runs the filter's hook.
    * @param {Object} tableManagerReference - The table manager that owns the table.
    */
   afterTableCreated(tableManagerReference) {
-    // This method can be overridden by subclasses for setup that needs the DataTable but not its data, e.g. initialising
-    // filter interface plugins such as select2. It runs right after the DataTable is created, with the header in the DOM.
+    this.filter?.afterTableCreated(tableManagerReference);
   }
 
   /**
    * Hook for setup that needs the initial table data, such as populating filter options. Runs once the table manager's
-   * ready promise has resolved.
+   * ready promise has resolved. The default runs the filter's hook.
    * @param {Object} tableManagerReference - The table manager that owns the table.
    * @returns {Promise<void>|void} A promise if the setup is asynchronous.
    */
   afterDataLoaded(tableManagerReference) {
-    // This method can be overridden by subclasses for setup that needs the table's initial data, e.g. populating filter
-    // options. It runs once tableManager.ready has resolved; it may return a promise.
+    return this.filter?.afterDataLoaded(tableManagerReference);
   }
-  
+
   /**
-   * Renders cell data for display, search, ordering and type detection. The default returns the data unchanged, except
-   * that null or undefined display values show the table's nullValuePlaceholder. Subclasses that override this should
-   * apply the same placeholder handling.
+   * The text of a cell value as the user reads it. Used by the filters for option labels and comparisons. The default
+   * converts the value to a string. Text-based data types override it.
+   * @param {*} v - The cell value.
+   * @returns {string} The plain text, or an empty string if the value is null or undefined.
+   */
+  plainText(v) {
+    return v === null || v === undefined ? "" : String(v);
+  }
+
+  /**
+   * The normalised plain text of a cell value, used wherever values are searched or compared (see normalizeForSearch).
+   * @param {*} v - The cell value.
+   * @returns {string} The normalised plain text.
+   */
+  searchText(v) {
+    return normalizeForSearch(this.plainText(v));
+  }
+
+  //---------------------------------------------------------------------------------//
+  //  Rendering. dataTableRenderer handles empty values, then hands each render type  //
+  //  to a hook: displayValue, searchValue or sortValue. Subclasses override the      //
+  //  hooks rather than dataTableRenderer.                                            //
+  //---------------------------------------------------------------------------------//
+
+  /**
+   * Renders cell data for display, search, ordering and type detection. Empty values (see isEmpty) display the
+   * table's nullValuePlaceholder. Otherwise the display type uses displayValue, the sort and type types use sortValue,
+   * and the filter type uses searchValue.
    * @param {*} data - The cell data.
    * @param {string} type - The DataTables render type: "display", "filter", "sort" or "type".
    * @param {*} row - The full row data.
@@ -65,28 +94,65 @@ class DataTypeBase {
    * @returns {*} The rendered value for the render type.
    */
   dataTableRenderer(data, type, row, meta, tableManagerReference) {
-    // This method should be overridden by subclasses to provide the appropriate rendering logic for the data type (if required).
-    // Default implementation returns the data as-is, except that null values display the table's nullValuePlaceholder.
-    // Subclasses that override this method should apply the same placeholder handling.
-    if (type === "display" && (data === null || data === undefined)) {
-      return tableManagerReference.nullValuePlaceholder;
+    if (type === "display") {
+      return this.isEmpty(data) ? tableManagerReference.nullValuePlaceholder : this.displayValue(data, tableManagerReference);
     }
+    if (type === "sort" || type === "type") {
+      return this.sortValue(data);
+    }
+    return this.searchValue(data);
+  }
+
+  /**
+   * Whether a cell has no value, so it displays the nullValuePlaceholder and exports as a blank cell. The default treats
+   * null and undefined as empty. List types also treat an empty list as empty.
+   * @param {*} data - The cell data.
+   * @returns {boolean} True if the cell has no value.
+   */
+  isEmpty(data) {
+    return data === null || data === undefined;
+  }
+
+  /**
+   * The markup (or value) displayed for a cell that is not empty. The default returns the data unchanged.
+   * @param {*} data - The cell data.
+   * @param {Object} tableManagerReference - The table manager that owns the table.
+   * @returns {*} The display value.
+   */
+  displayValue(data, tableManagerReference) {
     return data;
   }
-  
+
   /**
-   * Hook for the value a cell exports with. The default returns undefined, which exports the displayed cell content
-   * with its HTML stripped. Override it when the display value is not what should be exported.
+   * The value searched by the table's search and column filters. The default returns the data unchanged.
+   * @param {*} data - The cell data.
+   * @returns {*} The search value.
+   */
+  searchValue(data) {
+    return data;
+  }
+
+  /**
+   * The value the column orders by, also used for DataTables' type detection. The default is the search value.
+   * @param {*} data - The cell data.
+   * @returns {*} The sort value.
+   */
+  sortValue(data) {
+    return this.searchValue(data);
+  }
+
+  /**
+   * Hook for the value a cell exports with. The default returns "" for empty cells (see isEmpty), so the export has a
+   * blank cell rather than the nullValuePlaceholder, which is only for display. Otherwise it returns undefined, which
+   * exports the displayed cell content with its HTML stripped. Override it when the display value is not what should
+   * be exported.
    * @param {*} cellData - The cell data.
    * @param {*} rowData - The full row data.
    * @param {Object} tableManagerReference - The table manager that owns the table.
    * @returns {*} The value to export, or undefined to export the displayed content.
    */
   exportValue(cellData, rowData, tableManagerReference) {
-    // Return empty string for null/undefined, so the export has a blank cell rather 
-    // than tableManagerReference.nullValuePlaceholder (usually "-") which is only for display.
-    // otherwise, return undefined to export the content displayed in the cell.
-    return cellData ? undefined : ""; 
+    return this.isEmpty(cellData) ? "" : undefined;
   }
 
   /**

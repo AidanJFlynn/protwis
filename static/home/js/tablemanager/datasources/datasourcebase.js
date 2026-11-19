@@ -16,7 +16,7 @@ class DataSourceBase {
 
   /**
    * True for ServerDataSource. Only for the few places where the mode genuinely changes the caller's own logic
-   * (e.g. TextSelect filters on the raw value server-side but on the display text client-side).
+   * (e.g. the select filter filters on the raw value server-side but on the display text client-side).
    * @returns {boolean} True if the data source uses server-side processing.
    */
   get isServerSide() {

@@ -6,6 +6,7 @@
 // Ordering uses the number of references; search and export use the reference identifiers joined together.
 
 import { DataTypeBase } from "./datatypebase.js";
+import { listItems } from "./listbase.js";
 
 const IDENTIFIER_SEPARATOR = "; ";
 
@@ -58,33 +59,44 @@ function getReferenceModal() {
 class ReferenceList extends DataTypeBase {
 
     /**
-     * Renders a reference list. For the display type, null or empty lists show the nullValuePlaceholder, otherwise a
-     * "N refs" link (see eventHookup). The sort and type types return the number of references, so the column orders
-     * numerically. The filter type returns the reference identifiers joined, so searching for a PMID or DOI finds the row.
+     * A list with no references is empty, so it displays the nullValuePlaceholder.
      * @param {Array<Object>|null|undefined} data - The cell data.
-     * @param {string} type - The DataTables render type: "display", "filter", "sort" or "type".
-     * @param {*} row - The full row data.
-     * @param {Object} meta - The DataTables cell metadata.
-     * @param {Object} tableManagerReference - The table manager that owns the table.
-     * @returns {string|number} The rendered value for the render type.
+     * @returns {boolean} True if there are no references.
      */
-    dataTableRenderer(data, type, row, meta, tableManagerReference) {
-        const references = this._references(data);
-        if (type === "sort" || type === "type") {
-            return references.length;
-        }
-        if (type !== "display") {
-            return this._identifiers(references); // Search return
-        }
-        if (references.length === 0) {
-            return tableManagerReference.nullValuePlaceholder;
-        }
+    isEmpty(data) {
+        return listItems(data).length === 0;
+    }
 
+    /**
+     * Displays the number of references as a "N refs" link (see eventHookup).
+     * @param {Array<Object>} data - The cell data.
+     * @returns {string} The link markup.
+     */
+    displayValue(data) {
+        const count = listItems(data).length;
         const link = document.createElement("a");
         link.setAttribute("href", "#");
         link.classList.add("tm-reference-list-link");
-        link.textContent = `${references.length} ${references.length === 1 ? "ref" : "refs"}`;
+        link.textContent = `${count} ${count === 1 ? "ref" : "refs"}`;
         return link.outerHTML;
+    }
+
+    /**
+     * Searches the reference identifiers joined, so searching for a PMID or DOI finds the row.
+     * @param {Array<Object>|null|undefined} data - The cell data.
+     * @returns {string} The identifiers joined.
+     */
+    searchValue(data) {
+        return this._identifiers(data);
+    }
+
+    /**
+     * Orders by the number of references.
+     * @param {Array<Object>|null|undefined} data - The cell data.
+     * @returns {number} The number of references.
+     */
+    sortValue(data) {
+        return listItems(data).length;
     }
 
     /**
@@ -110,7 +122,7 @@ class ReferenceList extends DataTypeBase {
             const modal = getReferenceModal();
             modal.querySelector(".tm-reference-modal-title").textContent = this.column.title || "References";
             modal.querySelector(".tm-reference-modal-body")
-                .replaceChildren(...this._references(cellData).map((reference) => this._citation(reference)));
+                .replaceChildren(...listItems(cellData).map((reference) => this._citation(reference)));
             modal.showModal();
             modal.querySelector(".tm-reference-modal-body").scrollTop = 0;
         });
@@ -124,7 +136,7 @@ class ReferenceList extends DataTypeBase {
      * @returns {string} The reference identifiers joined.
      */
     exportValue(cellData, rowData, tableManagerReference) {
-        return this._identifiers(this._references(cellData));
+        return this._identifiers(cellData);
     }
 
     /**
@@ -176,20 +188,11 @@ class ReferenceList extends DataTypeBase {
 
     /**
      * Returns the reference identifiers joined, skipping references without one.
-     * @param {Array<Object>} references - The references.
+     * @param {Array<Object>|null|undefined} data - The cell data.
      * @returns {string} The identifiers joined, or an empty string if there are none.
      */
-    _identifiers(references) {
-        return references.map((reference) => reference.web_link_index).filter((index) => index).join(IDENTIFIER_SEPARATOR);
-    }
-
-    /**
-     * Returns the references in the cell data, skipping empty entries.
-     * @param {Array|null|undefined} data - The cell data.
-     * @returns {Array<Object>} The reference objects, or an empty array if the data is not a list.
-     */
-    _references(data) {
-        return Array.isArray(data) ? data.filter((reference) => reference) : [];
+    _identifiers(data) {
+        return listItems(data).map((reference) => reference.web_link_index).filter((index) => index).join(IDENTIFIER_SEPARATOR);
     }
 }
 
