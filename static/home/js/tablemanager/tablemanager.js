@@ -624,7 +624,18 @@ class TableManager {
         const masterCheckbox = new MasterCheckbox(col, this);
         th.appendChild(masterCheckbox.createHtmlElement());
         this.state.masterCheckbox = masterCheckbox; // Store reference to the master checkbox for later use
-      } else {
+      } 
+      else if (col.primaryHeaderInjectors && col.primaryHeaderInjectors.length > 0) {
+        let headerElements = [document.createTextNode(col.title)];
+        col.primaryHeaderInjectors.forEach((injectorName) => {
+          const injectorFunction = this.primaryHeaderInjectors.getInjector(injectorName);
+          if (injectorFunction) {
+            headerElements = injectorFunction(headerElements);
+          }
+        });
+        th.append(...headerElements);
+      }
+      else {
         th.textContent = col.title;
       }
       
@@ -917,8 +928,10 @@ class TableManager {
     const colDef = { data: column.json_id };
     // DataTables writes the title into the title row cell as HTML, so it is escaped. Without a title DataTables takes
     // it from the first single-column header cell from the top, which can be a one-column super-header group.
-    // The checkbox column has none, as writing one would replace the master checkbox.
-    if (column.data_type !== "checkbox") {
+    // The checkbox column has none, as writing one would replace the master checkbox. Columns with primary header
+    // injectors have none either, as it would replace the injected header content (their cell already holds the title).
+    const hasPrimaryHeaderInjectors = column.primaryHeaderInjectors && column.primaryHeaderInjectors.length > 0;
+    if (column.data_type !== "checkbox" && !hasPrimaryHeaderInjectors) {
       colDef.title = $.fn.dataTable.util.escapeHtml(String(column.title ?? ""));
     }
     colDef.render = (data, type, row, meta) => column.type.dataTableRenderer(data, type, row, meta, this);

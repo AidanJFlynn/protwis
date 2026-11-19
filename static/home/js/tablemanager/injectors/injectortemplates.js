@@ -24,6 +24,60 @@ class InjectorTemplates {
     }
 
     /**
+     * Enables Bootstrap 3 popovers (opt-in) for info icons, once, through delegation on body. Delegation is used because
+     * DataTables clones the header (e.g. the hidden sizing copy) and clones do not keep per-element popover bindings.
+     * The content may contain HTML, and the popover is attached to body so wrappers with overflow hidden do not clip it.
+     */
+    static _ensureInfoPopoverDelegation() {
+        if (InjectorTemplates._popoverDelegationReady) return;
+        $("body").popover({
+            selector: ".tablemanager-info-popover",
+            html: true,
+            container: "body",
+            trigger: "hover",
+            placement: "bottom"
+        });
+        InjectorTemplates._popoverDelegationReady = true;
+    }
+
+    /**
+     * Adds an information icon to the cell that shows the given content (HTML allowed) in a popover on hover.
+     * @param {Array<HTMLElement>} cellElementArray - An array of the elements currently in the cell
+     * @param {string} popoverContent - The popover content.
+     * @returns {Array<HTMLElement>} - The updated array of elements in the cell, including the info icon.
+     */
+    static addInfoIconPopover(cellElementArray, popoverContent) {
+        let span = document.createElement('span');
+        span.className = "glyphicon glyphicon-info-sign";
+        span.setAttribute("data-toggle", "popover");
+        span.setAttribute("data-trigger", "hover");
+        span.setAttribute("data-content", popoverContent);
+
+        span.classList.add("tablemanager-info-popover");
+
+        InjectorTemplates._ensureInfoPopoverDelegation();
+
+        cellElementArray.push(span);
+
+        return cellElementArray;
+    }
+
+    static addDocsIconLink(cellElementArray, href) {
+        let anchor = document.createElement('a');
+        anchor.href = href;
+        anchor.target = "_blank";
+
+        let span = document.createElement('span');
+        span.className = "glyphicon glyphicon-book icon-button";
+
+        anchor.appendChild(span);
+
+        cellElementArray.push(anchor);
+
+        return cellElementArray;
+    }
+
+    /**
      * Adds a popover to the cell that shows a chemical structure image when hovered over. The image is generated from SMILES or sequence data, 
      * or falls back to a provided image URL or a default "No image available" picture.
      * Requires dependencies: PeptideLayoutEngine.js and openchemlib-full.js 
