@@ -83,6 +83,7 @@
     "column_group": "Structure",
     "json_id": "refined_structure",
     "title": "Refined Structure",
+    "primaryHeaderInjectors": ["RefinedStructureDocs"],
     "data_type": "weblinktext",
     "allow_filter": true
   },
@@ -123,6 +124,7 @@
     "json_id": "state",
     "title": "State",
     "data_type": "textselect",
+    "primaryHeaderInjectors": ["ReceptorStateInfo", "StructureDescDocs"],
     "allow_filter": true
   },
   {
@@ -131,6 +133,7 @@
     "title": "Degree Active (%)",
     "data_type": "numeric",
     "precision": 0,
+    "primaryHeaderInjectors": ["StructureDescDocs"],
     "allow_filter": true
   },
   {
