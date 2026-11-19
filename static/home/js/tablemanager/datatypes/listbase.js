@@ -15,6 +15,18 @@ function listItems(data) {
 }
 
 /**
+ * Returns the items in list cell data, with empty entries (null, undefined and empty strings) replaced by a placeholder.
+ * @param {Array|null|undefined} data - The cell data.
+ * @param {string} placeholder - The text shown for an empty entry.
+ * @returns {Array} The items, or an empty array if the data is not a list.
+ */
+function withPlaceholders(data, placeholder) {
+    return Array.isArray(data)
+        ? data.map((item) => (item === null || item === undefined || item === "" ? placeholder : item))
+        : [];
+}
+
+/**
  * Base class for list data types. Cell data is an array of values of the item type. An empty list displays the
  * nullValuePlaceholder. The list's text is the item texts joined with the separator, and is what the list searches,
  * orders and exports by. Subclasses set the static itemClass and the separator, and implement displayValue.
@@ -83,7 +95,7 @@ class ListBase extends DataTypeBase {
      * @param {string} selector - Selects the element in the cell that opens the popup.
      * @param {Array} cellData - The list cell data.
      */
-    _bindListPopup(cell, selector, cellData) {
+    _bindListPopup(cell, selector, cellData, nullPlaceholder = null) {
         const trigger = cell.querySelector(selector);
         if (!trigger) {
             return;
@@ -91,9 +103,10 @@ class ListBase extends DataTypeBase {
         trigger.addEventListener("click", (e) => {
             e.preventDefault();
             e.stopPropagation();
-            showListPopup(trigger, listItems(cellData).map((item) => this.item.renderHtml(item, 0)));
+            const items = nullPlaceholder === null ? listItems(cellData) : withPlaceholders(cellData, nullPlaceholder);
+            showListPopup(trigger, items.map((item) => this.item.renderHtml(item, 0)));
         });
     }
 }
 
-export { ListBase, listItems };
+export { ListBase, listItems, withPlaceholders };

@@ -6,7 +6,7 @@
 //   "popover" (default) - a popup listing the full list, one item per line, as the "weblinktextlist" data type does.
 //   "extend"            - the remaining text is shown in the cell for a few seconds, as for truncated text.
 
-import { ListBase, listItems } from "./listbase.js";
+import { ListBase, withPlaceholders } from "./listbase.js";
 import { Text } from "./text.js";
 import { truncateHtml, bindTruncationToggles } from "./textutils.js";
 
@@ -24,8 +24,8 @@ class TextList extends ListBase {
      * @param {Array} data - The cell data.
      * @returns {string} The display markup.
      */
-    displayValue(data) {
-        const html = listItems(data).map((item) => this.item.displayHtml(item)).join(this.separator);
+    displayValue(data, tableManagerReference) {
+        const html = withPlaceholders(data, tableManagerReference.nullValuePlaceholder).map((item) => this.item.displayHtml(item)).join(this.separator);
         return truncateHtml(html, this.column.max_display_length).content;
     }
 
@@ -43,7 +43,7 @@ class TextList extends ListBase {
         if (this.column.extendMode === "extend") {
             bindTruncationToggles(cell);
         } else {
-            this._bindListPopup(cell, ".tm-text-expand", cellData);
+            this._bindListPopup(cell, ".tm-text-expand", cellData, tableManagerReference.nullValuePlaceholder);
         }
     }
 }
