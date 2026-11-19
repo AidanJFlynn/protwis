@@ -6,6 +6,10 @@ import { ShowBestResolution } from "../buttons/showbestresolution.js";
 import { ShowClosestToHuman } from "../buttons/showclosesttohuman.js";
 import { ShowRepresentatives } from "../buttons/showrepresentatives.js";
 import { ColumnVisibility } from "../buttons/columnvisibility.js";
+import { AlignSequencesButton } from "../buttons/alignsequencesbutton.js";
+import { DownloadPdbsButton } from "../buttons/downloadpdbsbutton.js";
+import { SuperpositionButton } from "../buttons/superpositionbutton.js";
+import { CopyUniprotButton, CopyPdbButton } from "../buttons/copyselectedbutton.js";
 
 
 /**
@@ -27,6 +31,11 @@ class ButtonFactory {
         this.registerButtonType("closest_to_human_toggle", ShowClosestToHuman);
         this.registerButtonType("representative_toggle", ShowRepresentatives);
         this.registerButtonType("column_visibility", ColumnVisibility);
+        this.registerButtonType("align_sequences", AlignSequencesButton);
+        this.registerButtonType("download_pdbs", DownloadPdbsButton);
+        this.registerButtonType("superposition", SuperpositionButton);
+        this.registerButtonType("copy_uniprot_ids", CopyUniprotButton);
+        this.registerButtonType("copy_pdb_ids", CopyPdbButton);
     }
 
     /**

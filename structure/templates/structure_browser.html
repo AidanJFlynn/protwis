@@ -17,11 +17,8 @@
                 width: 1770px;
             }
         }
-        #structure-browser-actions {
-            display: flex;
-            flex-wrap: wrap;
-            gap: 6px;
-            margin-bottom: 10px;
+        #structure-browser-selection-count {
+            margin-bottom: 6px;
         }
         #superposition_modal_table tbody tr {
             cursor: pointer;
@@ -30,15 +27,7 @@
 {% endblock %}
 
 {% block content %}
-<!-- Workflows on the selected structures; enabled while at least one structure is selected -->
-<div id="structure-browser-actions">
-    <button type="button" class="btn btn-default btn-sm selection-action" id="align-button" disabled>Align sequences</button>
-    <button type="button" class="btn btn-default btn-sm selection-action" id="download-button" disabled>Download PDBs</button>
-    <button type="button" class="btn btn-default btn-sm selection-action" id="superpose-button" disabled>Superposition</button>
-    <button type="button" class="btn btn-default btn-sm selection-action" id="copy-uniprot-button" disabled>Copy UniProt IDs</button>
-    <button type="button" class="btn btn-default btn-sm selection-action" id="copy-pdb-button" disabled>Copy PDB IDs</button>
-    <span id="structure-browser-selection-count">0 structure(s) selected</span>
-</div>
+<div id="structure-browser-selection-count">0 structure(s) selected</div>
 
 <div style='overflow-y:hidden;'>
     <table class="display compact" id="structure_browser_table">
@@ -46,9 +35,6 @@
             // Populate structure browser table using TableManager
             import { TableManager } from "{% static 'home/js/tablemanager/tablemanager.js' %}";
             import { InjectorTemplates } from "{% static 'home/js/tablemanager/injectors/injectortemplates.js' %}";
-
-            const MAX_DOWNLOAD = 100;
-            const MAX_SUPERPOSE = 50;
 
             let config = null;
             try {
@@ -77,146 +63,11 @@
                 window.tableManagers = window.tableManagers || {};
                 window.tableManagers.structureBrowserTable = structureBrowserTable;
 
-                //-------------------------------------//
-                //  Workflows on the selected structures //
-                //-------------------------------------//
-
-                // Checkbox data ({pdb_code, uniprot_entry_name}) of the selected structures (see GpcrStructureBrowserSerializer.CHECKBOX_DATA_FIELDS)
-                const selectedStructures = () =>
-                    [...structureBrowserTable.state.activeCheckBoxes.values()].map((checkbox) => checkbox.data);
-                const selectedPdbCodes = () => selectedStructures().map((structure) => structure.pdb_code);
-
-                // The superposition workflow can return here to pick its reference or targets (see superposition_workflow_index)
-                const superpositionMode = window.location.hash === "#keepselectionreference" ? "reference"
-                                        : window.location.hash === "#keepselectiontargets" ? "targets"
-                                        : "default";
-                const superposeButton = document.getElementById("superpose-button");
-                if (superpositionMode === "reference") {
-                    superposeButton.textContent = "Add reference to superposition";
-                } else if (superpositionMode === "targets") {
-                    superposeButton.textContent = "Add targets to superposition";
-                }
-
+                // Selected structure counter
+                const selectionCount = document.getElementById("structure-browser-selection-count");
                 structureBrowserTable.eventPubSub.subscribe("checkboxStateChanged", function() {
-                    const count = structureBrowserTable.state.activeCheckBoxes.size;
-                    document.querySelectorAll("#structure-browser-actions .selection-action").forEach((button) => button.disabled = count === 0);
-                    document.getElementById("structure-browser-selection-count").textContent = `${count} structure(s) selected`;
+                    selectionCount.textContent = `${structureBrowserTable.state.activeCheckBoxes.size} structure(s) selected`;
                 });
-
-                document.getElementById("align-button").addEventListener("click", function() {
-                    ClearSelection("targets");
-                    selectedPdbCodes().forEach((pdbCode) => AddToSelection("targets", "structure", pdbCode));
-                    window.location.href = "/structure/selection_convert";
-                });
-
-                document.getElementById("download-button").addEventListener("click", function() {
-                    const pdbCodes = selectedPdbCodes();
-                    if (pdbCodes.length > MAX_DOWNLOAD) {
-                        showAlert(`Maximum number of selected entries is ${MAX_DOWNLOAD}`, "warning");
-                        return;
-                    }
-                    ClearSelection("targets");
-                    AddToSelection("targets", "structure_many", pdbCodes.join(","));
-                    window.location.href = "/structure/pdb_download";
-                });
-
-                superposeButton.addEventListener("click", function() {
-                    const pdbCodes = selectedPdbCodes();
-                    if (pdbCodes.length > MAX_SUPERPOSE) {
-                        showAlert(`Maximum number of selected entries is ${MAX_SUPERPOSE}`, "warning");
-                        return;
-                    }
-
-                    if (superpositionMode === "reference") {
-                        if (pdbCodes.length !== 1) {
-                            showAlert("Please select exactly one entry as reference", "danger");
-                            return;
-                        }
-                        AddToSelection("reference", "structure", pdbCodes[0]);
-                        window.location.href = "/structure/superposition_workflow_index#keepselection";
-                    } else if (superpositionMode === "targets") {
-                        AddToSelection("targets", "structure_many", pdbCodes.join(","));
-                        window.location.href = "/structure/superposition_workflow_index#keepselection";
-                    } else {
-                        openSuperpositionModal();
-                    }
-                });
-
-                // Plain text of a row's cell, as its column's data type reads it (link text, formatted names, ...)
-                function cellText(rowData, jsonId) {
-                    const value = rowData[jsonId];
-                    if (value === null || value === undefined) {
-                        return structureBrowserTable.nullValuePlaceholder;
-                    }
-                    const type = structureBrowserTable.columns.find((col) => col.json_id === jsonId)?.type;
-                    const text = typeof type?._plainText === "function" ? type._plainText(value) : String(value);
-                    return text || structureBrowserTable.nullValuePlaceholder;
-                }
-
-                // Lists the selected structures; clicking one makes it the reference and the others the targets.
-                // The checkboxes only carry the PDB code, so the rows shown are fetched by their row ids.
-                async function openSuperpositionModal() {
-                    let rows;
-                    try {
-                        rows = await structureBrowserTable.dataSource.getRowsById(structureBrowserTable.state.activeCheckBoxes.keys());
-                    } catch (error) {
-                        console.error("Fetching the selected structures failed:", error);
-                        showAlert("Could not load the selected structures", "danger");
-                        return;
-                    }
-
-                    ClearSelection("targets");
-                    ClearSelection("reference");
-
-                    const modal = document.getElementById("superposition-modal");
-                    const tbody = document.querySelector("#superposition_modal_table tbody");
-                    tbody.replaceChildren();
-
-                    // json ids of the modal's columns, after its checkbox column
-                    const columns = ["pdb", "uniprot", "gene", "protein", "receptor_family", "receptor_class",
-                                     "species_common_name", "state", "publication_date"];
-                    const pdbCodes = rows.map((rowData) => rowData.checkbox.data.pdb_code);
-                    rows.forEach((rowData, index) => {
-                        const tr = document.createElement("tr");
-                        const checkboxCell = document.createElement("td");
-                        const checkbox = document.createElement("input");
-                        checkbox.type = "checkbox";
-                        checkboxCell.appendChild(checkbox);
-                        tr.appendChild(checkboxCell);
-                        for (const jsonId of columns) {
-                            const td = document.createElement("td");
-                            td.textContent = cellText(rowData, jsonId);
-                            tr.appendChild(td);
-                        }
-                        tr.addEventListener("click", () => {
-                            checkbox.checked = true;
-                            const reference = pdbCodes[index];
-                            const targets = pdbCodes.filter((pdbCode) => pdbCode !== reference);
-                            AddToSelection("reference", "structure", reference);
-                            AddToSelection("targets", "structure_many", targets.join(","));
-                            window.location.href = "/structure/superposition_workflow_index#keepselection";
-                        });
-                        tbody.appendChild(tr);
-                    });
-
-                    modal.style.display = "block";
-                    document.getElementById("close_superposition_modal").onclick = () => modal.style.display = "none";
-                    window.addEventListener("click", (e) => { if (e.target === modal) modal.style.display = "none"; });
-                }
-
-                // Copies one value per selected structure to the clipboard, one per line
-                function copySelected(field, label) {
-                    const values = selectedStructures().map((structure) => structure[field]).filter((value) => value);
-                    if (values.length === 0) {
-                        showAlert(`No ${label} available for the selected structures`, "warning");
-                        return;
-                    }
-                    navigator.clipboard.writeText(values.join("\n"))
-                        .then(() => showAlert(`${label} copied to clipboard!`, "success"))
-                        .catch(() => showAlert(`Could not copy ${label} to the clipboard`, "danger"));
-                }
-                document.getElementById("copy-uniprot-button").addEventListener("click", () => copySelected("uniprot_entry_name", "UniProt IDs"));
-                document.getElementById("copy-pdb-button").addEventListener("click", () => copySelected("pdb_code", "PDB IDs"));
             }
         </script>
     </table>
