@@ -12,12 +12,12 @@ import { truncateHtml, bindTruncationToggles } from "./textutils.js";
 
 /**
  * Data type for columns holding a list of text items. Cell data is an array of Text cell values. The cell shows the
- * items separated by ", ", truncated as a whole (see truncateHtml).
+ * items separated by "; ", truncated as a whole (see truncateHtml).
  * @extends ListBase
  */
 class TextList extends ListBase {
     static itemClass = Text;
-    separator = ", ";
+    separator = "; ";
 
     /**
      * Displays the item markup joined with the separator, truncated as one piece to max_display_length.

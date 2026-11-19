@@ -3,6 +3,7 @@
 import { FilterBase } from "./filterbase.js";
 import { addSymbolPopupIfEnabled } from "./symbolpopup.js";
 import { normalizeForSearch } from "../datatypes/textutils.js";
+import { ListBase } from "../datatypes/listbase.js";
 
 /**
  * Text input filter. The text is applied when the input loses focus or Enter is pressed. Text matching one of the
@@ -59,8 +60,11 @@ class TextFilter extends FilterBase {
             const options = await dataSource.getOptions(this.column);
             const searchOptions = new Set(options.map((option) => this.dataType.searchText(option)));
 
-            // If the search value is not one of the unique values, use a "contains" search to allow for partial matches
-            terms.push({ value: searchValue, contains: !searchOptions.has(searchValue) });
+            // If the search value is not one of the unique values, use a "contains" search to allow for partial matches.
+            // List columns always use "contains": a row's value is the whole joined list, so an exact match would only
+            // find rows whose list holds that single item.
+            const isList = this.dataType instanceof ListBase;
+            terms.push({ value: searchValue, contains: isList || !searchOptions.has(searchValue) });
         }
 
         // Redraws only if the filter has changed

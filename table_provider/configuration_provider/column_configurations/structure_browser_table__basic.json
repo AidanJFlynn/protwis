@@ -144,7 +144,7 @@
     "column_group": "Signalling Protein",
     "json_id": "signal_protein_subtype",
     "title": "Subtype",
-    "data_type": "weblinktext",
+    "data_type": "weblinktextselect",
     "allow_filter": true
   },
   {

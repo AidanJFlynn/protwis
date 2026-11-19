@@ -16,7 +16,7 @@ import { bindTruncationToggles } from "./textutils.js";
  */
 class WebLinkTextList extends ListBase {
     static itemClass = WebLinkText;
-    separator = " / ";
+    separator = "; ";
 
     /**
      * Displays the first max_list_items links, each rendered as WebLinkText renders it. A list gets one "more" icon,
