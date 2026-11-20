@@ -87,6 +87,7 @@
     "data_type": "text",
     "allow_filter": true,
     "max_display_length": 18,
+    "breakStyle": "force",
     "width": "200px"
   },
   {
@@ -95,7 +96,8 @@
     "title": "Inchikey",
     "data_type": "text",
     "allow_filter": true,
-    "max_display_length": 18,
+    "max_display_length": 16,
+    "breakStyle": "force",
     "width": "200px" 
   },
   {

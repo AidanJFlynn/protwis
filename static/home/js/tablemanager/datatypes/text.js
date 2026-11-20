@@ -32,7 +32,8 @@ class Text extends DataTypeBase {
      * @returns {string} The markup.
      */
     renderHtml(value, maxDisplayLength, expandIcon = true) {
-        return this._wrapDisplay(value, truncateHtml(this.displayHtml(value), maxDisplayLength, expandIcon).content);
+        const html = truncateHtml(this.displayHtml(value), maxDisplayLength, expandIcon, this.column.breakStyle).content;
+        return this._wrapDisplay(value, html);
     }
 
     /**

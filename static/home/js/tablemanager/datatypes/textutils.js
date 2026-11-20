@@ -55,9 +55,11 @@ function htmlToText(html) {
  * @param {string} html - The text, optionally containing HTML.
  * @param {number|undefined} maxDisplayLength - The maximum number of displayed characters to show, or a falsy value for no limit.
  * @param {boolean} [expandIcon=true] - Whether to add the expand icon after truncated text.
+ * @param {string} [breakStyle="natural"] - How the expanded text wraps: "natural" breaks at word boundaries, "force"
+ * breaks anywhere (for long strings without spaces, e.g. SMILES or sequences). Other values count as "natural".
  * @returns {{truncated: boolean, content: string}} Whether the text was truncated, and the text or the span's markup.
  */
-function truncateHtml(html, maxDisplayLength, expandIcon = true) {
+function truncateHtml(html, maxDisplayLength, expandIcon = true, breakStyle = "natural") {
     // The displayed length never exceeds the raw length, so short text can skip parsing
     if (!maxDisplayLength || html.length <= maxDisplayLength) {
         return { truncated: false, content: html };
@@ -79,6 +81,9 @@ function truncateHtml(html, maxDisplayLength, expandIcon = true) {
 
     const span = document.createElement("span");
     span.classList.add("tm-truncated");
+    if (breakStyle === "force") {
+        span.classList.add("tm-break-force");
+    }
     span.setAttribute("title", fullContainer.textContent);
     span.setAttribute("data-full", fullHtml);
     span.setAttribute("data-truncated", truncatedHtml);

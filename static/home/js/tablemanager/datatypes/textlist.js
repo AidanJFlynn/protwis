@@ -26,7 +26,7 @@ class TextList extends ListBase {
      */
     displayValue(data, tableManagerReference) {
         const html = withPlaceholders(data, tableManagerReference.nullValuePlaceholder).map((item) => this.item.displayHtml(item)).join(this.separator);
-        return truncateHtml(html, this.column.max_display_length).content;
+        return truncateHtml(html, this.column.max_display_length, true, this.column.breakStyle).content;
     }
 
     /**

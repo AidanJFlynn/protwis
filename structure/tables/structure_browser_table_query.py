@@ -208,6 +208,10 @@ def StructureBrowserTableRows():
         if len(aux_names) != len(aux_types) or len(aux_names) != len(aux_functions):
             raise ValueError("Inconsistent lengths in auxiliary small molecules")
 
+        # Regex to add a space after the slash in signal protein notes, so that the table can break lines there.
+        # Eg. "A34B/S43K/D678F" becomes "A34B / S43K / D678F"
+        aa_slash_re = re.compile(r"([A-Z][0-9]{1,4}[A-Z])/")
+
         rows.append({
             ## Structure
             'structure_id': s.id,
@@ -239,7 +243,7 @@ def StructureBrowserTableRows():
             'signal_protein_subtype': _signal_protein_subtype(signal_protein) if signal_protein else None,
             'signal_protein_entry_name': (signal_protein.wt_protein.entry_name
                                           if signal_protein and signal_protein.wt_protein else None),
-            'signal_protein_note': (signal_protein.note or None) if signal_protein else None,
+            'signal_protein_note': (aa_slash_re.sub("\\1 / ", signal_protein.note) or None) if signal_protein else None, #add space to allow breaks in table
             'signal_protein_pcntseq': signal_protein.wt_coverage if signal_protein else None,
 
             ## Structure ligands (position matched lists of ids, names, types and roles)

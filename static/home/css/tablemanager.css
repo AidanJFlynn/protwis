@@ -192,11 +192,15 @@ table.dataTable.tablemanager-standard tbody td {
 
 .tm-truncated-text.tm-truncated-text-expanded {
     display: inline-block;
-    /* The table is text-nowrap, which would stop the wrapping below. SMILES/Sequence strings have no spaces, so allow a break anywhere */
+    /* The table is text-nowrap, which would stop the wrapping. Default (breakStyle "natural"): break at word boundaries */
     white-space: normal;
+    hyphens: none;
+}
+
+/* breakStyle "force": SMILES/Sequence strings have no spaces, so allow a break anywhere */
+.tm-truncated.tm-break-force .tm-truncated-text.tm-truncated-text-expanded {
     overflow-wrap: anywhere;
     word-break: break-all;
-    hyphens: none;
 }
 
 /* Reference list modal      */
