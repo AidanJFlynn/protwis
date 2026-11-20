@@ -113,8 +113,8 @@ class GpcrStatisticsSummarySerializer(DataTablesSerializerMixin, serializers.Ser
     """Serializer to generate JSON for the structure statistics data for GPCRs stored in the gpcr_structure_statistics database table."""
 
     uniprot = serializers.SerializerMethodField()
-    protein_name = serializers.CharField(read_only=True)
-    receptor_family = serializers.ReadOnlyField()
+    protein_name = serializers.SerializerMethodField()
+    receptor_family = serializers.SerializerMethodField()
     receptor_class = serializers.ReadOnlyField(read_only=True, )
     gene = serializers.SerializerMethodField()
     species_common_name = serializers.CharField(read_only=True)
@@ -159,7 +159,7 @@ class GpcrStatisticsSummarySerializer(DataTablesSerializerMixin, serializers.Ser
     class Meta:
         model = GpcrStructureStatisticsTable
         serializer_method_to_filter_field_map = {
-            'uniprot': 'uniprot_entry_name', 'gene': 'gene_name',
+            'uniprot': 'uniprot_entry_name', 'gene': 'gene_name', 'protein_name': 'protein_name', 'receptor_family': 'receptor_family',
         }
 
     def get_uniprot(self, obj):
@@ -168,6 +168,12 @@ class GpcrStatisticsSummarySerializer(DataTablesSerializerMixin, serializers.Ser
 
     def get_gene(self, obj):
         return self.weblink_anchor(obj.gene_name, obj.gene_entrez_id, 'entrez_gene')
+
+    def get_protein_name(self, obj):
+        return self.string_with_optional_formatting(obj.protein_name, obj.protein_name_formatting)
+
+    def get_receptor_family(self, obj):
+        return self.string_with_optional_formatting(obj.receptor_family, obj.receptor_family_formatting)
 
 
 class PdbStructureSummarySerializer(DataTablesSerializerMixin, serializers.Serializer):
@@ -310,13 +316,13 @@ class PhysiologicalLigandsSerializer(DataTablesSerializerMixin, serializers.Seri
 
     def get_protein(self, obj):
         # HTML name displayed, plain name carried for filtering, ordering and export
-        return self.anchor(obj.protein_name_html, f'/protein/{obj.uniprot_entry_name}', obj.protein_name)
+        return self.anchor(self.string_with_optional_formatting(obj.protein_name, obj.protein_name_formatting), f'/protein/{obj.uniprot_entry_name}', obj.protein_name)
 
     def get_gene(self, obj):
         return self.weblink_anchor(obj.gene_name, obj.gene_entrez_id, 'entrez_gene')
 
     def get_ligand(self, obj):
-        return self.anchor(obj.ligand_name_html, f'/ligand/{obj.ligand_id}/group', obj.ligand_name)
+        return self.anchor(self.string_with_optional_formatting(obj.ligand_name, obj.ligand_name_formatting), f'/ligand/{obj.ligand_id}/group', obj.ligand_name)
 
     def get_gtp_ligand(self, obj):
         return self.weblink_anchor(obj.gtp_ligand_index, obj.gtp_ligand_index, 'gtoplig')
@@ -393,13 +399,13 @@ class LigandComplexModelsSerializer(DataTablesSerializerMixin, serializers.Seria
 
     def get_ligand(self, obj):
         # HTML name displayed, plain name carried for filtering, ordering and export
-        return self.anchor(obj.ligand_name_html, f'/ligand/{obj.ligand_id}/group', obj.ligand_name)
+        return self.anchor(self.string_with_optional_formatting(obj.ligand_name, obj.ligand_name_formatting), f'/ligand/{obj.ligand_id}/group', obj.ligand_name)
 
     def get_gene(self, obj):
         return self.weblink_anchor(obj.gene_name, obj.gene_entrez_id, 'entrez_gene')
 
     def get_protein(self, obj):
-        return self.anchor(obj.protein_name_html, f'/protein/{obj.uniprot_entry_name}', obj.protein_name)
+        return self.anchor(self.string_with_optional_formatting(obj.protein_name, obj.protein_name_formatting), f'/protein/{obj.uniprot_entry_name}', obj.protein_name)
 
 
 class GpcrStructureBrowserSerializer(DataTablesSerializerMixin, serializers.Serializer):

@@ -116,7 +116,7 @@
     "data_type": "textselect",
     "allow_filter": true,
     "width": "120px",
-    "max_display_length": 20
+    "max_display_length": 13
   },
   {
     "column_group": "Structure",
