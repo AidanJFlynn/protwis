@@ -1231,8 +1231,8 @@ class HTMLRemover:
                 out.append('<%s>%s</%s>' % (tag, unconverted, tag))
             return ''.join(out)
 
-        text = cls._SCRIPT_RE.sub(convert, str(text))
-        return unescape(text)
+        text = unescape(str(text))
+        return cls._SCRIPT_RE.sub(convert, text)
 
     @classmethod
     def HTMLtoFormatTags(cls, text):
