@@ -119,7 +119,7 @@ class SelectFilter extends FilterBase {
      * that are equal once normalised (e.g. "PIP₃" and "PIP3") share one option, as they match the same rows. Null and
      * empty values get no option. Options are ordered by their normalised text.
      * @param {Array<*>|null|undefined} data - The column values: raw cell data client-side, database values
-     *   server-side. Logs a warning and adds nothing if empty.
+     *   server-side; single items for list columns. Logs a warning and adds nothing if empty.
      */
     _populateOptions(data) {
         if (!data || data.length === 0) {
@@ -129,7 +129,7 @@ class SelectFilter extends FilterBase {
 
         const labels = new Map(); // normalised text -> label, first label seen wins
         for (const value of data) {
-            const label = this.dataType.plainText(value);
+            const label = this.dataType.optionText(value);
             const key = normalizeForSearch(label);
             if (key !== "" && !labels.has(key)) {
                 labels.set(key, label);

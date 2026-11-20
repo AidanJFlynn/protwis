@@ -77,7 +77,7 @@
     "column_group": "Structure Ligands",
     "json_id": "ligand_type",
     "title": "Type",
-    "data_type": "textselect",
+    "data_type": "textlistselect",
     "max_display_length": 15,
     "allow_filter": true
   },
@@ -85,7 +85,7 @@
     "column_group": "Structure Ligands",
     "json_id": "ligand_role",
     "title": "Modality",
-    "data_type": "textselect",
+    "data_type": "textlistselect",
     "max_display_length": 15,
     "allow_filter": true
   },

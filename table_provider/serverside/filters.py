@@ -289,18 +289,29 @@ class TextFilter(FilterRequirement):
 class JsonFilter(TextFilter):
     """A text filter for JSONField columns.
 
-    NOTE: THIS IS ONLY A STOP-GAP SOLUTION UNTIL DJANGO IS UPGRADED TO A VERSION THAT SUPPORTS JSON SEARCHES
-
-    Behaves like TextFilter, but searches the JSON serialised as text (via the `astext` transform, a
-    `::text` cast in PostgreSQL). Note that the text includes JSON syntax, e.g. '["A", "B"]', so
-    exact ("in") matches only succeed against the complete serialised value; "contains" is the
-    useful lookup. Normalisation (NFKC) is applied on the text unless normalize=False.
+    Matches the elements of a JSON array individually, using the lookups in common/db_functions.py. A row
+    matches an exact ("in") value when one of its elements equals the value (`elementin`), so a select option
+    chosen from a list column's elements finds every row listing it. It matches a "contains" value when one of
+    its elements contains the value, case-insensitively (`elementicontains`). Matches never span two elements
+    or JSON syntax, and values that are not arrays never match. Elements are NFKC normalised unless
+    normalize=False.
     """
 
     def __init__(self, db_field_name, exact=(), contains=(), normalize=True):
         super().__init__(db_field_name, exact, contains, normalize)
         self.filter_type = 'json'
-        self.lookup_prefix = f"{db_field_name}__astext" + ("__nfkc" if normalize else "")
+        prefix = "nfkc" if normalize else ""
+        self.exact_lookup = f"{db_field_name}__{prefix}elementin"
+        self.contains_lookup = f"{db_field_name}__{prefix}elementicontains"
+
+    def format_query(self):
+        """Converts filter values into a Django Q object; exact element matches and contains matches are ORed."""
+        query = Q()
+        if self.exact_values:
+            query |= Q(**{self.exact_lookup: self.exact_values})
+        for value in self.contains_values:
+            query |= Q(**{self.contains_lookup: value})
+        return query
 
 
 class NumericRangeFilter(FilterRequirement):

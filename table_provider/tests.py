@@ -8,7 +8,8 @@ from table_provider.models import GpcrStructureBrowserTable
 from table_provider.serializers import (
     GpcrStatisticsSummarySerializer, GpcrStructureBrowserSerializer, PdbStructureSummarySerializer, TABLE_SERIALIZERS,
 )
-from table_provider.serverside.filters import TextFilter, NumericRangeFilter, BooleanFilter, FilterSet, FilterError
+from table_provider.serverside.filters import TextFilter, JsonFilter, NumericRangeFilter, BooleanFilter, FilterSet, FilterError
+from table_provider.views import _distinct_json_elements
 from table_provider.serverside.querystringprocessing import DatatablesQueryStringProcessor, QueryStringProcessingError
 from rest_framework import serializers
 
@@ -117,6 +118,98 @@ class BooleanFilterTestCase(TestCase):
 
     def test_collection_of_values(self):
         self.assertEqual(BooleanFilter("is_complex", {True, False}).format_query(), Q(is_complex__in=[False, True]))
+
+
+class JsonFilterTestCase(TestCase):
+    """Tests for JsonFilter: exact values match any element of a JSON array, contains values search the JSON text."""
+
+    def _row(self, pdb_code, **json_fields):
+        return GpcrStructureBrowserTable.objects.create(
+            structure_id=1, pdb_code=pdb_code, uniprot_entry_name='x_human', uniprot_name='X', sodium_site='No', sodium='No',
+            **json_fields)
+
+    def _matching(self, json_filter):
+        return set(GpcrStructureBrowserTable.objects.filter(json_filter.format_query()).values_list('pdb_code', flat=True))
+
+    def test_query_structure(self):
+        f = JsonFilter("ligand_role", ["Agonist"], ["ago"])
+        self.assertEqual(f.format_query(), Q(ligand_role__nfkcelementin=["Agonist"]) | Q(ligand_role__nfkcelementicontains="ago"))
+
+    def test_query_structure_not_normalised(self):
+        f = JsonFilter("ligand_role", ["Agonist"], ["ago"], normalize=False)
+        self.assertEqual(f.format_query(), Q(ligand_role__elementin=["Agonist"]) | Q(ligand_role__elementicontains="ago"))
+
+    def test_empty_filter(self):
+        self.assertEqual(JsonFilter("ligand_role").format_query(), Q())
+
+    def test_exact_matches_any_element(self):
+        self._row('both', ligand_role=["Agonist", "Antagonist"])
+        self._row('agonist', ligand_role=["Agonist"])
+        self._row('none', ligand_role=[])
+        self.assertEqual(self._matching(JsonFilter("ligand_role", ["Antagonist"])), {'both'})
+        self.assertEqual(self._matching(JsonFilter("ligand_role", ["Agonist"])), {'both', 'agonist'})
+        self.assertEqual(self._matching(JsonFilter("ligand_role", ["Agonist", "Antagonist"])), {'both', 'agonist'})
+        self.assertEqual(self._matching(JsonFilter("ligand_role", ["Agonist, Antagonist"])), set())
+
+    def test_exact_is_whole_element_and_case_sensitive(self):
+        self._row('agonist', ligand_role=["Agonist"])
+        self.assertEqual(self._matching(JsonFilter("ligand_role", ["Agon"])), set())
+        self.assertEqual(self._matching(JsonFilter("ligand_role", ["agonist"])), set())
+
+    def test_exact_elements_normalised(self):
+        self._row('pip', ligand_names=["PIP₃"])
+        self.assertEqual(self._matching(JsonFilter("ligand_names", ["PIP₃"])), {'pip'})
+        self.assertEqual(self._matching(JsonFilter("ligand_names", ["PIP3"])), {'pip'})
+        self.assertEqual(self._matching(JsonFilter("ligand_names", ["PIP3"], normalize=False)), set())
+
+    def test_non_array_values_do_not_match_or_raise(self):
+        self._row('scalar', ligand_role="Agonist")
+        self._row('object', ligand_role={"name": "Agonist"})
+        self.assertEqual(self._matching(JsonFilter("ligand_role", ["Agonist"])), set())
+
+    def test_contains_matches_within_an_element_case_insensitively(self):
+        self._row('both', ligand_role=["Agonist", "Antagonist"])
+        self._row('pam', ligand_role=["PAM"])
+        self.assertEqual(self._matching(JsonFilter("ligand_role", contains=["TAGON"])), {'both'})
+        self.assertEqual(self._matching(JsonFilter("ligand_role", contains=["pa"])), {'pam'})
+
+    def test_contains_never_matches_json_syntax_or_across_elements(self):
+        self._row('both', ligand_role=["Agonist", "Antagonist"])
+        for term in ['", "', '["', 'st", "An', 'Agonist, Antagonist']:
+            with self.subTest(term=term):
+                self.assertEqual(self._matching(JsonFilter("ligand_role", contains=[term])), set())
+
+    def test_contains_is_literal(self):
+        """LIKE wildcards and regex characters in the search text are matched literally."""
+        self._row('plain', ligand_role=["Agonist"])
+        self._row('percent', ligand_role=["50% agonist_x"])
+        for term, expected in [('%', {'percent'}), ('_', {'percent'}), ('a.o', set()), ('(', set())]:
+            with self.subTest(term=term):
+                self.assertEqual(self._matching(JsonFilter("ligand_role", contains=[term])), expected)
+
+    def test_contains_elements_normalised(self):
+        self._row('pip', ligand_names=["PIP₃ analogue"])
+        self.assertEqual(self._matching(JsonFilter("ligand_names", contains=["pip3"])), {'pip'})
+        self.assertEqual(self._matching(JsonFilter("ligand_names", contains=["pip3"], normalize=False)), set())
+
+    def test_contains_ignores_non_array_values(self):
+        self._row('scalar', ligand_role="Agonist")
+        self._row('object', ligand_role={"name": "Agonist"})
+        self.assertEqual(self._matching(JsonFilter("ligand_role", contains=["agon"])), set())
+
+    def test_exact_and_contains_ored(self):
+        self._row('agonist', ligand_role=["Agonist"])
+        self._row('inverse', ligand_role=["Inverse agonist"])
+        self._row('pam', ligand_role=["PAM"])
+        self.assertEqual(self._matching(JsonFilter("ligand_role", ["PAM"], ["inverse"])), {'pam', 'inverse'})
+
+
+class DistinctJsonElementsTestCase(SimpleTestCase):
+    """Options of JSON columns are the distinct elements, matching JsonFilter's element-wise exact match."""
+
+    def test_flattens_and_deduplicates(self):
+        values = [["Agonist", "Antagonist"], ["Agonist"], [], None, "PAM", [{"a": 1}, ["nested"], None, "NAM"]]
+        self.assertEqual(_distinct_json_elements(values), ["Agonist", "Antagonist", "NAM", "PAM"])
 
 
 class FilterSetParseFiltersTestCase(TestCase):
@@ -429,7 +522,7 @@ class SerializerColumnMetadataTestCase(SimpleTestCase):
             'resolution': 'numeric', 'resolution_best': 'boolean', 'state': 'text', 'query_effector': 'text',
             'gprot_bound_likeness': 'numeric', 'tm6_angle': 'numeric', 'signal_protein': 'text',
             'signal_protein_subtype': 'text', 'signal_protein_note': 'text', 'signal_protein_pcntseq': 'numeric',
-            'fusion': 'text', 'antibody': 'text', 'ligand': 'text', 'ligand_role': 'text',
+            'fusion': 'text', 'antibody': 'text', 'ligand': 'json', 'ligand_role': 'json',
         })
 
     def test_gpcr_datatypes(self):
@@ -481,9 +574,13 @@ class ColumnConfigurationConsistencyTestCase(SimpleTestCase):
     # Client data_type -> server datatypes it can filter correctly.
     # text/textselect accept boolean because the client sends "true"/"false" search strings.
     COMPATIBLE = {
-        'text': {'text', 'boolean', 'date'},
-        'textselect': {'text', 'boolean', 'date'},
+        # json: exact values match any element of a JSON array (JsonFilter), and the options endpoint lists the elements
+        'text': {'text', 'boolean', 'date', 'json'},
+        'textselect': {'text', 'boolean', 'date', 'json'},
+        'textlist': {'json'},
+        'textlistselect': {'json'},
         'weblinktext': {'text', 'json'},
+        'weblinktextselect': {'text'},
         'weblinktextlist': {'json'},
         'referencelist': {'json'},
         'numeric': {'numeric'},

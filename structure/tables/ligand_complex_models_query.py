@@ -224,7 +224,7 @@ def LigandComplexModelsTableRows():
 
             ## Ligand
             'ligand_id': ligand.id,
-            'ligand_name': ligand.name,
+            'ligand_name': _ligand_display_name(ligand.name),
             'mol_modality': _mol_modality(ligand.ligand_type),
             'pharm_modality': pharm_modality_by_pair.get((ligand.id, _canonical_entry_name(protein))),
             'physiological': "Yes" if (ligand.id, protein.id) in physiological_pairs else "No",
@@ -236,7 +236,7 @@ def LigandComplexModelsTableRows():
             'gene_name': structure.gene_name,
             'gene_entrez_id': structure.gene_entrez_id,
             'uniprot_entry_name': protein.entry_name,
-            'protein_name': protein.name,
+            'protein_name': _receptor_display_name(protein.name),
             'receptor_family': protein.family.parent.name,
             'receptor_class': receptor_class[len("Class "):] if receptor_class.startswith("Class ") else receptor_class,
             'receptor_modality': receptor_modality.get(protein.family_id),

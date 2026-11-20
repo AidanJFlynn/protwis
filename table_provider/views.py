@@ -39,6 +39,17 @@ def apply_filterset(queryset, filterset):
     return queryset
 
 
+def _distinct_json_elements(values):
+    """Distinct scalar elements of JSON column values, sorted by their text. The elements of arrays are taken
+    individually, matching the element-wise exact filter (JsonFilter); nulls, objects and nested arrays are skipped."""
+    elements = set()
+    for value in values:
+        for element in (value if isinstance(value, list) else [value]):
+            if element is not None and not isinstance(element, (dict, list)):
+                elements.add(element)
+    return sorted(elements, key=str)
+
+
 def _parse_draw(url_params):
     """DataTables expects the draw counter echoed back as an integer; reject non-integers as a bad request."""
     try:
@@ -118,6 +129,8 @@ class DataTablesView(generics.ListAPIView):
             return JsonResponse(self.get_serializer().serialize_column('checkbox', rows), safe=False)
 
         try:
+            if self.serializer_class.column_datatypes()[column] == 'json':
+                return JsonResponse(_distinct_json_elements(filtered.values_list(source, flat=True)), safe=False)
             values = filtered.values_list(source, flat=True).distinct().order_by(source)
             return JsonResponse(list(values), safe=False)
         except FieldError:

@@ -189,7 +189,7 @@
     "column_group": "Structure Ligands",
     "json_id": "ligand_role",
     "title": "Modality",
-    "data_type": "textselect",
+    "data_type": "textlistselect",
     "max_display_length": 15,
     "allow_filter": true
   },
@@ -254,7 +254,7 @@
     "column_group": "Sodium Ion Sites",
     "json_id": "sodium_site",
     "title": "D2x50 S3x39",
-    "data_type": "textlist",
+    "data_type": "textselect",
     "allow_filter": true
   },
   {

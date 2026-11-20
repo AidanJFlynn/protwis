@@ -35,6 +35,8 @@ class DataTypeFactory {
         this.registerDataType("text", Text, TextFilter);
         this.registerDataType("textselect", Text, SelectFilter);
         this.registerDataType("textlist", TextList, TextFilter);
+        // Select filter over the list's distinct items; a chosen item matches every row listing it
+        this.registerDataType("textlistselect", TextList, SelectFilter);
         this.registerDataType("weblinktext", WebLinkText, TextFilter);
         this.registerDataType("weblinktextselect", WebLinkText, SelectFilter);
         this.registerDataType("weblinktextlist", WebLinkTextList, TextFilter);

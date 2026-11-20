@@ -58,11 +58,10 @@ class TextFilter extends FilterBase {
             // Client-side these are the raw cell data (strings, {content, formatting} objects or links), server-side
             // the raw database values.
             const options = await dataSource.getOptions(this.column);
-            const searchOptions = new Set(options.map((option) => this.dataType.searchText(option)));
+            const searchOptions = new Set(options.map((option) => normalizeForSearch(this.dataType.optionText(option))));
 
             // If the search value is not one of the unique values, use a "contains" search to allow for partial matches.
-            // List columns always use "contains": a row's value is the whole joined list, so an exact match would only
-            // find rows whose list holds that single item.
+            // List columns always use "contains", which matches within each item and so also finds a whole item.
             const isList = this.dataType instanceof ListBase;
             terms.push({ value: searchValue, contains: isList || !searchOptions.has(searchValue) });
         }

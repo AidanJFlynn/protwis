@@ -76,6 +76,16 @@ class DataTypeBase {
     return normalizeForSearch(this.plainText(v));
   }
 
+  /**
+   * The text of a filter option, as returned by the data source's getOptions. Options are cell values, so the default
+   * is plainText. List types override it, as their options are single items.
+   * @param {*} option - The option value.
+   * @returns {string} The option's plain text.
+   */
+  optionText(option) {
+    return this.plainText(option);
+  }
+
   //---------------------------------------------------------------------------------//
   //  Rendering. dataTableRenderer handles empty values, then hands each render type  //
   //  to a hook: displayValue, searchValue or sortValue. Subclasses override the      //

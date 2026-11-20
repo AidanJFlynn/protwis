@@ -68,6 +68,24 @@ class ListBase extends DataTypeBase {
     }
 
     /**
+     * Filter options of list columns are single items (see getOptions in the data sources), so their text is the item's.
+     * @param {*} option - One item.
+     * @returns {string} The item's plain text.
+     */
+    optionText(option) {
+        return this.item.plainText(option);
+    }
+
+    /**
+     * The normalised text of each item, used to filter the list item by item.
+     * @param {Array|null|undefined} data - The cell data.
+     * @returns {string[]} The items' search texts.
+     */
+    itemSearchTexts(data) {
+        return listItems(data).map((item) => this.item.searchText(item));
+    }
+
+    /**
      * Searches and orders by the normalised joined item texts, so a search for any item finds the row.
      * @param {Array|null|undefined} data - The cell data.
      * @returns {string} The search value.

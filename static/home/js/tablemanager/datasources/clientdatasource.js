@@ -3,6 +3,7 @@
 
 import { DataSourceBase } from "./datasourcebase.js";
 import { StorageCache } from "./storagecache.js";
+import { ListBase, listItems } from "../datatypes/listbase.js";
 
 class ClientDataSource extends DataSourceBase {
 
@@ -72,13 +73,17 @@ class ClientDataSource extends DataSourceBase {
   // called earlier, e.g. by a cell style while the first rows are rendered).
 
   /**
-   * Gets the distinct values of a column from the loaded rows, sorted.
-   * @param {Object} column - The column (data type instance) to get options for.
+   * Gets the distinct values of a column from the loaded rows, sorted. For list columns these are the distinct items,
+   * as for the server-side options endpoint, since list filters match item by item.
+   * @param {Object} column - The column to get options for.
    * @returns {Promise<Array>} The distinct raw values.
    */
   async getOptions(column) {
     await this.tableManagerReference.ready;
-    const data = this._dataTable.column(column.col_idx).data().toArray();
+    let data = this._dataTable.column(column.col_idx).data().toArray();
+    if (column.type instanceof ListBase) {
+      data = data.flatMap((value) => listItems(value));
+    }
     return Array.from(new Set(data.map((value) => value?.content ?? value))).sort();
   }
 
@@ -219,6 +224,9 @@ class ClientDataSource extends DataSourceBase {
    */
   _buildColumnSearch(column, filter) {
     if (filter.type === "text") {
+      if (column.type instanceof ListBase) {
+        return this._buildListTextSearch(column, filter.terms);
+      }
       const search = this._buildTextSearch(filter.terms);
       return { ...search, key: search.value };
     }
@@ -280,6 +288,30 @@ class ClientDataSource extends DataSourceBase {
     // regex always true for any multi-term searches as they use | (or) operator, 
     // and for single-term searches with the "contains" flag (which need wildcards).
     return { value: value, regex: true };
+  }
+
+  /**
+   * Builds a text search for a list column that matches item by item, as the server does for JSON list columns: a row
+   * matches an exact term when one of its items equals it, and a contains term when one of its items contains it
+   * (case-insensitively). Terms never match across two items or the separator. Term values are normalised by the
+   * filters, and are compared with the items' normalised text.
+   * @param {Object} column - The list column to filter.
+   * @param {Array<{value: string, contains: boolean}>} terms - The terms to match, ORed.
+   * @returns {{value: string|Function, regex: boolean, key: string}} The column search. With no terms, an empty search.
+   */
+  _buildListTextSearch(column, terms) {
+    if (terms.length === 0) {
+      return { value: "", regex: false, key: "" };
+    }
+
+    const exact = new Set(terms.filter((term) => !term.contains).map((term) => String(term.value)));
+    const contains = terms.filter((term) => term.contains).map((term) => String(term.value).toLowerCase());
+
+    const listSearch = (searchData, rowData) => column.type.itemSearchTexts(rowData[column.json_id]).some((item) =>
+      exact.has(item) || contains.some((value) => item.toLowerCase().includes(value)));
+    listSearch.filterKey = JSON.stringify(terms);
+
+    return { value: listSearch, regex: false, key: listSearch.filterKey };
   }
 
   /**
