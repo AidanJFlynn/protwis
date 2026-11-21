@@ -6,9 +6,14 @@ import { registerPopupForOutsideClick } from "../datatypes/popups.js";
 const GREEK_SYMBOLS = [
     { label: "α", name: "alpha" },
     { label: "β", name: "beta" },
+    { label: "γ", name: "gamma" },
+    { label: "Δ", name: "delta_uppercase" },
     { label: "δ", name: "delta" },
+    { label: "ε", name: "epsilon" },
     { label: "κ", name: "kappa" },
     { label: "μ", name: "mu" },
+    { label: "φ", name: "phi" },
+	{ label: "Φ", name: "phi_uppercase" }
 ];
 
 /**
@@ -57,12 +62,26 @@ function addSymbolPopupIfEnabled(column, wrapper, getTextInput) {
     symbolBtn.classList.add("tm-symbol-button");
     symbolBtn.addEventListener("click", (e) => {
         e.stopPropagation();
+        const opening = !popup.classList.contains("tm-open");
         popup.classList.toggle("tm-open");
+        if (opening) {
+            const rect = symbolBtn.getBoundingClientRect();
+            popup.style.left = (rect.left + window.scrollX) + "px";
+            popup.style.top = (rect.bottom + window.scrollY) + "px";
+        }
     });
 
     registerPopupForOutsideClick(popup);
+    // Attached to the body rather than the filter wrapper, so the table header does not clip it. Being detached from
+    // the button, it is closed on scroll instead of following it.
+    document.body.appendChild(popup);
+    window.addEventListener("scroll", (e) => {
+        if (!popup.contains(e.target)) {
+            popup.classList.remove("tm-open");
+        }
+    }, true);
 
-    wrapper.append(symbolBtn, popup);
+    wrapper.append(symbolBtn);
     return true;
 }
 
