@@ -257,6 +257,7 @@ class InjectorTemplates {
             }
 
             // Create the tooltip, but don't show it yet
+            document.querySelectorAll(".tooltip-struct").forEach((t) => t.remove());
             let tooltip = document.createElement("p");
             tooltip.classList.add("tooltip-struct");
             tooltip.innerHTML = tooltipHtml;
@@ -275,7 +276,8 @@ class InjectorTemplates {
         }
         
         const mouseLeaveHandler = function(e) {
-            document.querySelector(".tooltip-struct").remove();
+            // Remove every tooltip, not just the first, so a stray duplicate can never stay open
+            document.querySelectorAll(".tooltip-struct").forEach((t) => t.remove());
         }
 
         
