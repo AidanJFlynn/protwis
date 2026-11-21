@@ -12,7 +12,7 @@
     "column_group": "Classification",
     "json_id": "uniprot",
     "title": "UniProt",
-    "data_type": "weblinktext",
+    "data_type": "weblinktextselect",
     "allow_filter": true,
     "width": "70px"
   },
@@ -20,7 +20,7 @@
     "column_group": "Classification",
     "json_id": "gene",
     "title": "Gene",
-    "data_type": "weblinktext",
+    "data_type": "weblinktextselect",
     "allow_filter": true,    
     "cssClassFilterInput": "gene_filter_input"
   },

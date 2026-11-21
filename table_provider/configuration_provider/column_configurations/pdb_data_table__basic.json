@@ -55,7 +55,7 @@
     "column_group": "Receptor",
     "json_id": "uniprot",
     "title": "UniProt",
-    "data_type": "weblinktext",
+    "data_type": "weblinktextselect",
     "allow_filter": true,
     "width": "120px"
   },
@@ -70,7 +70,7 @@
   "column_group": "Receptor",
   "json_id": "gene",
   "title": "Gene",
-  "data_type": "weblinktext",
+  "data_type": "weblinktextselect",
   "allow_filter": true   
 },
     {
@@ -187,14 +187,14 @@
     "column_group": "Auxiliary Proteins",
     "json_id": "fusion",
     "title": "Fusion",
-    "data_type": "text",
+    "data_type": "textselect",
     "allow_filter": true   
   },
     {
     "column_group": "Auxiliary Proteins",
     "json_id": "antibody",
     "title": "Antibody",
-    "data_type": "text",
+    "data_type": "textselect",
     "allow_filter": true   
   },
     {
@@ -202,7 +202,7 @@
     "json_id": "ligand",
     "title": "Ligand",
     "max_display_length": 15,
-    "data_type": "text",
+    "data_type": "textselect",
     "allow_filter": true   
   },
     {

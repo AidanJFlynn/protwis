@@ -22,9 +22,10 @@
     "column_group": "Ligand",
     "json_id": "ligand",
     "title": "Name",
-    "data_type": "weblinktext",
+    "data_type": "weblinktextselect",
     "allow_filter": true,
-    "width": "160px",
+    "show_symbol_popup": true,
+    "width": "180px",
     "max_display_length": 20,
     "cellInjectors": [
       "structurePopover"
@@ -62,7 +63,7 @@
     "title": "Clinical",
     "data_type": "textselect",
     "allow_filter": true,
-    "width": "90px"
+    "width": "110px"
   },
   {
     "column_group": "Receptor",
@@ -87,8 +88,8 @@
     "title": "Family",
     "data_type": "textselect",
     "allow_filter": true,
-    "width": "140px",
-    "max_display_length": 20
+    "width": "170px",
+    "max_display_length": 18
   },
   {
     "column_group": "Receptor",
