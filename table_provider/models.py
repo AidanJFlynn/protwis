@@ -459,3 +459,47 @@ class LigandComplexModelsTable(models.Model):
             models.Index(fields=["rfaa_score"], name="lcm_rfaa_score_idx"),
             models.Index(fields=["publication_date"], name="lcm_publication_date_idx"),
         ]
+
+
+class HomologyModelsTable(models.Model):
+    """Model representing the homology models table, one row per receptor model, generated from the data retrieved by HomologyModelsTableRows"""
+
+    # Model (plain ids, no foreign keys, so the table can be rebuilt independently)
+    model_id = models.IntegerField(null=False)  # StructureModel pk, used by the model download
+    version = models.DateField(null=True)
+    state = models.CharField(max_length=50, null=True)  # ProteinState name, part of the selection id
+    state_slug = models.CharField(max_length=50, null=True)  # ProteinState slug, part of the model page link
+    method = models.CharField(max_length=50, null=True)
+
+    # Receptor
+    uniprot_entry_name = models.CharField(max_length=100, null=False)
+    uniprot_accession = models.CharField(max_length=100, null=True)
+    uniprot_name = models.CharField(max_length=100, null=True)
+    gene_name = models.CharField(max_length=100, null=True)
+    gene_entrez_id = models.CharField(max_length=20, null=True)
+    protein_name = models.CharField(max_length=200, null=True)  # plain text, filtered and ordered on
+    protein_name_formatting = JSONField(default=list, null=True)
+    receptor_family = models.CharField(max_length=200, null=True)
+    receptor_family_formatting = JSONField(default=list, null=True)
+    receptor_class = models.CharField(max_length=100, null=True)
+    receptor_class_formatting = JSONField(default=list, null=True)
+    species_common_name = models.CharField(max_length=100, null=True)
+
+    def __str__(self):
+        return "{} - {}".format(self.uniprot_entry_name, self.state)
+
+    class Meta:
+        """Index definitions for the HomologyModelsTable model to optimize query performance during table filtering"""
+
+        db_table = "table_homology_models"
+        indexes = [
+            models.Index(fields=["version"], name="hm_version_idx"),
+            models.Index(fields=["state"], name="hm_state_idx"),
+            models.Index(fields=["method"], name="hm_method_idx"),
+            models.Index(fields=["uniprot_name"], name="hm_uniprot_name_idx"),
+            models.Index(fields=["gene_name"], name="hm_gene_name_idx"),
+            models.Index(fields=["protein_name"], name="hm_protein_name_idx"),
+            models.Index(fields=["receptor_family"], name="hm_receptor_family_idx"),
+            models.Index(fields=["receptor_class"], name="hm_receptor_class_idx"),
+            models.Index(fields=["species_common_name"], name="hm_species_idx"),
+        ]

@@ -200,23 +200,10 @@ class EffectorStructureBrowser(TemplateView):
 
 
 class ServeHomologyModels(TemplateView):
+    """Homology model browser page. The table is a TableManager table fed by table_provider's homology_models_table
+    endpoints (data built by build_frontend_table_datasources), so the page itself needs no context."""
 
     template_name = "homology_models.html"
-    def get_context_data(self, **kwargs):
-        context = super(ServeHomologyModels, self).get_context_data(**kwargs)
-        try:
-            context['structure_model'] = StructureModel.objects.filter(main_template__isnull=True).prefetch_related(
-                "protein__family",
-                "state",
-                "protein__family__parent__parent__parent",
-                "protein__species",
-                "main_template__protein_conformation__protein__parent__family",
-                "main_template__pdb_code",
-                "protein__genes")
-        except StructureModel.DoesNotExist as e:
-            pass
-
-        return context
 
 
 class ServeComplexModels(TemplateView):

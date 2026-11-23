@@ -6,9 +6,9 @@ import { ShowBestResolution } from "../buttons/showbestresolution.js";
 import { ShowClosestToHuman } from "../buttons/showclosesttohuman.js";
 import { ShowRepresentatives } from "../buttons/showrepresentatives.js";
 import { ColumnVisibility } from "../buttons/columnvisibility.js";
-import { AlignSequencesButton } from "../buttons/alignsequencesbutton.js";
-import { DownloadPdbsButton } from "../buttons/downloadpdbsbutton.js";
-import { SuperpositionButton } from "../buttons/superpositionbutton.js";
+import { AlignStructureSequencesButton, AlignModelSequencesButton } from "../buttons/alignsequencesbutton.js";
+import { DownloadStructuresButton, DownloadModelsButton } from "../buttons/downloadselectedbutton.js";
+import { SuperposeStructuresButton, SuperposeModelsButton } from "../buttons/superpositionbutton.js";
 import { CopyUniprotButton, CopyPdbButton } from "../buttons/copyselectedbutton.js";
 
 
@@ -31,9 +31,12 @@ class ButtonFactory {
         this.registerButtonType("closest_to_human_toggle", ShowClosestToHuman);
         this.registerButtonType("representative_toggle", ShowRepresentatives);
         this.registerButtonType("column_visibility", ColumnVisibility);
-        this.registerButtonType("align_sequences", AlignSequencesButton);
-        this.registerButtonType("download_pdbs", DownloadPdbsButton);
-        this.registerButtonType("superposition", SuperpositionButton);
+        this.registerButtonType("align_sequences_structures", AlignStructureSequencesButton);
+        this.registerButtonType("align_sequences_models", AlignModelSequencesButton);
+        this.registerButtonType("download_structures", DownloadStructuresButton);
+        this.registerButtonType("download_models", DownloadModelsButton);
+        this.registerButtonType("superposition_structures", SuperposeStructuresButton);
+        this.registerButtonType("superposition_models", SuperposeModelsButton);
         this.registerButtonType("copy_uniprot_ids", CopyUniprotButton);
         this.registerButtonType("copy_pdb_ids", CopyPdbButton);
     }

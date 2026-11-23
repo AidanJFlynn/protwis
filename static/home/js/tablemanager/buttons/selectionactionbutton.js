@@ -1,10 +1,14 @@
 /**
- * Base class for buttons that act on the structures selected through the table's checkbox column.
+ * Base class for buttons that act on the items selected through the table's checkbox column.
  * The button is disabled until at least one row is selected. Subclasses set button_config.text and implement _onClick.
  *
- * Checkbox data is expected to be {pdb_code, uniprot_entry_name} (see GpcrStructureBrowserSerializer.CHECKBOX_DATA_FIELDS).
+ * Buttons that send selection ids to a GPCRdb workflow set the static ID_FIELD to the checkbox data field holding
+ * the id (e.g. pdb_code, see GpcrStructureBrowserSerializer.CHECKBOX_DATA_FIELDS), and read the ids with selectedIds.
  */
 class SelectionActionButton {
+
+    // Checkbox data field holding an item's selection id, set by subclasses that use selectedIds
+    static ID_FIELD = null;
 
     button_config
     tableManagerReference
@@ -43,10 +47,14 @@ class SelectionActionButton {
     }
 
     /**
-     * @returns {string[]} PDB codes of the selected structures.
+     * @returns {string[]} Selection ids (the checkbox data field named by the static ID_FIELD) of the selected items.
      */
-    selectedPdbCodes() {
-        return this.selectedItems().map((structure) => structure.pdb_code);
+    selectedIds() {
+        const idField = this.constructor.ID_FIELD;
+        if (!idField) {
+            throw new Error(`${this.constructor.name} does not set ID_FIELD`);
+        }
+        return this.selectedItems().map((item) => item[idField]);
     }
 
     /**

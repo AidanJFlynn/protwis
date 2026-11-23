@@ -6,7 +6,7 @@ from django.db import models
 from rest_framework import serializers
 
 from common.models import WebResource, WebLink
-from table_provider.models import GpcrStructureBrowserTable, GpcrStructureStatisticsTable, LigandComplexModelsTable, PdbTable, PhysiologicalLigandsTable
+from table_provider.models import GpcrStructureBrowserTable, GpcrStructureStatisticsTable, HomologyModelsTable, LigandComplexModelsTable, PdbTable, PhysiologicalLigandsTable
 
 # Server-side filter datatype for each model field class; checked in order.
 MODEL_FIELD_DATATYPES = (
@@ -546,6 +546,72 @@ class GpcrStructureBrowserSerializer(DataTablesSerializerMixin, serializers.Seri
         return self.weblink_anchor(obj.reference_index, obj.reference_index, obj.reference_web_resource)
 
 
+class HomologyModelsSerializer(DataTablesSerializerMixin, serializers.Serializer):
+    """Serializer to generate JSON for the receptor model data stored in the table_homology_models database table."""
+
+    # Paper describing each modelling method (HomologyModelsTable.method)
+    METHOD_DOIS = {
+        'AlphaFold2': 'https://doi.org/10.1038/s41586-021-03819-2',
+        'AlphaFold2-Multistate': 'https://doi.org/10.1002/prot.26382',
+    }
+
+    checkbox = serializers.SerializerMethodField()
+
+    # Model
+    model = serializers.SerializerMethodField()
+    version = serializers.ReadOnlyField(read_only=True)
+    state = serializers.ReadOnlyField(read_only=True)
+    method = serializers.SerializerMethodField()
+
+    # Receptor
+    uniprot = serializers.SerializerMethodField()
+    gene = serializers.SerializerMethodField()
+    protein = serializers.SerializerMethodField()
+    receptor_family = serializers.SerializerMethodField()
+    receptor_class = serializers.SerializerMethodField()
+    species_common_name = serializers.ReadOnlyField(read_only=True)
+
+    class Meta:
+        model = HomologyModelsTable
+        datatypes = {'checkbox': 'checkbox'}
+        serializer_method_to_filter_field_map = {
+            'checkbox': 'checkbox', 'model': 'uniprot_entry_name', 'method': 'method', 'uniprot': 'uniprot_name',
+            'gene': 'gene_name', 'protein': 'protein_name', 'receptor_family': 'receptor_family',
+            'receptor_class': 'receptor_class',
+        }
+
+    def get_checkbox(self, obj):
+        # model_id for the model download; selection_id (<entry name>_<state name>) for the 'structure_model'
+        # selections read by the alignment and superposition workflows
+        return {'row_id': obj.id, 'data': {'model_id': obj.model_id,
+                                           'selection_id': f'{obj.uniprot_entry_name}_{obj.state}'}}
+
+    def get_model(self, obj):
+        # Model icon linking to the model page; the entry name is carried for filtering and export
+        return self.anchor('<img width="14px" height="20px" class="model-link" src="/static/home/images/gpcr_structure_logo.png">',
+                           f'/structure/structure_models/receptor/{obj.uniprot_entry_name}_{obj.state_slug}',
+                           obj.uniprot_entry_name)
+
+    def get_method(self, obj):
+        return self.anchor(obj.method, self.METHOD_DOIS.get(obj.method)) if obj.method else None
+
+    def get_uniprot(self, obj):
+        return self.weblink_anchor(obj.uniprot_name, obj.uniprot_accession, 'uniprot')
+
+    def get_gene(self, obj):
+        return self.weblink_anchor(obj.gene_name, obj.gene_entrez_id, 'entrez_gene')
+
+    def get_protein(self, obj):
+        name = self.string_with_optional_formatting(obj.protein_name, obj.protein_name_formatting or [])
+        return self.anchor(name, f'/protein/{obj.uniprot_entry_name}', obj.protein_name) if obj.protein_name else None
+
+    def get_receptor_family(self, obj):
+        return self.string_with_optional_formatting(obj.receptor_family, obj.receptor_family_formatting or [])
+
+    def get_receptor_class(self, obj):
+        return self.string_with_optional_formatting(obj.receptor_class, obj.receptor_class_formatting or [])
+
+
 # Serializer behind each table name used in the configuration files (<table_name>__<variant>.json)
 TABLE_SERIALIZERS = {
     'structure_browser_table': GpcrStructureBrowserSerializer,
@@ -553,4 +619,5 @@ TABLE_SERIALIZERS = {
     'structure_statistics_table_gpcr': GpcrStatisticsSummarySerializer,
     'physiological_ligands_table': PhysiologicalLigandsSerializer,
     'ligand_complex_models_table': LigandComplexModelsSerializer,
+    'homology_models_table': HomologyModelsSerializer,
 }

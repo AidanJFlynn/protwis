@@ -269,7 +269,6 @@ def PdbTableDataSource():
             entry['ligand_ids'] = []
             entry['ligand_names'] = []
             entry['ligand_roles'] = []
-            entry['ligand_names_formatting'] = []
 
             for l in s.ligands.all():
                 entry['ligand_ids'].append(l.ligand.id)

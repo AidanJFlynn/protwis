@@ -11,8 +11,8 @@ from rest_framework.pagination import LimitOffsetPagination
 
 #Table provider imports
 from table_provider.configuration_provider.configuration_factory import ColumnConfigurationFactory, DataTablesConfigurationFactory
-from table_provider.models import GpcrStructureBrowserTable, GpcrStructureStatisticsTable, LigandComplexModelsTable, PdbTable, PhysiologicalLigandsTable
-from table_provider.serializers import GpcrStatisticsSummarySerializer, GpcrStructureBrowserSerializer, LigandComplexModelsSerializer, PdbStructureSummarySerializer, PhysiologicalLigandsSerializer
+from table_provider.models import GpcrStructureBrowserTable, GpcrStructureStatisticsTable, HomologyModelsTable, LigandComplexModelsTable, PdbTable, PhysiologicalLigandsTable
+from table_provider.serializers import GpcrStatisticsSummarySerializer, GpcrStructureBrowserSerializer, HomologyModelsSerializer, LigandComplexModelsSerializer, PdbStructureSummarySerializer, PhysiologicalLigandsSerializer
 from table_provider.serverside.filters import FilterSet, FilterError, TextFilter, BooleanFilter
 from table_provider.serverside.querystringprocessing import DatatablesQueryStringProcessor, QueryStringProcessingError
 
@@ -221,6 +221,14 @@ class LigandComplexModelsSummaryTable(DataTablesView):
     model = LigandComplexModelsTable
     serializer_class = LigandComplexModelsSerializer
     checkbox_fields = ('id', 'structure_id', 'pdb_code')
+
+
+class HomologyModelsSummaryTable(DataTablesView):
+    """API endpoint for receptor models (one row per model)"""
+
+    model = HomologyModelsTable
+    serializer_class = HomologyModelsSerializer
+    checkbox_fields = ('id', 'model_id', 'uniprot_entry_name', 'state')
 
 
 class ConfigurationFactoryView(views.APIView):

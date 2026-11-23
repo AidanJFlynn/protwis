@@ -6,7 +6,7 @@ import django.apps
 from django.core.management.base import BaseCommand
 
 # Table model imports
-from table_provider.models import GpcrStructureBrowserTable, GpcrStructureStatisticsTable, LigandComplexModelsTable, PdbTable, PhysiologicalLigandsTable
+from table_provider.models import GpcrStructureBrowserTable, GpcrStructureStatisticsTable, HomologyModelsTable, LigandComplexModelsTable, PdbTable, PhysiologicalLigandsTable
 
 # Table query imports
 from structure.tables.structure_browser_table_query import StructureBrowserTableRows
@@ -14,6 +14,7 @@ from structure.tables.structure_coverage_statistics_query import GpcrStructureCo
 from contactnetwork.tables.pdb_table_query import PdbTableDataSource
 from ligand.tables.physiological_ligands_query import PhysiologicalLigandsTableRows
 from structure.tables.ligand_complex_models_query import LigandComplexModelsTableRows
+from structure.tables.homology_models_query import HomologyModelsTableRows
 
 # Other imports
 from common.tools import HTMLRemover, test_model_updates
@@ -34,6 +35,7 @@ class Command(BaseCommand):
             'build_structure_statistics_table',
             'build_physiological_ligands_table',
             'build_ligand_complex_models_table',
+            'build_homology_models_table',
         ]
 
         for f in functions:
@@ -128,6 +130,19 @@ class Command(BaseCommand):
         LigandComplexModelsTable.objects.bulk_create(rows, batch_size=10000)
 
         self.logger.info('COMPLETED BUILDING LIGAND COMPLEX MODELS TABLE ({} rows)'.format(len(rows)))
+
+    def build_homology_models_table(self):
+        """ Builds table_provider.HomologyModelsTable, a flat per receptor model table
+            consumed by the homology models page."""
+        self.logger.info('BUILDING HOMOLOGY MODELS TABLE')
+
+        HomologyModelsTable.objects.all().delete()
+
+        html_containing_fields = ['protein_name', 'receptor_family', 'receptor_class']
+        rows = [ HomologyModelsTable(**self._clean_html_content(row, html_containing_fields)) for row in HomologyModelsTableRows() ]
+        HomologyModelsTable.objects.bulk_create(rows, batch_size=10000)
+
+        self.logger.info('COMPLETED BUILDING HOMOLOGY MODELS TABLE ({} rows)'.format(len(rows)))
 
     def build_pdb_structure_table(self):
         """Builds the PDB structure summary table by fetching data from the PdbTableDataSource and bulk creating PdbTable instances."""        

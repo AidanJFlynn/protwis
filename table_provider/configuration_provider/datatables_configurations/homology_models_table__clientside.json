@@ -1,0 +1,31 @@
+{
+  "serverSide": false,
+  "processing": true,
+  "deferRender": true,
+  "scrollX": true,
+  "layout": {
+    "topEnd": "pageLength",
+    "topStart": "buttons"
+  },
+  "ajax": {
+    "url": "/table_provider/homology_models_table_cached",
+    "type": "GET",
+    "cache": false,
+    "dataSrc":  "data"
+  },
+  "search": {
+    "regex": true,
+    "caseInsensitive": true
+  },
+  "order": [
+    { "name": "method", "dir": "asc" },
+    { "name": "uniprot", "dir": "asc" }
+  ],
+  "lengthMenu": [25, 50, 100, 250, 500],
+  "nullValuePlaceholder": "-",
+  "showCategoryCounts": false,
+  "buttons": [ "clear_selection_default", "clear_filters_default", "column_visibility", "align_sequences_models", "download_models", "superposition_models", "excel_default"],
+  "localStorageKey": "homology_models_table_clientside",
+  "localStorageDurationDays": 7,
+  "fixedWidthTable": true
+}

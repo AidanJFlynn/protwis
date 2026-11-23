@@ -20,9 +20,6 @@
         #structure-browser-selection-count {
             margin-bottom: 6px;
         }
-        #superposition_modal_table tbody tr {
-            cursor: pointer;
-        }
     </style>
 {% endblock %}
 
@@ -88,32 +85,6 @@
     </table>
 </div>
 <br>
-
-<div id="superposition-modal" class="modal">
-    <div class="modal-content">
-        <button id="close_superposition_modal" style="float:right;display:inline;" aria-label="Close" class="close">&times;</button>
-        <h3>Pick reference from selection</h3>
-        <p>Superposes the structures selected in the browser to the reference clicked in this table</p>
-        <br>
-        <table id="superposition_modal_table" class="display compact" width="100%">
-            <thead>
-                <tr>
-                    <th></th>
-                    <th>PDB</th>
-                    <th>UniProt</th>
-                    <th>Gene</th>
-                    <th>IUPHAR</th>
-                    <th>Rec. family</th>
-                    <th>Class</th>
-                    <th>Species</th>
-                    <th>State</th>
-                    <th>PDB Date</th>
-                </tr>
-            </thead>
-            <tbody><!-- populated from the selected structures --></tbody>
-        </table>
-    </div>
-</div>
 {% endblock %}
 
 {% block addon_js %}

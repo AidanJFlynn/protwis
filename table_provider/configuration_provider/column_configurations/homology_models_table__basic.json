@@ -1,0 +1,90 @@
+[
+  {
+    "column_group": "Model",
+    "json_id": "checkbox",
+    "title": "",
+    "data_type": "checkbox",
+    "checkboxMultiSelect": true,
+    "allow_filter": false,
+    "width": "20px",
+    "orderable": false
+  },
+  {
+    "column_group": "Model",
+    "json_id": "model",
+    "title": "Model",
+    "data_type": "weblinktext",
+    "allow_filter": false,
+    "orderable": false,
+    "width": "40px",
+    "exportHeaderOverride": "Model entry name"
+  },
+  {
+    "column_group": "Model",
+    "json_id": "version",
+    "title": "Date",
+    "data_type": "date",
+    "allow_filter": true    
+  },
+  {
+    "column_group": "Model",
+    "json_id": "state",
+    "title": "State",
+    "data_type": "textselect",
+    "allow_filter": true
+  },
+  {
+    "column_group": "Model",
+    "json_id": "method",
+    "title": "Method",
+    "data_type": "weblinktextselect",
+    "allow_filter": true,
+    "width": "170px"
+  },
+  {
+    "column_group": "Receptor",
+    "json_id": "uniprot",
+    "title": "UniProt",
+    "data_type": "weblinktextselect",
+    "allow_filter": true
+  },
+  {
+    "column_group": "Receptor",
+    "json_id": "gene",
+    "title": "Gene",
+    "data_type": "weblinktextselect",
+    "allow_filter": true
+  },
+  {
+    "column_group": "Receptor",
+    "json_id": "protein",
+    "title": "IUPHAR",
+    "data_type": "weblinktextselect",
+    "show_symbol_popup": true,
+    "allow_filter": true,
+    "width": "140px"
+  },
+  {
+    "column_group": "Receptor",
+    "json_id": "receptor_family",
+    "title": "Rec. family",
+    "data_type": "textselect",
+    "allow_filter": true,
+    "width": "300px"
+  },
+  {
+    "column_group": "Receptor",
+    "json_id": "receptor_class",
+    "title": "Class",
+    "data_type": "textselect",
+    "allow_filter": true,
+    "width": "300px"
+  },
+  {
+    "column_group": "Receptor",
+    "json_id": "species_common_name",
+    "title": "Species",
+    "data_type": "textselect",
+    "allow_filter": true
+  }
+]
