@@ -27,6 +27,26 @@ class Numeric extends DataTypeBase {
         }
         return data;
     }
+
+    /**
+     * Exports a numeric value as a number, rounded to the column's precision when one is set, so Excel can sort and
+     * calculate on it. Non-numeric values are exported as plain text.
+     * @param {*} cellData - The cell data.
+     * @param {*} rowData - The full row data.
+     * @param {Object} tableManagerReference - The table manager that owns the table.
+     * @returns {number|string} The number to export, or the plain text of a non-numeric value, or "" if empty.
+     */
+    exportValue(cellData, rowData, tableManagerReference) {
+        if (this.isEmpty(cellData)) {
+            return "";
+        }
+        const numericValue = Number.parseFloat(cellData);
+        if (!Number.isFinite(numericValue)) {
+            return this.plainText(cellData);
+        }
+        const precision = this.column.precision;
+        return precision !== undefined && !isNaN(precision) ? Number(numericValue.toFixed(precision)) : numericValue;
+    }
 }
 
 export { Numeric };

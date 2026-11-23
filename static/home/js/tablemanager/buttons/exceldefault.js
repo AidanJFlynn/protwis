@@ -9,7 +9,7 @@ class ExcelDefault {
      * Creates the Excel export button configuration. The export covers every row matching the current search and
      * filters, across all pages (on server-side tables the rows are fetched from the server), in the table's current
      * order. It keeps the super-header and column title rows and drops the rows below the title row. Each cell exports
-     * the value from its column data type's exportValue, falling back to the displayed content with its HTML stripped.
+     * the value from its column data type's exportValue (by default its plain text).
      * @param {Object} tableManagerReference - The TableManager instance that owns the table.
      */
     constructor(tableManagerReference) {

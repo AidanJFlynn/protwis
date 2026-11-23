@@ -66,28 +66,6 @@ class Text extends DataTypeBase {
     }
 
     /**
-     * Exports the full text of a truncated cell, rather than the truncated display text.
-     * @param {*} cellData - The cell data.
-     * @param {*} rowData - The full row data.
-     * @param {Object} tableManagerReference - The table manager that owns the table.
-     * @returns {string|undefined} The full plain text if the cell is truncated, otherwise as DataTypeBase.exportValue.
-     */
-    exportValue(cellData, rowData, tableManagerReference) {
-        return this._isTruncated(cellData) ? this.plainText(cellData) : super.exportValue(cellData, rowData, tableManagerReference);
-    }
-
-    /**
-     * Checks whether a cell's text is longer than the column's max_display_length, so it is displayed truncated. The
-     * plain text is what is displayed, as tags take no space and entities show as one character.
-     * @param {*} data - The cell data.
-     * @returns {boolean} True if the text is displayed truncated.
-     */
-    _isTruncated(data) {
-        const maxDisplayLength = this.column.max_display_length;
-        return Boolean(maxDisplayLength) && !this.isEmpty(data) && this.plainText(data).length > maxDisplayLength;
-    }
-
-    /**
      * Hooks up the expand icons of truncated text in the cell.
      * @param {HTMLElement} cell - The rendered table cell.
      * @param {*} cellData - The cell data.

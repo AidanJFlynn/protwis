@@ -1,12 +1,8 @@
 // Shared Excel export logic for the Excel buttons. The rows to export come from the table's data source rather than from
 // DataTables' loaded rows, so server-side tables export every matching row instead of only the current page.
 
-// Buttons' default export settings, used when a cell exports its displayed content
-const STRIP_DATA_CONFIG = { stripHtml: true, stripNewlines: true, decodeEntities: true, trim: true, escapeExcelFormula: false };
-
 /**
- * Gets the export value of a cell: the value from its column data type's exportValue, falling back to the displayed
- * content with its HTML stripped.
+ * Gets the export value of a cell, from its column data type's exportValue.
  * @param {Object} tableManagerReference - The TableManager instance that owns the table.
  * @param {Object} rowData - The full row data.
  * @param {number} colIdx - The DataTables column index.
@@ -19,13 +15,7 @@ function exportCell(tableManagerReference, rowData, colIdx) {
     }
 
     const cellData = $.fn.dataTable.util.get(column.json_id)(rowData);
-    const value = column.type.exportValue(cellData, rowData, tableManagerReference);
-    if (value !== undefined) {
-        return value;
-    }
-
-    const displayed = column.type.dataTableRenderer(cellData, 'display', rowData, { row: null, col: colIdx }, tableManagerReference);
-    return $.fn.dataTable.Buttons.stripData(displayed, STRIP_DATA_CONFIG);
+    return column.type.exportValue(cellData, rowData, tableManagerReference);
 }
 
 /**

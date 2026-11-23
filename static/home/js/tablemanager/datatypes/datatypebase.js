@@ -152,17 +152,16 @@ class DataTypeBase {
   }
 
   /**
-   * Hook for the value a cell exports with. The default returns "" for empty cells (see isEmpty), so the export has a
-   * blank cell rather than the nullValuePlaceholder, which is only for display. Otherwise it returns undefined, which
-   * exports the displayed cell content with its HTML stripped. Override it when the display value is not what should
-   * be exported.
+   * The value a cell exports with. The default returns "" for empty cells (see isEmpty), so the export has a blank cell
+   * rather than the nullValuePlaceholder, which is only for display. Otherwise it returns the cell's plainText.
+   * Override it when the export should differ from the plain text, e.g. to export a number as a number.
    * @param {*} cellData - The cell data.
    * @param {*} rowData - The full row data.
    * @param {Object} tableManagerReference - The table manager that owns the table.
-   * @returns {*} The value to export, or undefined to export the displayed content.
+   * @returns {*} The value to export.
    */
   exportValue(cellData, rowData, tableManagerReference) {
-    return this.isEmpty(cellData) ? "" : undefined;
+    return this.isEmpty(cellData) ? "" : this.plainText(cellData);
   }
 
   /**
