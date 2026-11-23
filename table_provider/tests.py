@@ -582,6 +582,7 @@ class ColumnConfigurationConsistencyTestCase(SimpleTestCase):
         'weblinktext': {'text', 'json'},
         'weblinktextselect': {'text'},
         'weblinktextlist': {'json'},
+        'weblinktextlistselect': {'json'},
         'referencelist': {'json'},
         'numeric': {'numeric'},
         'date': {'date'},

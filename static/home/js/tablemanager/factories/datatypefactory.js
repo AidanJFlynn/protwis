@@ -40,6 +40,7 @@ class DataTypeFactory {
         this.registerDataType("weblinktext", WebLinkText, TextFilter);
         this.registerDataType("weblinktextselect", WebLinkText, SelectFilter);
         this.registerDataType("weblinktextlist", WebLinkTextList, TextFilter);
+        this.registerDataType("weblinktextlistselect", WebLinkTextList, SelectFilter);
         this.registerDataType("referencelist", ReferenceList);
         this.registerDataType("checkbox", Checkbox);
     }
