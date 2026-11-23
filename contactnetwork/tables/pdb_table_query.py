@@ -176,7 +176,7 @@ def PdbTableDataSource():
                 shorted = s.protein_conformation.protein.parent
 
             entry['pdb_id'] = pdb_id
-            entry['uniprot_entry_name'] = shorted.entry_name
+            entry['uniprot_entry_name'] = shorted.entry_name.split("_")[0] if "_" in shorted.entry_name else shorted.entry_name
             entry['uniprot_accession'] = shorted.accession
             entry['protein_name_short'] = shorted.short()
             entry['receptor_family_short'] = shorted.family.parent.short()

@@ -1,6 +1,6 @@
 #Django Framework imports
-from django.db.models import Count, Q, IntegerField, F, Value, Subquery, OuterRef,  Min, DecimalField
-from django.db.models.functions import Coalesce, Replace
+from django.db.models import CharField, Count, Q, IntegerField, F, Value, Subquery, OuterRef,  Min, DecimalField
+from django.db.models.functions import Coalesce, Replace, Substr, StrIndex
 
 #GPCRdb imports
 from structure.models import Structure, StructureExtraProteins
@@ -141,7 +141,7 @@ def GpcrStructureCoverageStatisticsQuery():
         'species',
     ).annotate(
         ## Basic protein identity
-        uniprot_entry_name = F('entry_name'),
+        uniprot_entry_name = Substr(F('entry_name'), Value(1), StrIndex(F('entry_name'), Value('_')) - Value(1), output_field=CharField(),),
         uniprot_accession = F('accession'),
         protein_name = Replace(F('name'), Value(' receptor'), Value('')),
         receptor_family = F('family__parent__name'),
