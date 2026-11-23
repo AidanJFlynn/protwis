@@ -103,6 +103,8 @@
     "title": "Species",
     "data_type": "textselect",
     "allow_filter": true,
+    "max_display_length": 15,
+    "width": "130px",
     "cellStyler": {
       "type": "categorical",
       "source": "closest_to_human",
@@ -188,28 +190,35 @@
     "json_id": "fusion",
     "title": "Fusion",
     "data_type": "textselect",
-    "allow_filter": true   
+    "allow_filter": true,
+    "max_display_length": 14,
+    "width": "120px"
   },
     {
     "column_group": "Auxiliary Proteins",
     "json_id": "antibody",
     "title": "Antibody",
     "data_type": "textselect",
-    "allow_filter": true   
+    "allow_filter": true,
+    "max_display_length": 14,
+    "width": "120px"
   },
     {
     "column_group": "Ligand",
-    "json_id": "ligand",
+    "json_id": "ligands",
     "title": "Ligand",
-    "max_display_length": 15,
-    "data_type": "textselect",
-    "allow_filter": true   
+    "max_display_length": 25,
+    "data_type": "weblinktextlistselect",
+    "allow_filter": true,
+    "max_list_items": 1,
+    "width": "200px"
   },
     {
     "column_group": "Ligand",
-    "json_id": "ligand_role",
+    "json_id": "ligand_roles",
     "title": "Role",
-    "data_type": "textselect",
+    "data_type": "textlistselect",
+    "max_list_items": 1,
     "allow_filter": true,
     "width": "140px"
   }

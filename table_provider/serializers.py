@@ -17,6 +17,9 @@ MODEL_FIELD_DATATYPES = (
     (JSONField, 'json'),
 )
 
+# Shown in the ligand column of structures with no ligands
+APO_LIGAND_NAME = 'Apo (no ligand)'
+
 
 class DataTablesSerializerMixin:
     """Server-side column metadata for TableManager tables.
@@ -107,6 +110,18 @@ class DataTablesSerializerMixin:
         if len(formatting) > 0:
             return dict(content=content, formatting=formatting)
         return content
+
+    def collate_ligand_links(self, ids, names, formatting):
+        """weblinktextlist links for parallel ligand id/name/formatting lists; ligands without an id are not linked."""
+        formatting = formatting or []
+        links = []
+        for index, (ligand_id, name) in enumerate(zip(ids, names)):
+            name_formatting = formatting[index] if index < len(formatting) else []
+            link = self.anchor(self.string_with_optional_formatting(name, name_formatting),
+                               f'/ligand/{ligand_id}/info' if ligand_id is not None else None)
+            if link:
+                links.append(link)
+        return links    
 
 
 class GpcrStatisticsSummarySerializer(DataTablesSerializerMixin, serializers.Serializer):
@@ -210,15 +225,15 @@ class PdbStructureSummarySerializer(DataTablesSerializerMixin, serializers.Seria
     fusion = serializers.ReadOnlyField(read_only=True)
     antibody = serializers.ReadOnlyField(read_only=True)
 
-    ligand = serializers.SerializerMethodField()
-    ligand_role = serializers.SerializerMethodField()
+    ligands = serializers.SerializerMethodField()
+    ligand_roles = serializers.ReadOnlyField(read_only=True)
 
     class Meta:
         model = PdbTable
         datatypes = {'checkbox': 'checkbox'}
         serializer_method_to_filter_field_map = {
            'checkbox': 'checkbox', 'uniprot': 'uniprot_entry_name', 'gene': 'gene_name', 'pdb_id': 'pdb_id', 
-           'ligand': 'ligand_names', 'ligand_role': 'ligand_roles', 'protein_name_short': 'protein_name_short', 
+           'ligands': 'ligand_names', 'ligand_roles': 'ligand_roles', 'protein_name_short': 'protein_name_short', 
            'receptor_family_short': 'receptor_family_short', 'signal_protein_subtype': 'signal_protein_subtype',
         }
 
@@ -247,14 +262,10 @@ class PdbStructureSummarySerializer(DataTablesSerializerMixin, serializers.Seria
         else:
             return self.weblink_anchor(obj.pdb_id, None, 'pdb')
     
-    def get_ligand(self, obj):
-        #Currently only the first ligand is displayed in the table, so we return only the first ligand and its formatting. 
-        # If there are no ligands, None is returned. If there is no formatting for the first ligand, only the ligand content is returned as a string
-        first_ligand = obj.ligand_names[0] if obj.ligand_names and len(obj.ligand_names) > 0 else None
-        first_ligand_formatting = obj.ligand_names_formatting[0] if obj.ligand_names_formatting else []
-        if first_ligand:
-            return self.string_with_optional_formatting(first_ligand, first_ligand_formatting)
-        return None
+    def get_ligands(self, obj):
+        # Structures without ligands are apo; shown as an unlinked "Apo (no ligand)" entry
+        links = self.collate_ligand_links(obj.ligand_ids, obj.ligand_names, obj.ligand_names_formatting)
+        return links or [self.anchor(APO_LIGAND_NAME, None)]
 
     def get_ligand_role(self, obj):
         #Currently only the first ligand is displayed in the table, so we return only the first ligand/role
@@ -415,9 +426,6 @@ class GpcrStructureBrowserSerializer(DataTablesSerializerMixin, serializers.Seri
     # copying ids). Anything else about the selected rows is fetched with dataSource.getRowsById.
     CHECKBOX_DATA_FIELDS = ('pdb_code', 'uniprot_entry_name')
 
-    # Shown in the ligand column of structures with no ligands
-    APO_LIGAND_NAME = 'Apo (no ligand)'
-
     checkbox = serializers.SerializerMethodField()
 
     # Receptor
@@ -520,25 +528,15 @@ class GpcrStructureBrowserSerializer(DataTablesSerializerMixin, serializers.Seri
         href = f'/signprot/{obj.signal_protein_entry_name}/' if obj.signal_protein_entry_name else None
         return self.anchor(subtype, href)
 
-    def _ligand_links(self, ids, names, formatting):
-        """weblinktextlist links for parallel ligand id/name/formatting lists; ligands without an id are not linked."""
-        formatting = formatting or []
-        links = []
-        for index, (ligand_id, name) in enumerate(zip(ids, names)):
-            name_formatting = formatting[index] if index < len(formatting) else []
-            link = self.anchor(self.string_with_optional_formatting(name, name_formatting),
-                               f'/ligand/{ligand_id}/info' if ligand_id is not None else None)
-            if link:
-                links.append(link)
-        return links
-
     def get_ligand(self, obj):
-        # Structures without ligands are apo; shown as an unlinked "Apo (no ligand)" entry
-        links = self._ligand_links(obj.ligand_ids, obj.ligand_names, obj.ligand_names_formatting)
-        return links or [self.anchor(self.APO_LIGAND_NAME, None)]
+        if APO_LIGAND_NAME in obj.ligand_names:
+            # Structures with no ligands are apo; shown as an unlinked "Apo (no ligand)" entry
+            return [self.anchor(APO_LIGAND_NAME, None)]
+        links = self.collate_ligand_links(obj.ligand_ids, obj.ligand_names, obj.ligand_names_formatting)
+        return links or [self.anchor(APO_LIGAND_NAME, None)]
 
     def get_endo_ligand(self, obj):
-        return self._ligand_links(obj.endo_ligand_ids, obj.endo_ligand_names, obj.endo_ligand_names_formatting)
+        return self.collate_ligand_links(obj.endo_ligand_ids, obj.endo_ligand_names, obj.endo_ligand_names_formatting)
 
     def get_reference(self, obj):
         if not obj.reference_index or not obj.reference_web_resource:

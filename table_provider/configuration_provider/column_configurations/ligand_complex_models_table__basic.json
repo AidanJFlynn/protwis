@@ -149,7 +149,7 @@
     "title": "AF2 (PAE mean)",
     "data_type": "numeric",
     "allow_filter": true,
-    "precision": 2,
+    "precision": 1,
     "width": "70px",
     "exportHeaderOverride": "AF2 score (PAE mean)"
   },
@@ -169,7 +169,7 @@
     "title": "RFAA (pLDDT mean)",
     "data_type": "numeric",
     "allow_filter": true,
-    "precision": 2,
+    "precision": 1,
     "width": "70px",
     "exportHeaderOverride": "RFAA score (pLDDT mean)"
   },

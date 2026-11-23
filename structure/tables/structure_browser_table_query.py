@@ -9,6 +9,7 @@ from django.db.models.functions import Length, Coalesce, Cast
 from structure.models import Structure, StructureExtraProteins, StructureAuxiliarySmallMolecule
 from interaction.models import StructureLigandInteraction, ResidueFragmentInteraction
 from protein.models import Gene, IdentifiedSites
+from ligand.models import LigandType
 from common.models import WebLink
 
 
@@ -28,7 +29,6 @@ ANTIBODY_RE = (
 fusion_pat = re.compile(FUSION_RE, re.I)
 antibody_pat = re.compile(ANTIBODY_RE, re.I)
 
-APO_LIGAND_NAME = "Apo (no ligand)"
 SIGNAL_PROTEIN_CATEGORIES = {"G alpha", "Arrestin"}
 
 
@@ -79,7 +79,7 @@ def _structure_ligands(structure):
     roles = []
     for interaction in structure.prefetched_ligands:
         ligand = interaction.ligand
-        if not ligand or ligand.name == APO_LIGAND_NAME:
+        if not ligand:
             continue
         ids.append(ligand.id)
         names.append(ligand.name)

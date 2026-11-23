@@ -49,7 +49,7 @@
     "data_type": "textselect",
     "max_display_length": 20,
     "allow_filter": true,
-    "width": "150px"
+    "width": "200px"
   },
   {
     "column_group": "Classification",
@@ -175,16 +175,18 @@
     "column_group": "Structure Ligands",
     "json_id": "ligand",
     "title": "Name",
-    "data_type": "weblinktextlist",
+    "data_type": "weblinktextlistselect",
     "max_list_items": 1,
     "max_display_length": 15,
+    "width": "180px",
     "allow_filter": true
   },
   {
     "column_group": "Structure Ligands",
     "json_id": "ligand_type",
     "title": "Type",
-    "data_type": "textlist",
+    "data_type": "textlistselect",
+    "max_list_items": 1,
     "max_display_length": 15,
     "allow_filter": true
   },
@@ -194,6 +196,7 @@
     "title": "Modality",
     "data_type": "textlistselect",
     "max_display_length": 10,
+    "max_list_items": 1,
     "width": "110px",
     "allow_filter": true
   },
@@ -219,8 +222,10 @@
     "column_group": "Auxiliary Small-Molecules",
     "json_id": "auxiliary_molecule",
     "title": "Name",
-    "data_type": "textlist",
+    "data_type": "textlistselect",
     "max_display_length": 15,
+    "max_list_items": 1,
+    "width":"140px",
     "allow_filter": true
   },
   {
@@ -229,7 +234,8 @@
     "title": "Type",
     "data_type": "textlistselect",
     "max_display_length": 15,
-    "width":"120px",
+    "max_list_items": 1,
+    "width":"140px",
     "allow_filter": true
   },
   {
@@ -238,13 +244,15 @@
     "title": "Function",
     "data_type": "textlistselect",
     "max_display_length": 15,
+    "max_list_items": 1,
+    "width":"140px",
     "allow_filter": true
   },
   {
     "column_group": "Natural Ligands",
     "json_id": "endo_ligand",
     "title": "Name",
-    "data_type": "weblinktextlist",
+    "data_type": "weblinktextlistselect",
     "max_list_items": 1,
     "max_display_length": 15,
     "width": "130px",
