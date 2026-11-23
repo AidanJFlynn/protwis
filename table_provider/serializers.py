@@ -590,7 +590,7 @@ class HomologyModelsSerializer(DataTablesSerializerMixin, serializers.Serializer
         # Model icon linking to the model page; the entry name is carried for filtering and export
         return self.anchor('<img width="14px" height="20px" class="model-link" src="/static/home/images/gpcr_structure_logo.png">',
                            f'/structure/structure_models/receptor/{obj.uniprot_entry_name}_{obj.state_slug}',
-                           obj.uniprot_entry_name)
+                           f'{obj.uniprot_entry_name}_{obj.state_slug}')
 
     def get_method(self, obj):
         return self.anchor(obj.method, self.METHOD_DOIS.get(obj.method)) if obj.method else None
