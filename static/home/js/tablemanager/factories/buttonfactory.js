@@ -1,0 +1,68 @@
+import { ExcelDefault } from "../buttons/exceldefault.js";
+import { ExcelExtended } from "../buttons/excelextended.js";
+import { ClearFiltersDefault } from "../buttons/clearfiltersdefault.js";
+import { ClearSelectionDefault } from "../buttons/clearselectiondefault.js";
+import { ShowBestResolution } from "../buttons/showbestresolution.js";
+import { ShowClosestToHuman } from "../buttons/showclosesttohuman.js";
+import { ShowRepresentatives } from "../buttons/showrepresentatives.js";
+import { ColumnVisibility } from "../buttons/columnvisibility.js";
+import { AlignStructureSequencesButton, AlignModelSequencesButton } from "../buttons/alignsequencesbutton.js";
+import { DownloadStructuresButton, DownloadModelsButton } from "../buttons/downloadselectedbutton.js";
+import { SuperposeStructuresButton, SuperposeModelsButton } from "../buttons/superpositionbutton.js";
+import { CopyUniprotButton, CopyPdbButton } from "../buttons/copyselectedbutton.js";
+
+
+/**
+ * Creates button instances for the table manager by button type name.
+ * Button classes are kept in a registry keyed by the name used in the table specification.
+ */
+class ButtonFactory {
+    _buttonTypes = {};
+
+    /**
+     * Registers the built-in button types.
+     */
+    constructor() {
+        this.registerButtonType("excel_default", ExcelDefault);
+        this.registerButtonType("excel_extended", ExcelExtended);
+        this.registerButtonType("clear_filters_default", ClearFiltersDefault);
+        this.registerButtonType("clear_selection_default", ClearSelectionDefault);
+        this.registerButtonType("best_resolution_toggle", ShowBestResolution);
+        this.registerButtonType("closest_to_human_toggle", ShowClosestToHuman);
+        this.registerButtonType("representative_toggle", ShowRepresentatives);
+        this.registerButtonType("column_visibility", ColumnVisibility);
+        this.registerButtonType("align_sequences_structures", AlignStructureSequencesButton);
+        this.registerButtonType("align_sequences_models", AlignModelSequencesButton);
+        this.registerButtonType("download_structures", DownloadStructuresButton);
+        this.registerButtonType("download_models", DownloadModelsButton);
+        this.registerButtonType("superposition_structures", SuperposeStructuresButton);
+        this.registerButtonType("superposition_models", SuperposeModelsButton);
+        this.registerButtonType("copy_uniprot_ids", CopyUniprotButton);
+        this.registerButtonType("copy_pdb_ids", CopyPdbButton);
+    }
+
+    /**
+     * Registers a button class so it can be created by {@link ButtonFactory#getButtonType}.
+     * @param {string} buttonName - Name used to reference the button in the table specification.
+     * @param {Function} buttonClass - Button class to instantiate. It is constructed with the table manager reference.
+     */
+    registerButtonType(buttonName, buttonClass) {
+        this._buttonTypes[buttonName] = buttonClass;
+    }
+
+    /**
+     * Creates a button instance for a registered button type.
+     * @param {string} buttonTypeName - Registered name of the button type.
+     * @param {Object} tableManagerReference - The TableManager instance the button operates on.
+     * @returns {Object|undefined} The new button instance, or undefined if the type is not registered.
+     */
+    getButtonType(buttonTypeName, tableManagerReference) {
+        if (!this._buttonTypes[buttonTypeName]) {
+            console.error(`Button type "${buttonTypeName}" is not registered with TableManager.`);
+            return undefined;
+        }
+        return new this._buttonTypes[buttonTypeName](tableManagerReference);
+    }
+}
+
+export { ButtonFactory }

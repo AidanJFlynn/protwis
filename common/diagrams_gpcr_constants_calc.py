@@ -38,7 +38,7 @@ django.setup()
 from residue.models import Residue
 from protein.models import Protein
 from structure.models import Structure
-from angles.models import ResidueAngle
+from contactnetwork.models import ResidueAngle
 
 TMS = ['TM1', 'TM2', 'TM3', 'TM4', 'TM5', 'TM6', 'TM7']
 CLASS_SLUG_PATH = 'structure__protein_conformation__protein__parent__family__parent__parent__parent__slug'

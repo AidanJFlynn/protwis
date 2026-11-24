@@ -167,7 +167,7 @@ class Construct(models.Model):
         temp = self.snakecache
         if temp==None:
             print(self.name+'_snake no cache')
-            from angles.models import get_snake_plot_distance_lookup
+            from contactnetwork.models import get_snake_plot_distance_lookup
             residues = Residue.objects.filter(protein_conformation__protein=self.protein).order_by('sequence_number').prefetch_related(
                 'protein_segment', 'generic_number', 'display_generic_number')
             distance_lookup = get_snake_plot_distance_lookup(self.protein)

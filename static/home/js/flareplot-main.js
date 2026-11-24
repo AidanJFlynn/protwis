@@ -994,8 +994,8 @@ function rangeCount(start, end){
   return endIdx-startIdx+1;
 }
 
-Array.prototype.indexUpDown = indexUpDown;
-Array.prototype.rangeCount = rangeCount;
+Object.defineProperty(Array.prototype, "indexUpDown", {value: indexUpDown, enumerable: false, writable: true, configurable: true});
+Object.defineProperty(Array.prototype, "rangeCount", {value: rangeCount, enumerable: false, writable: true, configurable: true});
 
 // var list = [1,2,5,10,15,16];
 // function testRange(l,s,e, expected){

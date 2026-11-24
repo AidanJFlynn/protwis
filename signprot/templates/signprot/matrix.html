@@ -3,14 +3,11 @@
 
 {% block addon_css %}
 <link href="{% static 'home/css/signprotmat.css' %}" rel="stylesheet">
-<link href="{% static 'home/css/jquery.dataTables.min.css' %}" rel="stylesheet">
-<link href="{% static 'home/css/select.dataTables.min.css' %}" rel="stylesheet">
-<link href="{% static 'home/css/buttons.dataTables.min.css' %}" rel="stylesheet">
 <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/font-awesome/4.4.0/css/font-awesome.min.css">
 
-<link rel="stylesheet" href="{% static 'home/css/jquery.dataTables.min.css' %}" type="text/css" />
-<link rel="stylesheet" href="{% static 'home/css/yadcf_bootstrap_version.css' %}" type="text/css" />
-<link rel="stylesheet" href="{% static 'home/css/select2.css' %}" type="text/css" />
+<link rel="stylesheet" href="{% static '/home/css/frameworks/select2/4.1.0/select2.min.css' %}" type="text/css" />
+<link rel="stylesheet" href="{% static '/home/css/frameworks/datatables/datatables_bundle-3.1.4_min.css' %}">
+<link rel="stylesheet" href="{% static 'home/css/tablemanager.css' %}">
 
 <link href="{% static 'home/css/flareplot-contactbrowser.css' %}" rel="stylesheet">
 <link href="{% static 'home/css/flareplot-selectors.css' %}" rel="stylesheet">
@@ -71,10 +68,12 @@
                     0 structures selected.
                         </p></h5>
                         <button
+                            id="interface-select-button"
                             type="button"
                             class="btn btn-primary"
                             data-toggle="modal"
-                            data-target="#interface-modal-table">
+                            data-target="#interface-modal-table"
+                            disabled>
                             Select Structures
                         </button>
                         <button
@@ -134,18 +133,71 @@
             <div class="modal-body">
                 <div class="col-md-12">
                     <span id="single-crystal-group-pdbs-modal-text">0 structure(s) selected</span>
-                    <button type="button" onclick="resetselection();" class="btn btn-xs btn-primary reset-selection">Reset selection</button>
-                    <p style="display:inline;">Filtering and selection might take up a few seconds.</p>
-                    <div class="tableview"></div>
+                    <div class="tableview">
+                    <!-- This table is populated by the TableManager -->
+                        <table id="interface-pdb-table" width="100%" class="display">
+                            <script type="module">
+                                // Populate PDB table using TableManager
+                                import { TableManager } from "{% static 'home/js/tablemanager/tablemanager.js' %}";
+                                import { InjectorTemplates } from "{% static 'home/js/tablemanager/injectors/injectortemplates.js' %}";
+
+                                window.tableManagers = window.tableManagers || {};
+                                
+                                const current_site = '{{ page }}';
+
+                                // Select configuration variant based on the current page
+                                let config_variant = current_site === 'gprotein' 
+                                  ? 'clientside_gprotein_interface'
+                                  : 'clientside_arrestin_interface';
+
+                                let config
+                                try {
+                                    // The datatable variant restricts the rows to structures in complex with this page's effector
+                                    config = await TableManager.fetchConfiguration(
+                                    'pdb_data_table', //dataTableConfigName
+                                    config_variant, //dataTableConfigVariant
+                                    'pdb_data_table', //columnConfigName
+                                    'basic' //columnConfigVariant
+                                    );
+                                } catch(error) {
+                                    console.error('Error fetching configuration:', error);
+                                }
+
+
+                                if (config) {
+                                    // Initialize the table (multi-select checkboxes are the default)
+                                    let interfaceTableManager = new TableManager(config.columnsSpecifications, 'interface-pdb-table');
+
+                                    // Register a super header injector to add info-icon to "Receptor state" header
+                                    interfaceTableManager.superHeaderInjectors.registerInjector("Receptor State", function(cellElementArray) {
+                                        return InjectorTemplates.addInfoIconLink(cellElementArray, "https://docs.gpcrdb.org/structures.html#structure-descriptors");
+                                    });
+
+                                    interfaceTableManager.initialiseDataTable(config.datatableConfiguration);
+
+                                    // Enable the select button once the table is ready
+                                    interfaceTableManager.ready.then(() => {
+                                        document.getElementById("interface-select-button").disabled = false;
+                                    });
+
+                                    interfaceTableManager.eventPubSub.subscribe("checkboxStateChanged", function(eventData) {
+                                        let count = interfaceTableManager.state.activeCheckBoxes.size;
+                                        document.querySelector("#single-crystal-group-pdbs-modal-text").textContent = `${count} structure(s) selected`;
+                                        document.querySelector("#single-crystal-group-pdbs-modal-external-text").textContent = `${count} structure(s) selected`;
+                                    });
+
+                                    window.tableManagers.interfaceTableManager = interfaceTableManager;
+                                }
+                            </script>
+                        </table>
+                    </div>
                 </div>
+                <div class="clearfix"></div>
             </div>
 
             <div class="modal-footer">
                 <button type="button" class="btn btn-default" data-dismiss="modal">Close</button>
             </div>
-        </div>
-        <div class="loading_overlay">
-            <img src="/static/home/images/loading.gif" id="img-load" />
         </div>
     </div>
 </div>
@@ -313,17 +365,13 @@ const adjust = {{ adjust | safe}};
 <script src="{% static 'home/js/lodash.min.js' %}"></script>
 <script src="{% static 'home/js/chroma.min.js' %}"></script>
 
-<script src="{% static 'home/js/jquery.dataTables.min.js' %}"></script>
-<script src="{% static 'home/js/dataTables.select.min.js' %}"></script>
-<script src="{% static 'home/js/dataTables.buttons.min.js' %}"></script>
+<script src="{% static 'home/js/frameworks/datatables/datatables_3.1.4_bundle_min.js' %}"> </script>
 <script src="{% static 'home/js/selection.js' %}"> </script>
-<script src="{% static 'home/js/jquery.dataTables.yadcf.js' %}"> </script>
-<script src="{% static 'home/js/select2.js' %}"> </script>
+<script src="{% static 'home/js/frameworks/select2/4.1.0/select2.min.js' %}"> </script>
 <script src="{% static 'home/js/gpcrdb.js' %}"></script>
 <script src="{% static 'home/js/jquery.tablesorter.js' %}"></script>
 <script src="https://code.jquery.com/ui/1.12.1/jquery-ui.js"></script>
 <script src="{% static 'home/js/matrix_utilities.js' %}"></script>
 <script src="{% static 'home/js/signprotmat.js' %}"></script>
-<script src="{% static 'home/js/fixed_columns.js' %}"></script>
 <script type="text/javascript" src="{% static 'home/js/contactbrowser_functions.js' %}"> </script>
 {% endblock %}

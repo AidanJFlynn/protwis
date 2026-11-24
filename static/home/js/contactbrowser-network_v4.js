@@ -113,7 +113,7 @@ function createNetworkPlot(raw_data,original_width, inputGraph, containerSelecto
             var pfs_1 = raw_data['pfs1'].length
             var pfs_2 = raw_data['pfs2'].length
             var normalized = raw_data['normalized'];
-        } else if (raw_data['proteins'].length > 1) {
+        } else if (raw_data['pdbs'].length > 1) {
             var pdbs_counts = raw_data['pdbs'].length
             var normalized = raw_data['normalized'];
             var pfs = raw_data['pfs'].length
@@ -133,7 +133,7 @@ function createNetworkPlot(raw_data,original_width, inputGraph, containerSelecto
                     sfreq2 = Math.round(100 * v['pdbs2'].length / pdbs_2);
                 }
                 freq = sfreq1 - sfreq2;
-            } else if (raw_data['proteins'].length > 1) {
+            } else if (raw_data['pdbs'].length > 1) {
                 if (normalized) {
                     freq = Math.round(100 * v['pfs'].length / pfs);
                 } else {
@@ -1545,10 +1545,10 @@ function createNetworkPlot(raw_data,original_width, inputGraph, containerSelecto
     
 }
 
-Array.prototype.indexOfForArrays = function(search)
+Object.defineProperty(Array.prototype, "indexOfForArrays", {enumerable: false, writable: true, configurable: true, value: function(search)
 {
   var searchJson = JSON.stringify(search); // "[3,566,23,79]"
   var arrJson = this.map(JSON.stringify); // ["[2,6,89,45]", "[3,566,23,79]", "[434,677,9,23]"]
     console.log("hi!",arrJson, searchJson,arrJson.indexOf(searchJson));
   return arrJson.indexOf(searchJson);
-};
+}});

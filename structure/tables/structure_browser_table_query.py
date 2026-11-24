@@ -9,9 +9,15 @@ from django.db.models.functions import Length, Coalesce, Cast
 from structure.models import Structure, StructureExtraProteins, StructureAuxiliarySmallMolecule
 from interaction.models import StructureLigandInteraction, ResidueFragmentInteraction
 from protein.models import Gene, IdentifiedSites
+from ligand.models import LigandType
 from common.models import WebLink
 
-# ── stabilising-agent classification (moved out of the view) ───────────────
+
+#####################
+# Structure Browser #
+#####################
+
+# ── stabilising-agent classification ───────────────────────────────────────
 FUSION_RE = (
     r".*thase.*|PGS|BRIL|.*Lysozyme|.*b562.*|TrxA|Flavodoxin|Rubredoxin|"
     r"Sialidase|.*Thioredoxin.*|Endolysin|.*cytochrome.*|.*DARPin.*"
@@ -22,6 +28,8 @@ ANTIBODY_RE = (
 )
 fusion_pat = re.compile(FUSION_RE, re.I)
 antibody_pat = re.compile(ANTIBODY_RE, re.I)
+
+SIGNAL_PROTEIN_CATEGORIES = {"G alpha", "Arrestin"}
 
 
 # ── subquery: distinct annotated-ligand count per structure ────────────────
@@ -47,34 +55,99 @@ def _num_interactions_subquery():
     )
 
 
-def StructureBrowserTableRows():
-    """
-    Yields one flat dict per Structure for table_provider.GpcrStructureBrowserTable.
+def _yes_no(value):
+    return "Yes" if value else "No"
 
-    Only fields that need real per-row work are computed here: regex-classified
-    stabilising agents, picking "the" arrestin/G-alpha extra-protein row, building
-    the ligand/endogenous-ligand lists, filtered gene/IUPHAR lookups, and a couple
-    of genuine subqueries (coverage, sodium site, interaction counts). Everything
-    else (family, class, species, state, pdb, resolution, ...) is a plain FK-chain
-    scalar and is read live via select_related in StructureDataJsonView instead of
-    being duplicated here.
+
+def _signal_protein(structure):
+    """The structure's G alpha or arrestin chain, None if it has neither."""
+    return next((ep for ep in structure.prefetched_extras if ep.category in SIGNAL_PROTEIN_CATEGORIES), None)
+
+
+def _signal_protein_subtype(signal_protein):
+    """Display name of the signalling protein; G proteins are shown with a Greek alpha."""
+    name = signal_protein.display_name
+    return f"α{name[1:]}" if name.startswith("G") else name
+
+
+def _structure_ligands(structure):
+    """(ids, names, types, roles) of the structure's ligands. "Apo (no ligand)" entries are left out, so apo
+    structures have no ligands (the serializer shows them as apo)."""
+    ids = []
+    names = []
+    types = []
+    roles = []
+    for interaction in structure.prefetched_ligands:
+        ligand = interaction.ligand
+        if not ligand:
+            continue
+        ids.append(ligand.id)
+        names.append(ligand.name)
+        types.append(ligand.ligand_type.name if ligand.ligand_type else None)
+        roles.append(interaction.ligand_role.name if interaction.ligand_role else None)
+    return ids, names, types, roles
+
+
+def _endogenous_ligands(receptor):
+    """(ids, names, types) of the receptor's endogenous ligands, each ligand once."""
+    ids = [] 
+    names = []
+    types = []
+    for endogenous in receptor.endogenous_gtp_set.all():
+        ligand = endogenous.ligand
+        if not ligand or ligand.id in ids:
+            continue
+        ids.append(ligand.id)
+        names.append(ligand.name)
+        types.append(ligand.ligand_type.name if ligand.ligand_type else None)
+    return ids, names, types
+
+
+def _auxiliary_small_molecules(structure):
+    """(names, types, functions) of the structure's auxiliary small molecules; names are unique and in order."""
+    names = []
+    types = []
+    functions = []
+    for molecule in structure.prefetched_aux_small_molecules:
+        title = molecule.title or molecule.name
+        if title and title not in names:
+            names.append(title)
+            types.append(molecule.type if molecule.type else None)
+            functions.append(molecule.function if molecule.function else None)
+    return names, types, functions
+
+
+#------------#
+# Main Query #
+#------------#
+def StructureBrowserTableRows():
+    """Rows for table_provider.GpcrStructureBrowserTable, one per experimental structure.
+
+    Names that may contain HTML (protein_name, receptor_family, signal_protein_subtype, ligand_names,
+    endo_ligand_names) are returned as HTML; the build command splits them into plain text and formatting.
     """
     structures = (
         Structure.objects
         .filter(structure_type__origin='experiment')
+        .select_related(
+            "state", "structure_type", "pdb_code",
+            "publication__web_link__web_resource",
+            "protein_conformation__protein__species",
+            "protein_conformation__protein__parent",
+            "protein_conformation__protein__family__parent__parent__parent",
+        )
         .prefetch_related(
             Prefetch(
                 "protein_conformation__protein__parent__genes",
-                queryset=Gene.objects.filter(position=0).select_related("entrez_weblink"),
+                queryset=Gene.objects.filter(position=0),
                 to_attr="filtered_genes",
             ),
             Prefetch(
                 "extra_proteins",
-                queryset=StructureExtraProteins.objects.select_related(
-                    "wt_protein__family__parent"),
+                queryset=StructureExtraProteins.objects.select_related("wt_protein__family__parent"),
                 to_attr="prefetched_extras",
             ),
-            Prefetch(                          # ligands for Python loop
+            Prefetch(
                 "ligands",
                 queryset=StructureLigandInteraction.objects.select_related(
                     "ligand", "ligand_role", "ligand__ligand_type"),
@@ -87,22 +160,16 @@ def StructureBrowserTableRows():
             ),
             Prefetch(
                 "protein_conformation__protein__parent__web_links",
-                queryset=WebLink.objects
-                    .select_related("web_resource")
-                    .filter(web_resource__slug="gtop"),
+                queryset=WebLink.objects.filter(web_resource__slug="gtop"),
                 to_attr="prefetched_gtop_links",
             ),
-            "stabilizing_agents",               # regex filter
+            "stabilizing_agents",
             "protein_conformation__protein__parent__endogenous_gtp_set__ligand__ligand_type",
         )
         .annotate(
             coverage_pct=ExpressionWrapper(
-                Cast(Count("protein_conformation__residue", distinct=True),
-                     FloatField()) * 100.0 /
-                Coalesce(
-                    Length("protein_conformation__protein__parent__sequence"),
-                    Value(1.0)
-                ),
+                Cast(Count("protein_conformation__residue", distinct=True), FloatField()) * 100.0 /
+                Coalesce(Length("protein_conformation__protein__parent__sequence"), Value(1.0)),
                 output_field=IntegerField(),
             ),
             has_sodium_site=Exists(
@@ -111,8 +178,7 @@ def StructureBrowserTableRows():
                     site__slug="sodium_pocket")
             ),
             has_ligand_interactions=Exists(
-                ResidueFragmentInteraction.objects.filter(
-                    structure_ligand_pair__structure=OuterRef("pk"))
+                ResidueFragmentInteraction.objects.filter(structure_ligand_pair__structure=OuterRef("pk"))
             ),
             num_annotated_ligands=Coalesce(
                 Subquery(_num_annotated_ligands_subquery(), output_field=IntegerField()), 0),
@@ -121,101 +187,98 @@ def StructureBrowserTableRows():
         )
     )
 
+    rows = []
     for s in structures:
-        pp = s.protein_conformation.protein.parent
+        protein = s.protein_conformation.protein  # the construct
+        receptor = protein.parent                 # the wild-type receptor
+        pdb_code = s.pdb_code.index if s.pdb_code else None
+        gene = receptor.filtered_genes[0] if receptor.filtered_genes else None
+        gtop_link = next(iter(receptor.prefetched_gtop_links), None)
+        web_link = s.publication.web_link if s.publication else None
+        signal_protein = _signal_protein(s)
 
-        # arrestin / Gα — pick the row, store only its id (display formatting
-        # happens at read time off the FK)
-        arrestin = next(
-            (ep for ep in getattr(s, "prefetched_extras", [])
-             if ep.category in {"G alpha", "Arrestin"}), None
-        )
+        agent_names = [agent.name for agent in s.stabilizing_agents.all()]
+        ligand_ids, ligand_names, ligand_types, ligand_roles = _structure_ligands(s)
+        if len(ligand_ids) != len(ligand_names) or len(ligand_ids) != len(ligand_types) or len(ligand_ids) != len(ligand_roles):
+            raise ValueError("Inconsistent lengths in structure ligands")
+        endo_ids, endo_names, endo_types = _endogenous_ligands(receptor)
+        if len(endo_ids) != len(endo_names) or len(endo_ids) != len(endo_types):
+            raise ValueError("Inconsistent lengths in endogenous ligands")
+        aux_names, aux_types, aux_functions = _auxiliary_small_molecules(s)
+        if len(aux_names) != len(aux_types) or len(aux_names) != len(aux_functions):
+            raise ValueError("Inconsistent lengths in auxiliary small molecules")
 
-        # stabilising agents – tiny regex pass
-        fusions = "<br>".join(a.name for a in s.stabilizing_agents.all()
-                              if fusion_pat.match(a.name)) or "-"
-        antibodies = "<br>".join(a.name for a in s.stabilizing_agents.all()
-                                 if antibody_pat.match(a.name)) or "-"
+        # Regex to add a space after the slash in signal protein notes, so that the table can break lines there.
+        # Eg. "A34B/S43K/D678F" becomes "A34B / S43K / D678F"
+        aa_slash_re = re.compile(r"([A-Z][0-9]{1,4}[A-Z])/")
 
-        # auxiliary small molecules – dedupe by title for the Name list,
-        # distinct sorted sets for Type/Function (same shape as fusions/antibodies)
-        aux_names, aux_types, aux_functions, seen_aux = [], set(), set(), set()
-        for am in getattr(s, "prefetched_aux_small_molecules", []):
-            title = am.title or am.name
-            if title and title not in seen_aux:
-                seen_aux.add(title)
-                aux_names.append(title)
-            if am.type:
-                aux_types.add(am.type)
-            if am.function:
-                aux_functions.add(am.function)
+        rows.append({
+            ## Structure
+            'structure_id': s.id,
+            'pdb_code': pdb_code,
+            'method': s.structure_type.type_short(),
+            'refined_structure': f"{pdb_code.upper()}_refined" if s.refined and pdb_code else None,
+            'resolution': float(s.resolution) if s.resolution is not None else None,
+            'representative': s.representative,
+            'preferred_chain': s.preferred_chain or None,
+            'state': s.state.name if s.state else None,
+            'gprot_bound_likeness': float(s.gprot_bound_likeness) if s.gprot_bound_likeness is not None else None,
+            'coverage': int(s.coverage_pct) if s.coverage_pct is not None else None,
 
-        # ligands – build names/types/roles here
-        lig_list, lig_types, lig_roles = [], set(), set()
-        for li in getattr(s, "prefetched_ligands", []):
-            if not li.ligand:
-                continue
-            is_apo = li.ligand.name == "Apo (no ligand)"
-            lig_list.append({"id": None if is_apo else li.ligand.id, "name": li.ligand.name})
-            if li.ligand.ligand_type and not is_apo:
-                lig_types.add(li.ligand.ligand_type.name)
-            if li.ligand_role and not is_apo:
-                lig_roles.add(li.ligand_role.name)
+            ## Receptor
+            'uniprot_entry_name': receptor.entry_name,
+            'uniprot_accession': receptor.accession,
+            'uniprot_name': receptor.entry_name.split('_')[0].upper(),
+            'protein_name': receptor.name.replace("receptor", "").replace("-adrenoceptor", "").strip(),
+            'iuphar_index': gtop_link.index if gtop_link and gtop_link.index else None,
+            'gene_name': gene.name if gene else None,
+            'gene_entrez_id': str(gene.entrez_id) if gene and gene.entrez_id is not None else None,
+            'receptor_family': protein.family.parent.short(),
+            'receptor_class': protein.family.parent.parent.parent.shorter(),
+            'species_common_name': protein.species.common_name,
 
-        # endogenous ligands from parent protein
-        endos = getattr(pp, "endogenous_gtp_set", []).all() if hasattr(pp, "endogenous_gtp_set") else []
-        endo_list, seen = [], set()
-        for e in endos:
-            lig = getattr(e, "ligand", None)
-            if not lig:
-                continue
-            key = getattr(lig, "id", None) or lig.name
-            if key in seen:
-                continue
-            seen.add(key)
-            endo_list.append({"id": lig.id, "name": lig.name})
+            ## Signalling protein
+            'signal_protein_family': (signal_protein.wt_protein.family.parent.name
+                                      if signal_protein and signal_protein.wt_protein else None),
+            'signal_protein_subtype': _signal_protein_subtype(signal_protein) if signal_protein else None,
+            'signal_protein_entry_name': (signal_protein.wt_protein.entry_name
+                                          if signal_protein and signal_protein.wt_protein else None),
+            'signal_protein_note': (aa_slash_re.sub("\\1 / ", signal_protein.note) or None) if signal_protein else None, #add space to allow breaks in table
+            'signal_protein_pcntseq': signal_protein.wt_coverage if signal_protein else None,
 
-        # gene (filtered M2M — not a plain FK chain, so it's precomputed)
-        gene_name = (pp.filtered_genes[0].name
-                     if getattr(pp, "filtered_genes", []) else None)
-        gene_entrez_url = (str(pp.filtered_genes[0].entrez_weblink)
-                            if getattr(pp, "filtered_genes", []) and
-                            pp.filtered_genes[0].entrez_weblink else None)
+            ## Structure ligands (position matched lists of ids, names, types and roles)
+            'ligand_ids': ligand_ids,
+            'ligand_names': ligand_names,
+            'ligand_type': ligand_types,
+            'ligand_role': ligand_roles,
 
-        # IUPHAR / GToP link (filtered reverse FK — same reasoning)
-        iuphar_link, iuphar_index = None, None
-        wl = next(iter(getattr(pp, "prefetched_gtop_links", [])), None)
-        if wl and wl.web_resource and wl.index:
-            iuphar_index = wl.index
-            iuphar_link = wl.web_resource.url.replace("$index", str(wl.index))
+            ## Auxiliary proteins and small molecules
+            'fusion': [name for name in agent_names if fusion_pat.match(name)],
+            'antibody': [name for name in agent_names if antibody_pat.match(name)],
+            ## Position matched lists of auxiliary molecule names, types and functions
+            'auxiliary_molecule': aux_names,
+            'auxiliary_molecule_type': aux_types,
+            'auxiliary_molecule_function': aux_functions,
 
-        yield {
-            "structure_id": s.id,
-            "arrestin_extra_protein_id": arrestin.id if arrestin else None,
-            "coverage": int(s.coverage_pct) if s.coverage_pct is not None else None,
-            "sodium_site": bool(s.has_sodium_site),
+            ## Natural ligands (position matched lists of ids, names, types)
+            'endo_ligand_ids': endo_ids,
+            'endo_ligand_names': endo_names,
+            'endo_ligand_type': endo_types,
 
-            "fusions": fusions,
-            "antibodies": antibodies,
+            ## Sodium ion sites
+            'sodium_site': _yes_no(s.has_sodium_site),
+            'sodium': _yes_no(s.sodium),
 
-            "auxiliary_molecules": "<br>".join(aux_names) or "-",
-            "auxiliary_molecule_type": "<br>".join(sorted(aux_types)) or "-",
-            "auxiliary_molecule_function": "<br>".join(sorted(aux_functions)) or "-",
+            ## Reference
+            'authors': s.publication.authors if s.publication and s.publication.authors else None,
+            'reference_index': web_link.index if web_link and web_link.web_resource else None,
+            'reference_web_resource': web_link.web_resource.slug if web_link and web_link.web_resource else None,
+            'publication_date': s.publication_date,
 
-            "ligands": lig_list,
-            "ligand_type": "<br>".join(map(str, sorted(lig_types))) or "-",
-            "ligand_role": "<br>".join(map(str, sorted(lig_roles))) or "-",
+            ## Ligand interactions
+            'has_ligand_interactions': bool(s.has_ligand_interactions),
+            'num_annotated_ligands': s.num_annotated_ligands,
+            'num_interactions': s.num_interactions,
+        })
 
-            "endo_ligands": endo_list,
-            "endo_type": "<br>".join(sorted({e.ligand.ligand_type.name for e in endos
-                                              if e.ligand and e.ligand.ligand_type})) or "-",
-
-            "gene_name": gene_name,
-            "gene_entrez_url": gene_entrez_url,
-            "iuphar_link": iuphar_link,
-            "iuphar_index": iuphar_index,
-
-            "has_ligand_interactions": bool(s.has_ligand_interactions),
-            "num_annotated_ligands": s.num_annotated_ligands,
-            "num_interactions": s.num_interactions,
-        }
+    return rows

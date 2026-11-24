@@ -1,0 +1,215 @@
+[
+  {
+    "column_group": "Receptor",
+    "json_id": "receptor_class",
+    "title": "Class",
+    "data_type": "textselect",
+    "allow_filter": true,
+    "width": "90px",
+    "max_display_length": 20
+  },
+  {
+    "column_group": "Receptor",
+    "json_id": "receptor_family",
+    "title": "Receptor family",
+    "data_type": "textselect",
+    "allow_filter": true,
+    "width": "170px",
+    "max_display_length": 18
+  },
+  {
+    "column_group": "Receptor",
+    "json_id": "uniprot",
+    "title": "UniProt",
+    "data_type": "weblinktextselect",
+    "allow_filter": true,
+    "width": "70px"
+  },
+  {
+    "column_group": "Receptor",
+    "json_id": "protein",
+    "title": "IUPHAR",
+    "data_type": "weblinktextselect",
+    "show_symbol_popup": true,
+    "allow_filter": true
+  },
+  {
+    "column_group": "Receptor",
+    "json_id": "gene",
+    "title": "Gene",
+    "data_type": "weblinktextselect",
+    "allow_filter": true,
+    "cssClassFilterInput": "gene_filter_input"
+  },
+  {
+    "column_group": "Receptor",
+    "json_id": "species_common_name",
+    "title": "Species",
+    "data_type": "textselect",
+    "allow_filter": true,
+    "cssClassFilterInput": "species_filter_input"
+  },
+  {
+    "column_group": "Physiological ligands",
+    "json_id": "ligand",
+    "title": "Ligand",
+    "data_type": "weblinktextselect",
+    "allow_filter": true,
+    "max_display_length": 20,
+    "width": "150px",
+    "show_symbol_popup": true,
+    "cellInjectors" : ["structurePopover"]
+  },
+  {
+    "column_group": "Physiological ligands",
+    "json_id": "gtp_classification",
+    "title": "GtP Classification",
+    "data_type": "textselect",
+    "allow_filter": true
+  },
+  {
+    "column_group": "Physiological ligands",
+    "json_id": "potency_ranking",
+    "title": "Potency Ranking",
+    "data_type": "numeric",
+    "allow_filter": true
+  },
+  {
+    "column_group": "Physiological ligands",
+    "json_id": "ligand_type",
+    "title": "Type",
+    "data_type": "textselect",
+    "allow_filter": true,
+    "width": "120px"
+  },
+  {
+    "column_group": "Physiological ligands",
+    "json_id": "smiles",
+    "title": "Smiles",
+    "data_type": "text",
+    "allow_filter": true,
+    "max_display_length": 18,
+    "breakStyle": "force",
+    "width": "200px"
+  },
+  {
+    "column_group": "Physiological ligands",
+    "json_id": "inchikey",
+    "title": "Inchikey",
+    "data_type": "text",
+    "allow_filter": true,
+    "max_display_length": 16,
+    "breakStyle": "force",
+    "width": "200px" 
+  },
+  {
+    "column_group": "Structure",
+    "json_id": "structure_model",
+    "title": "Model",
+    "data_type": "weblinktextlist",
+    "max_list_items": 3,
+    "allow_filter": false,
+    "exportHeaderOverride": "Model structure"
+  },
+  {
+    "column_group": "Structure",
+    "json_id": "structure_exp",
+    "title": "Exp",
+    "data_type": "weblinktextlist",
+    "max_list_items": 1,
+    "allow_filter": false,
+    "exportHeaderOverride": "Experimental structure"
+  },
+  {
+    "column_group": "pEC50",
+    "json_id": "pec50_min",
+    "title": "Min",
+    "data_type": "numeric",
+    "precision": 1,
+    "allow_filter": true,
+    "width": "70px",
+    "exportHeaderOverride": "pEC50 Min",
+    "cellStyler": {
+      "type": "gradient_greyscale",
+      "source": "pec50_min"
+    }
+  },
+  {
+    "column_group": "pEC50",
+    "json_id": "pec50_mid",
+    "title": "Mid",
+    "data_type": "numeric",
+    "precision": 1,
+    "allow_filter": true,
+    "exportHeaderOverride": "pEC50 Mid",
+    "width": "70px",
+    "cellStyler": {
+      "type": "gradient_greyscale",
+      "source": "pec50_mid"
+    }
+  },
+  {
+    "column_group": "pEC50",
+    "json_id": "pec50_max",
+    "title": "Max",
+    "data_type": "numeric",
+    "precision": 1,
+    "allow_filter": true,
+    "exportHeaderOverride": "pEC50 Max",
+    "width": "70px",
+    "cellStyler": {
+      "type": "gradient_greyscale",
+      "source": "pec50_max"
+    }
+  },
+  {
+    "column_group": "pKi",
+    "json_id": "pki_min",
+    "title": "Min",
+    "data_type": "numeric",
+    "precision": 1,
+    "allow_filter": true,
+    "exportHeaderOverride": "pKi Min",
+    "width": "70px",
+    "cellStyler": {
+      "type": "gradient_greyscale",
+      "source": "pki_min"
+    }
+  },
+  {
+    "column_group": "pKi",
+    "json_id": "pki_mid",
+    "title": "Mid",
+    "data_type": "numeric",
+    "precision": 1,
+    "allow_filter": true,
+    "exportHeaderOverride": "pKi Mid",
+    "width": "70px",
+    "cellStyler": {
+      "type": "gradient_greyscale",
+      "source": "pki_mid"
+    }
+  },
+  {
+    "column_group": "pKi",
+    "json_id": "pki_max",
+    "title": "Max",
+    "data_type": "numeric",
+    "precision": 1,
+    "allow_filter": true,
+    "exportHeaderOverride": "pKi Max",
+    "width": "70px",
+    "cellStyler": {
+      "type": "gradient_greyscale",
+      "source": "pki_max"
+    }
+  },
+  {
+    "column_group": "References",
+    "json_id": "references",
+    "title": "Refs",
+    "data_type": "referencelist",
+    "allow_filter": false,
+    "exportHeaderOverride": "References"
+  }
+]

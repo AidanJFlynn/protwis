@@ -1,4 +1,4 @@
-/*global Papa,d3,yadcf,createYADCFfilters,GlobalTableToExcel,showPDBtable,showAlert, _, signprotmat, con_seq, non_interactions,interactions_metadata,interactions,gprot,receptor,csrf_token*/
+/*global Papa,d3,GlobalTableToExcel,showAlert, _, signprotmat, con_seq, non_interactions,interactions_metadata,interactions,gprot,receptor,csrf_token*/
 /*eslint complexity: ["error", 20]*/
 
 let pdb_sel = [];
@@ -351,14 +351,7 @@ const run_sig_match = function() {
       // console.log(data);
       document.querySelector("#sigmatch-container").style.display = "inline-block";
       //sigmatch_data = Object.keys(data).map((key) => {data[String(key)];});
-      let column_filters = [];
       let columns_to_add = [];
-      // Family column
-      column_filters = column_filters.concat(createYADCFfilters(2, 1, "multi_select", "select2", "Select", false, null, null, "120px"));
-      // IUPHAR column
-      column_filters = column_filters.concat(createYADCFfilters(3, 1, "multi_select", "select2", "Select", false, null, null, "80px"));
-      // Interface Conservation % column
-      column_filters = column_filters.concat(createYADCFfilters(5, 1, "range_number_slider", null, null, false, null, null, "40px"));
       let columns_definition = [{
                 data: null,
                 targets: 0,
@@ -423,8 +416,6 @@ const run_sig_match = function() {
               targets: 13,
             }, ];
         columns_definition = columns_definition.concat(columns_to_add);
-        // Gprots columns (4 GtoP + 4 GPCRdb Mean)
-        column_filters = column_filters.concat(createYADCFfilters(6, 8, "range_number", null, ["Min", "Max"], false, null, "html", "40px"));
       } else {
         columns_to_add = [{
               data: "arrb1.html",
@@ -446,27 +437,24 @@ const run_sig_match = function() {
             //   targets: 9,
             //   visible: false,
             // },];
-        // Arrestins columns (2 GtoP + 2 GPCRdb Mean)
-        column_filters = column_filters.concat(createYADCFfilters(6, 2,"range_number", null, ["Min", "Max"], false, null, "html", "40px"));
       }
       columns_definition = columns_definition.concat(columns_to_add);
       if (filtering_particle === "G alpha") {
         sigmatch_table = $("#sigmatch_table").DataTable({
-          dom: "Bfrtip",
+          layout: {
+            topStart: "buttons",
+            topEnd: "search",
+          },
           data: sigmatch_data,
           // scrollY: "60vh",
           scrollY: true,
           scrollX: true,
           scrollCollapse: true,
-          scroller: true,
           destroy: true,
           columnDefs: columns_definition,
           order: [
             [5, "desc"]
           ],
-          select: {
-            style: "single",
-          },
           paging: true,
           buttons: [
             {
@@ -515,35 +503,34 @@ const run_sig_match = function() {
             {
               text: "Reset All Filters",
               action() {
-                yadcf.exResetAllFilters(sigmatch_table);
+                sigmatch_table.search("").columns().search("").draw();
               }
             },
             {
               text: "Show Alignment",
               className: "score-button",
               action() {
-                sigmatch_table.rows().deselect();
+                $(sigmatch_table.rows(".selected").nodes()).removeClass("selected");
               }
             },
           ]
         });
       } else {
         sigmatch_table = $("#sigmatch_table").DataTable({
-          dom: "Bfrtip",
+          layout: {
+            topStart: "buttons",
+            topEnd: "search",
+          },
           data: sigmatch_data,
           // scrollY: "60vh",
           scrollY: true,
           scrollX: true,
           scrollCollapse: true,
-          scroller: true,
           destroy: true,
           columnDefs: columns_definition,
           order: [
             [5, "desc"]
           ],
-          select: {
-            style: "single",
-          },
           paging: true,
           buttons: [
             {
@@ -586,30 +573,34 @@ const run_sig_match = function() {
             {
               text: "Reset All Filters",
               action() {
-                yadcf.exResetAllFilters(sigmatch_table);
+                sigmatch_table.search("").columns().search("").draw();
               }
             },
             {
               text: "Show Alignment",
               className: "score-button",
               action() {
-                sigmatch_table.rows().deselect();
+                $(sigmatch_table.rows(".selected").nodes()).removeClass("selected");
               }
             },
           ]
         });
       }
-      yadcf.init(sigmatch_table.draw(), column_filters, {
-        cumulative_filtering: false
-      });
-
       $(".score-button").click(function() {
         //const render_url = window.location.origin + "/signprot/matrix/render_sigmat/";
         window.open("/signprot/matrix/render_sigmat/", "_blank");
       });
 
-      sigmatch_table.on("select", function(e, dt, type, indexes) {
-        const entry = sigmatch_table.rows(indexes).data().toArray()[0];
+      // Single row selection on click (the DataTables Select extension is not in the DataTables 3 bundle)
+      $("#sigmatch_table tbody").off("click", "tr").on("click", "tr", function() {
+        if ($(this).hasClass("selected")) {
+          $(this).removeClass("selected");
+          return;
+        }
+        $(sigmatch_table.rows(".selected").nodes()).removeClass("selected");
+        $(this).addClass("selected");
+
+        const entry = sigmatch_table.row(this).data();
         //console.log(entry);
         svg = d3.select("svg.svg-content.conseq");
         $("g#sigmatch_frame").remove();
@@ -622,7 +613,7 @@ const run_sig_match = function() {
         );
       });
       // Recalculate table layout incl. column widths
-      yadcf.exResetAllFilters(sigmatch_table);
+      sigmatch_table.columns.adjust();
     },
     error(jqXHR, exception) {
       console.log(jqXHR);
@@ -704,40 +695,21 @@ const reset_slider = function() {
 
 
 $(document).ready(function() {
-  // Calling the PDBTableData
-  $.get("/signprot/pdbtabledata", {
-    exclude_non_interacting: true,
-    effector: filtering_particle,
-  }, function(data) {
-    $("#interface-modal-table .tableview").html(data);
-  })
-
   signprotmat.d3.print_resScaleColor_legend();
   $("[data-toggle=\"tooltip\"]").tooltip();
 
-  let table = $($.fn.dataTable.tables()[0]).DataTable();
-
   initialize_filter_slider();
 
-  $("#interface-modal-table").on("shown.bs.modal", function(e) {
-    showPDBtable("#interface-modal-table");
-  })
-
   $("#interface-modal-table").on("hidden.bs.modal", function(e) {
-    table = $($.fn.dataTable.tables()[0]).DataTable();
-    let selection = table.rows(".selected").data();
-
     let old_pdb_sel = pdb_sel;
     pdb_sel = [];
     pos_set = [];
 
-    // get selected pdb ids
-    $(".pdb_selected:checked").each(function(index) {
-      pdb_sel.push(($(this).attr("id")));
-    });
+    // get selected pdb ids from the TableManager structure table (see matrix.html)
+    window.tableManagers.interfaceTableManager.state.activeCheckBoxes.forEach(cb => pdb_sel.push(cb.data.pdb_id));
 
     var ajax_url = "";
-    if (selection.length>1) {
+    if (pdb_sel.length>1) {
       ajax_url = "/signprot/matrix/AJAX_Interactions/True";
     } else {
       ajax_url = "/signprot/matrix/AJAX_Interactions/False"

@@ -16,7 +16,7 @@ from residue.models import Residue, ResiduePositionSet
 from mutational_landscape.models import NaturalMutations, PTMs
 
 from common.diagrams_gpcr import DrawHelixBox, DrawSnakePlot
-from angles.models import get_snake_plot_distance_lookup
+from contactnetwork.models import get_snake_plot_distance_lookup
 
 from interaction.models import ResidueFragmentInteraction
 

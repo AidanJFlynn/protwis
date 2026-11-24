@@ -1,0 +1,332 @@
+@import "struct_tooltip.css";
+
+/* --------------*/
+/* Table Styling */
+/* --------------*/    
+
+.fixed-width-table {
+    table-layout: fixed;
+}
+
+.auto-width-table {
+    table-layout: auto;    
+}
+
+/* ------------------- */
+/* Header cell styling */
+/* ------------------- */
+
+.super_header_cell {
+    text-align: center !important;
+    border: 1px solid #b3b3b3;    
+}
+
+.primary_header_cell {
+    border-bottom: 1px solid #b3b3b3;
+}
+
+.filter_header_cell {
+    border-bottom: 1px solid #b3b3b3;
+}
+
+.col_group_boundary_left {
+    border-left: 1px solid #b3b3b3;
+}
+
+.col_group_boundary_right {
+    border-right: 1px solid #b3b3b3;
+}
+
+/* Centre every header row (titles, category counts, filters) to match the centred body cells.
+   The table.dataTable.tablemanager-standard prefix outranks DataTables' right alignment of numeric columns. */
+table.dataTable.tablemanager-standard thead th {
+    text-align: center;
+}
+
+/* DataTables lays a sortable title out as a flex row: the title grows, followed by the sort arrow
+   (--dt-order-arrow-width wide, 4px gap). Padding the other side of the title by the same amount keeps the
+   title centred over the column instead of shifted away from the arrow. */
+table.dataTable.tablemanager-standard thead th:is(.dt-orderable-asc, .dt-orderable-desc, .dt-ordering-asc, .dt-ordering-desc) .dt-column-title {
+    padding-left: calc(var(--dt-order-arrow-width) + 4px);
+}
+
+/* Numeric (and date) headers are laid out row-reverse, with the arrow on the left, so pad the right instead */
+table.dataTable.tablemanager-standard thead th:is(.dt-type-numeric, .dt-type-date):is(.dt-orderable-asc, .dt-orderable-desc, .dt-ordering-asc, .dt-ordering-desc) .dt-column-title {
+    padding-left: 0;
+    padding-right: calc(var(--dt-order-arrow-width) + 4px);
+}
+
+/* ---------------------- */
+/* Filter control styling */
+/* ---------------------- */
+
+.col-filter.numericrange-filter {
+    width: 60px;
+}
+
+.col-filter.text-filter {
+    width: 140px;
+}
+
+.fixed-width-table .col-filter.text-filter {
+    width: 100%;
+}
+
+/* select2 sizes itself from the still-empty <select> and writes that (tiny) width inline, so override it to fill
+   the column. inline-size containment stops a long selected chip from widening the column; min-width keeps the
+   control usable in narrow columns. */
+table.dataTable.tablemanager-standard thead .filter_header_cell .select2-container {
+    width: 100% !important;
+    min-width: 60px;
+    contain: inline-size;
+}
+
+/* -------------------------------- */
+/* Styling for the table body cells */
+/* -------------------------------- */
+
+table.dataTable.tablemanager-standard tbody td {
+    text-align: center;
+}
+
+.wide-note-cell, .wide-note-header {
+    min-width: 150px !important;
+    max-width: 250px;
+}
+
+
+/* ----------------------------------- */
+/* CSS for optional Greek symbol popup */
+/* ----------------------------------- */
+
+.tm-text-filter-wrapper {
+    width: 100%;
+    position: relative;
+    display: inline-flex;
+    align-items: center;
+    gap: 2px;
+}
+
+.tm-symbol-button {
+    cursor: pointer;
+    border: 1px solid #ccc;
+    border-radius: 3px;
+    background: #f0f0f0;
+    padding: 1px 4px;
+    font-size: 0.8em;
+    white-space: nowrap;
+}
+
+.tm-symbol-popup {
+    display: none;
+    position: absolute;
+    z-index: 9999;
+    background: #fff;
+    border: 1px solid #ccc;
+    border-radius: 4px;
+    padding: 4px;
+    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.2);
+    grid-template-columns: repeat(3, 1fr);
+    gap: 3px;
+}
+
+.tm-symbol-popup.tm-open {
+    display: grid;
+}
+
+.tm-symbol-popup-item {
+    cursor: pointer;
+    border: 1px solid #ddd;
+    border-radius: 3px;
+    background: #f8f8f8;
+    padding: 2px 5px;
+    font-size: 1em;
+    line-height: 1.4;
+}
+
+/* ------------------------------------------- */
+/* WebLinkTextList "+"(show more) button popup */
+/* (popup of the weblinktextlist data type,    */
+/*  attached to the document body)             */
+/* ------------------------------------------- */
+
+.tm-link-list-popup {
+    display: none;
+    position: absolute;
+    z-index: 9999;
+    background: #fff;
+    border: 1px solid #ccc;
+    border-radius: 4px;
+    padding: 4px 8px;
+    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.2);
+    max-height: 20em;
+    max-width: 30em;
+    overflow-y: auto;
+    text-align: left;
+}
+
+.tm-link-list-popup.tm-open {
+    display: block;
+}
+
+.tm-link-list-popup-item {
+    white-space: nowrap;
+    line-height: 1.6;
+}
+
+/* ------------------------- */
+/* Truncated text (max_display_length): the icon shows the full text for a few seconds */
+.tm-text-expand {
+    cursor: pointer;
+}
+
+.tm-truncated.tm-expanded .tm-text-expand {
+    display: none;
+}
+
+.tm-truncated {
+    display: inline-block;
+    max-width: 100%;
+    white-space: nowrap;
+}
+
+.tm-truncated-text.tm-truncated-text-expanded {
+    display: inline-block;
+    /* The table is text-nowrap, which would stop the wrapping. Default (breakStyle "natural"): break at word boundaries */
+    white-space: normal;
+    hyphens: none;
+}
+
+/* breakStyle "force": SMILES/Sequence strings have no spaces, so allow a break anywhere */
+.tm-truncated.tm-break-force .tm-truncated-text.tm-truncated-text-expanded {
+    overflow-wrap: anywhere;
+    word-break: break-all;
+}
+
+/* Reference list modal      */
+/* (referencelist data type) */
+/* ------------------------- */
+
+.tm-reference-modal {
+    width: min(50em, 90vw);
+    max-height: 80vh;
+    padding: 0;
+    border: 1px solid #ccc;
+    border-radius: 4px;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+    text-align: left;
+}
+
+.tm-reference-modal[open] {
+    display: flex;
+    flex-direction: column;
+}
+
+.tm-reference-modal::backdrop {
+    background: rgba(0, 0, 0, 0.4);
+}
+
+.tm-reference-modal-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 8px 15px;
+    border-bottom: 1px solid #e5e5e5;
+}
+
+.tm-reference-modal-title {
+    margin: 0;
+    font-weight: bold;
+}
+
+.tm-reference-modal-close {
+    border: 0;
+    background: none;
+    font-size: 21px;
+    font-weight: bold;
+    line-height: 1;
+    opacity: 0.4;
+    cursor: pointer;
+}
+
+.tm-reference-modal-close:hover {
+    opacity: 0.8;
+}
+
+.tm-reference-modal-body {
+    padding: 15px;
+    overflow-y: auto;
+}
+
+.tm-reference + .tm-reference {
+    margin-top: 1em;
+}
+
+/* ------------------------------ */
+/* Conditional formatting classes */
+/* ------------------------------ */
+
+.bestTrue {
+    color: green; 
+}
+
+.bestFalse {
+    color: red; 
+}
+
+/* ---------------------------------------- */
+/* -- Column visibility (ColVis) classes -- */
+/* CSS to override DataTables Buttons'      */
+/* default styling for the column           */
+/* visibility popup                         */
+/* ---------------------------------------- */
+
+
+/* Column visibility collection: each column group is laid out as a column, headed by its group button */
+/* Buttons gives collections a fixed 150px width; size the popup to its columns instead, capped at the viewport */
+.dt-button-collection.colvis_grouped_columns {
+  width: max-content;
+  max-width: 90vw;
+}
+
+.dt-button-collection.colvis_grouped_columns > [role="menu"] {
+  display: flex;
+  flex-wrap: nowrap;
+  align-items: flex-start;
+  gap: 12px;
+  overflow-x: auto;
+}
+
+.dt-button-collection.colvis_grouped_columns .colvis_group_column {
+  display: flex;
+  flex-direction: column;
+  flex: 0 0 auto;
+  min-width: 10em;
+  max-width: 16em;
+}
+
+/* Scoped to the grouped popup so these beat Buttons' own .dt-button-active padding and nowrap rules.
+   Right padding keeps wrapped labels clear of the active tick Buttons draws at right: 1em */
+.dt-button-collection.colvis_grouped_columns .dt-button {
+  display: block;
+  width: 100%;
+  box-sizing: border-box;
+  white-space: normal !important;
+  overflow: visible;
+  padding-right: 2.5em !important;
+}
+
+.dt-button-collection.colvis_grouped_columns .dt-button-active:after {
+  right: 0.75em;
+}
+
+.dt-button.colvis_group_button {
+  font-weight: bold;
+  text-align: left;
+  border-bottom: 1px solid #ccc;
+  margin-bottom: 4px;
+}
+
+.dt-button.colvis_column_button {
+  padding-left: 1.5em;
+}

@@ -1195,3 +1195,75 @@ def select_entrez_id(current_gene_index, uniprot_dict, entrez_lookup):
         entrez_geneid_use = entrez_list[0] if len(entrez_list) > 0 else None #Prioritise the first entry as this hopefully corresponds to the official symbol match
 
     return entrez_geneid_use
+
+class HTMLRemover:
+    """Removes HTML markup from strings, keeping as much formatting information as possible."""
+
+    SUPERSCRIPT = dict(zip('0123456789+-=()ni', '⁰¹²³⁴⁵⁶⁷⁸⁹⁺⁻⁼⁽⁾ⁿⁱ'))
+    SUBSCRIPT = dict(zip('0123456789+-=()aehklmnopstx', '₀₁₂₃₄₅₆₇₈₉₊₋₌₍₎ₐₑₕₖₗₘₙₒₚₛₜₓ'))
+
+    _SCRIPT_RE = re.compile(r'<(sup|sub)>(.*?)</\1>', re.IGNORECASE | re.DOTALL)
+    _TAG_RE = re.compile(r'<(/?)(i|b|sup|sub)\s*>', re.IGNORECASE)
+    _FORMAT_TYPES = {'i': 'italics', 'b': 'bold', 'sup': 'superscript', 'sub': 'subscript'}
+
+    @classmethod
+    def HTMLtoUTF8(cls, text):
+        """Replace <sup>/<sub> contents and HTML entities with unicode characters.
+        e.g. 'x<sup>321</sup>' -> 'x³²¹'. Characters without a unicode equivalent are left
+        inside a (smaller) tag so HTMLtoFormatTags can still pick them up."""
+        if text is None:
+            return ''
+        from html import unescape
+
+        def convert(match):
+            tag = match.group(1).lower()
+            mapping = cls.SUPERSCRIPT if tag == 'sup' else cls.SUBSCRIPT
+            out, unconverted = [], ''
+            for ch in match.group(2):
+                if ch in mapping:
+                    if unconverted:
+                        out.append('<%s>%s</%s>' % (tag, unconverted, tag))
+                        unconverted = ''
+                    out.append(mapping[ch])
+                else:
+                    unconverted += ch
+            if unconverted:
+                out.append('<%s>%s</%s>' % (tag, unconverted, tag))
+            return ''.join(out)
+
+        text = unescape(str(text))
+        return cls._SCRIPT_RE.sub(convert, text)
+
+    @classmethod
+    def HTMLtoFormatTags(cls, text):
+        """Strip <i>, <b>, <sup> and <sub> tags and record what they covered.
+        Returns {'value': clean text, 'formatting': JSON list of {start, end, type}} where start is
+        0-indexed and end exclusive, e.g. '<i>PIP</i>3' ->
+        {'value': 'PIP3', 'formatting': '[{"start": 0, "end": 3, "type": "italics"}]'}"""
+        if text is None:
+            return {'value': '', 'formatting': '[]'}
+        text = str(text)
+        clean, ranges, stack, pos, length = [], [], [], 0, 0
+        for m in cls._TAG_RE.finditer(text):
+            chunk = text[pos:m.start()]
+            clean.append(chunk)
+            length += len(chunk)
+            pos = m.end()
+            name = m.group(2).lower()
+            if not m.group(1):
+                stack.append((name, length))
+            else:
+                # close the nearest matching open tag; ignore stray closing tags
+                for i in range(len(stack) - 1, -1, -1):
+                    if stack[i][0] == name:
+                        _, start = stack.pop(i)
+                        if length > start:
+                            ranges.append({'start': start, 'end': length, 'type': cls._FORMAT_TYPES[name]})
+                        break
+        clean.append(text[pos:])
+        length += len(text[pos:])
+        for name, start in stack:  # unclosed tags run to the end of the string
+            if length > start:
+                ranges.append({'start': start, 'end': length, 'type': cls._FORMAT_TYPES[name]})
+        ranges.sort(key=lambda r: (r['start'], r['end']))
+        return {'value': ''.join(clean), 'formatting': ranges}

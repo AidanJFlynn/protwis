@@ -9,7 +9,8 @@
 <link href="https://gitcdn.github.io/bootstrap-toggle/2.2.2/css/bootstrap-toggle.min.css" rel="stylesheet">
 
 <!-- DataTables CSS -->
-<link rel="stylesheet" href="{% static '/home/css/frameworks/datatables/datatables_bundle.min-2.3.8.css' %}">
+<link rel="stylesheet" href="{% static 'home/css/frameworks/datatables/datatables_bundle-3.1.4_min.css' %}">
+<link rel="stylesheet" href="{% static 'home/css/tablemanager.css' %}">
 <!-- Select2 CSS -->
 <link rel="stylesheet" href="{% static '/home/css/frameworks/select2/4.1.0/select2.min.css' %}">
 <!-- Spectrum color picker CSS -- loaded without this before, so the picker popup never worked -->
@@ -250,21 +251,6 @@
         height: 30px;
     }    
 
-    /*Table Manager CSS */
-    .super_header_cell {
-        text-align: center !important;
-        border: 1px solid #000000;
-    }
-
-    .primary_header_cell {
-        border: 1px solid #000000;        
-    }
-
-    .filter_header_cell {
-        font-weight: bold;
-        border: 1px solid #000000;
-    }
-
 </style>
 
 {% if page == 'gpcr' %}
@@ -419,17 +405,17 @@
 
 {% block content %}
 
-<!---------------->
-<!---------------->
-<!----- HTML ----->
-<!---------------->
-<!---------------->
+<!-- ---------------- -->
+<!-- ---------------- -->
+<!-- ----- HTML ----- -->
+<!-- ---------------- -->
+<!-- ---------------- -->
 
 {% if page == 'gpcr' %}
 
-    <!-------------------------------->
-    <!----- GPCR PAGE PROCESSING ----->
-    <!-------------------------------->
+    <!-- -------------------------------- -->
+    <!-- ----- GPCR PAGE PROCESSING ----- -->
+    <!-- -------------------------------- -->
 
 
     <!-- NAVIGATION TABS -->
@@ -458,9 +444,9 @@
     <!-- TAB CONTENT -->
     <div class="tab-content">
         
-        <!------------------------------->
+        <!-- ------------------------- -->
         <!-- WHEELS : RECEPTORS STATES -->
-        <!------------------------------->
+        <!-- ------------------------- -->
 
         <div id="structure_coverage_wheel_pane" class="tab-pane fade in active">
             <div class="col-md-12" style="margin-bottom:20px; margin-top:20px;">
@@ -505,9 +491,9 @@
             <div id="GPCRome_plot" class="text-center" style="padding-top:10px; margin-bottom:30px;"></div>
         </div>
 
-        <!------------------------------->
+        <!-- ------------------------- -->
         <!-- WHEELS : LIGAND COMPLEXES -->
-        <!------------------------------->
+        <!-- ------------------------- -->
 
         <div id="receptor_ligand_wheel_pane" class="tab-pane fade">
             <div class="col-md-12" style="margin-bottom:20px; margin-top:20px;">
@@ -552,9 +538,9 @@
             <div id="GPCRome_complexes_plot" class="text-center" style="padding-top:10px; margin-bottom:30px;"></div>
         </div>
 
-        <!---------------------------------->
+        <!-- ---------------------------- -->
         <!-- WHEELS : OLFACTORY RECEPTORS -->
-        <!---------------------------------->
+        <!-- ---------------------------- -->
 
         <div id="olfactory_wheel_pane" class="tab-pane fade">
             <div class="col-md-12" style="margin-bottom:20px; margin-top:20px;">
@@ -599,9 +585,9 @@
             <div id="GPCRome_olfactory_plot" class="text-center" style="padding-top:10px; margin-bottom:30px;"></div>
         </div>
 
-        <!----------------------------------------->
+        <!-- ----------------------------------- -->
         <!-- STRUCTURE COUNTS BY YEAR BAR CHARTS -->
-        <!----------------------------------------->
+        <!-- ----------------------------------- -->
 
         <div id="barchart" class="tab-pane fade">
             <script>
@@ -708,9 +694,9 @@
             </div>
         </div>
 
-        <!-------------------------------------->
+        <!-- -------------------------------- -->
         <!-- GPCRDB SUMMARY STATISTICS TABLES -->
-        <!-------------------------------------->
+        <!-- -------------------------------- -->
         
         <div id="table_counts" class="tab-pane fade">
             <ul class="nav nav-tabs sub">
@@ -779,31 +765,41 @@
                 <span class="footer"> Specific sets of structures can be downloaded from the <a href="/structure">Structures</a> page. The latest released structure is from <strong>{{ latest_structure|date:"Y-m-d" }}</strong>.</span>
         </div>
         
-        <!----------------------------------->
+        <!-- ----------------------------- -->
         <!-- PER-RECEPTOR STATISTICS TABLE -->
-        <!----------------------------------->
+        <!-- ----------------------------- -->
 
         <div id="table_perreceptorstats" class="tab-pane fade">
-            <table id="structureStatisticsTable" class="display" style="width:100%">
-                <!-- This table is populated by the TableManager via AJAX -->  
-            </table>
-            <div style="margin-top: 10px;text-align: right;">
-                <div class="btn-group">
-                    <button type="button" class="btn btn-primary dropdown-toggle" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
-                        <span class="glyphicon glyphicon-download"></span> Download <span class="caret"></span>
-                    </button>
-                    <ul class="dropdown-menu">
-                        <li><a href="#" onclick="exportStructureStatistics('csv'); return false;">CSV (UTF-8)</a></li>
-                        <li><a href="#" onclick="exportStructureStatistics('excel'); return false;">Excel</a></li>
-                    </ul>
-                </div>
-            </div>
+            <table id="structureStatisticsTable" class="display">
+                    <script type="module">
+                        // Populate structure model statistics table using TableManager
+                        import { TableManager } from "{% static 'home/js/tablemanager/tablemanager.js' %}";
+                        
+                        let config = null;
+                        
+                        try {
+                            config = await TableManager.fetchConfiguration(
+                                        'structure_statistics_table_gpcr', //dataTableConfigName
+                                        'clientside', //dataTableConfigVariant
+                                        'structure_statistics_table_gpcr', //columnConfigName
+                                        'basic' //columnConfigVariant
+                                    );
+                        } catch(error) {
+                            console.error('Error fetching configuration:', error);
+                        }
+                        
+                        if (config){
+                            let stattable = new TableManager(config.columnsSpecifications, 'structureStatisticsTable');
+                            stattable.initialiseDataTable(config.datatableConfiguration);
+                        }        
+                    </script>
+            </table>            
         </div>
     </div>
 
-<!--------------------------->
+<!-- --------------------- -->
 <!-- Class Selection Modal -->
-<!--------------------------->
+<!-- --------------------- -->
 
 <div class="modal fade" id="classSelectionModal" tabindex="-1" role="dialog" aria-labelledby="classSelectionModalLabel">
     <div class="modal-dialog" role="document">
@@ -825,9 +821,9 @@
     </div>
 </div>
 
-<!------------------------------->
+<!-- ------------------------- -->
 <!-- Chemotype Selection Modal -->
-<!------------------------------->
+<!-- ------------------------- -->
 
 <div class="modal fade" id="chemotypeSelectionModal" tabindex="-1" role="dialog" aria-labelledby="chemotypeSelectionModalLabel">
     <div class="modal-dialog" role="document">
@@ -849,9 +845,9 @@
     </div>
 </div>
 
-<!---------------------------->
+<!-- ---------------------- -->
 <!-- Family Selection Modal -->
-<!---------------------------->
+<!-- ---------------------- -->
 
 <div class="modal fade" id="familySelectionModal" tabindex="-1" role="dialog" aria-labelledby="familySelectionModalLabel">
     <div class="modal-dialog" role="document">
@@ -876,11 +872,11 @@
 
 {% elif page == 'gprotein' %}
     
-    <!------------------------------------>
-    <!----- GPROTEIN PAGE PROCESSING ----->
-    <!------------------------------------>
+    <!-- -------------------------- -->
+    <!--  GPROTEIN PAGE PROCESSING  -->
+    <!-- -------------------------- -->
 
-    <!----- WHEEL/TABLE SELECTOR NAV TAB DEFINITION -->
+    <!-- -- WHEEL/TABLE SELECTOR NAV TAB DEFINITION -- -->
     <ul class="nav nav-tabs main">
         <li class="dropdown active">
             <a class="dropdown-toggle" data-toggle="dropdown" href="#">Trees <span class="caret"></span></a>
@@ -899,7 +895,7 @@
         </li>
     </ul>
     
-    <!----- CHART CONTROLS: Fixed bottom left -->
+    <!-- --- CHART CONTROLS: Fixed bottom left --- -->
     <div class="wheel_or_tree_chart_legend bottom_left visible">
         Receptor names:
         <div class="btn-group" role="group" id="gtp_plus">
@@ -908,7 +904,7 @@
         </div>
     </div>
 
-    <!----- CHART LEGEND: Fixed to bottom right -->
+    <!-- --- CHART LEGEND: Fixed to bottom right --- -->
     <div class="wheel_or_tree_chart_legend bottom_right visible">
         <div class="text-center">
             <b>G Protein complexes</b> <br />
@@ -921,7 +917,7 @@
     </div>
 
     <div class="tab-content">
-            <!----- CLASS A TREE PANEL  -->
+            <!-- --- CLASS A TREE PANEL --- -->
             <div id="tree_class_a_rhodopsin" class="tab-pane fade in active">
                 <div id="class_a" class="text-center">
                     <h4 class="chartHeader">Class A<br />(Rhodopsin)</h4>
@@ -954,7 +950,7 @@
                 </div>
             </div>
     
-            <!----- CLASS A ORPHAN WHEEL PANEL  -->
+            <!-- --- CLASS A ORPHAN WHEEL PANEL --- -->
             <div id="tree_class_a_orphan" class="tab-pane fade">
                 <div id="orphan" class="text-center">
                     <h4 class="chartHeader">Class A <br /> (Orphans)</h4>
@@ -987,7 +983,7 @@
                 </div>
             </div>
     
-            <!----- CLASS B1 WHEEL PANEL  -->
+            <!-- --- CLASS B1 WHEEL PANEL --- -->
             <div id="tree_class_b1_secretin" class="tab-pane fade">
                 <div id="class_b1" class="text-center">
                     <h4 class="chartHeader">Class B1<br />(Secretin)</h4>
@@ -1020,7 +1016,7 @@
                 </div>
             </div>
     
-            <!----- CLASS B2 TREE PANEL  -->
+            <!-- --- CLASS B2 TREE PANEL --- -->
             <div id="tree_class_b2_adhesion" class="tab-pane fade">
                 <div id="class_b2" class="text-center">
                     <h4 class="chartHeader">Class B2<br />(Adhesion)</h4>
@@ -1053,7 +1049,7 @@
                 </div>
             </div>
     
-            <!----- CLASS C WHEEL PANEL  -->
+            <!-- --- CLASS C WHEEL PANEL --- -->
             <div id="tree_class_c_glutamate" class="tab-pane fade">
                 <div id="class_c" class="text-center">
                     <h4 class="chartHeader">Class C<br />(Glutamate)</h4>
@@ -1086,7 +1082,7 @@
                 </div>
             </div>
     
-            <!----- CLASS F WHEEL PANEL  -->
+            <!-- --- CLASS F WHEEL PANEL --- -->
             <div id="tree_class_f_frizzled" class="tab-pane fade">
                 <div id="class_f" class="text-center">
                     <h4 class="chartHeader">Class F<br />(Frizzled)</h4>
@@ -1119,7 +1115,7 @@
                 </div>
             </div>
     
-            <!----- CLASS T2 WHEEL PANEL  -->
+            <!-- --- CLASS T2 WHEEL PANEL --- -->
             <div id="tree_class_t2_taste2" class="tab-pane fade">
                 <div id="class_t2" class="text-center">
                     <h4 class="chartHeader">Class T <br /> (Taste 2)</h4>
@@ -1153,7 +1149,8 @@
             </div>
 
 
-        <!----- TABLE NAV PANEL  -->
+
+        <!-- --- TABLE NAV PANEL --- -->
         <div id="gprotein_tables" class="tab-pane fade">
             <ul class="nav nav-tabs sub">
                 <li class="active">
@@ -1171,11 +1168,11 @@
 
 {% elif page == 'arrestin' %}
 
-    <!------------------------------------>
-    <!----- ARRESTIN PAGE PROCESSING ----->
-    <!------------------------------------>
+    <!-- ------------------------------------ -->
+    <!-- ----- ARRESTIN PAGE PROCESSING ----- -->
+    <!-- ------------------------------------ -->
 
-    <!----- WHEEL/TABLE SELECTOR NAV TAB DEFINITION -->
+    <!-- --- WHEEL/TABLE SELECTOR NAV TAB DEFINITION --- -->
     <ul class="nav nav-tabs main">
         <li class="active">
             <a href="#arrestin_wheels" data-toggle="tab">GPCRome Wheel</a>
@@ -1185,12 +1182,12 @@
         </li>
     </ul>
 
-        <!----- WHEEL/TABLE SELECTOR NAV TAB CONTENT -->
+        <!-- --- WHEEL/TABLE SELECTOR NAV TAB CONTENT --- -->
     <div class="tab-content">
-        <!----- WHEEL NAV PANEL  -->
+        <!-- --- WHEEL NAV PANEL --- -->
         <div id="arrestin_wheels" class="tab-pane fade in active">
 
-            <!----- CHART CONTROLS: Fixed bottom left -->
+            <!-- --- CHART CONTROLS: Fixed bottom left --- -->
             <div style="position: fixed; bottom: 20px; left: 20px;z-index: 1000">
                 Receptor names:
                 <div class="btn-group" role="group" id="gtp_plus">
@@ -1251,7 +1248,7 @@
             </div>
         </div>
 
-        <!----- TABLE NAV PANEL  -->
+        <!-- --- TABLE NAV PANEL --- -->
         <div id="arrestin_tables" class="tab-pane fade">
             <ul class="nav nav-tabs sub">
                 <li class="active">
@@ -1271,11 +1268,11 @@
 
 {% block addon_js %}
 
-<!----------------------->
-<!----------------------->
-<!----- JAVA SCRIPT ----->
-<!----------------------->
-<!----------------------->
+<!-- ----------------------- -->
+<!-- ----------------------- -->
+<!-- ----- JAVA SCRIPT ----- -->
+<!-- ----------------------- -->
+<!-- ----------------------- -->
 
 <script src="{% static 'home/js/bootstrap-toggle.min.js' %}"></script>
 <script src="{% static 'home/js/d3.min.js' %}"></script>
@@ -1290,9 +1287,9 @@
 
 {% if page == 'gpcr' %}
 
-    <!-------------------------------->
-    <!----- GPCR PAGE JAVASCRIPT ----->
-    <!-------------------------------->
+    <!-- -------------------------------- -->
+    <!-- ----- GPCR PAGE JAVASCRIPT ----- -->
+    <!-- -------------------------------- -->
 
 <script src="{% static 'home/js/datamapper.js' %}"></script>
     <script src="{% static 'home/js/popper.min.js' %}"></script>
@@ -1302,12 +1299,9 @@
 
     <!-- jQuery + DataTables -->
   
-  <script src="{% static '/home/js/frameworks/datatables/datatables-2.3.8.js' %}"></script> 
-  <script src="{% static '/home/js/frameworks/datatables/buttons-3.2.6.js' %}"></script> 
-  <script src="{% static '/home/js/frameworks/datatables/fixed_columns-5.0.5.js' %}"></script> 
-  <script src="{% static '/home/js/frameworks/datatables/html5_export-3.2.6.js' %}"></script> 
+  <script src="{% static 'home/js/frameworks/datatables/datatables_3.1.4_bundle_min.js' %}"></script>
   
-  <script src="{% static '/home/js/select2/4.1.0/select2.min.js' %}"></script> 
+  <script src="{% static '/home/js/frameworks/select2/4.1.0/select2.min.js' %}"></script> 
 
     <script>
       window.STRUCTURE_GPCROME_WHEEL_DATA = {
@@ -1325,238 +1319,13 @@
     </script>
     <script src="{% static 'home/js/gpcrome_svg_export.js' %}"></script>
     <script src="{% static 'home/js/gpcrome_wheel_controls.js' %}"></script>
-    <script src="{% static 'home/js/structure/statistics_gpcrome_wheels.js' %}"></script>
-    <script type="module">
-        // Populate structure model statistics table using TableManager
-        import { TableManager } from "{% static 'home/js/tablemanager/tablemanager.js' %}";
-        let stattable = null;
-        TableManager.fetchConfiguration(
-          'structure_statistics_table_gpcr', //dataTableConfigName
-          'clientside', //dataTableConfigVariant
-          'structure_statistics_table_gpcr', //columnConfigName
-          'basic' //columnConfigVariant
-        )
-        .then(config => {
-          stattable = new TableManager(config.columnsSpecifications, 'structureStatisticsTable');
-          stattable.initialiseDataTable(config.datatableConfiguration);
-        }).catch(error => {
-          console.error('Error fetching configuration:', error);
-        });
-    </script>
-    <script>
-        function exportStructureStatistics(format) {
-          try {
-            const table = stattable.dataTableReference;
-            const ajsonData = table.ajax.json();
-            const columnSpecs = stattable.columnsSpecifications;
-
-            if (!ajsonData || !ajsonData.data || ajsonData.data.length === 0) {
-              alert('No data available to export');
-              return;
-            }
-
-            const allRows = ajsonData.data;
-            const headers = columnSpecs.map(col => col.exportHeaderOverride || col.title);
-            const jsonIds = columnSpecs.map(col => col.json_id);
-
-            const exportData = allRows.map(row => {
-              return jsonIds.map(jsonId => {
-                const value = row[jsonId];
-                if (value && typeof value === 'object' && value.anchor_content !== undefined) {
-                  return value.anchor_content;
-                }
-                return (value === null || value === undefined) ? '' : value;
-              });
-            });
-
-            if (format === 'csv') {
-              exportToCSV(headers, exportData, 'gpcr_structure_statistics.csv');
-            } else if (format === 'excel') {
-              exportToExcel(headers, exportData, columnSpecs, 'gpcr_structure_statistics.xlsx');
-            }
-          } catch (error) {
-            console.error('Export error:', error);
-            alert('Error exporting data: ' + error.message);
-          }
-        }
-
-        function exportToCSV(headers, data, filename) {
-          const csvContent = [];
-          csvContent.push(headers.map(h => escapeCSV(processHTMLForCSV(h))).join(','));
-
-          data.forEach(row => {
-            csvContent.push(row.map(cell => escapeCSV(processHTMLForCSV(cell))).join(','));
-          });
-
-          const blob = new Blob([csvContent.join('\n')], { type: 'text/csv;charset=utf-8;' });
-          downloadFile(blob, filename);
-        }
-
-        function exportToExcel(headers, data, columnSpecs, filename) {
-          const workbook = XLSX.utils.book_new();
-          const worksheetData = [headers, ...data];
-          const worksheet = XLSX.utils.aoa_to_sheet(worksheetData);
-
-          const headerRange = XLSX.utils.decode_range(worksheet['!ref']);
-          for (let C = headerRange.s.c; C <= headerRange.e.c; ++C) {
-            const address = XLSX.utils.encode_col(C) + '1';
-            if (!worksheet[address]) continue;
-            worksheet[address].s = {
-              font: { bold: true },
-              fill: { fgColor: { rgb: 'FFD9D9D9' } },
-              alignment: { horizontal: 'center', vertical: 'center' }
-            };
-          }
-
-          for (let R = 1; R < worksheetData.length; R++) {
-            for (let C = 0; C < worksheetData[R].length; C++) {
-              const address = XLSX.utils.encode_col(C) + (R + 1);
-              const cell = worksheet[address];
-              if (!cell) continue;
-
-              const rawValue = worksheetData[R][C];
-              if (typeof rawValue !== 'string' || (!rawValue.includes('<') && !rawValue.includes('&'))) continue;
-
-              const richText = parseHTMLForExcel(rawValue);
-
-              if (richText && richText.length > 1) {
-                cell.t = 's';
-                cell.v = richText.map(r => r.t).join('');
-                cell.r = richText;
-              } else if (richText && richText.length === 1) {
-                cell.t = 's';
-                cell.v = richText[0].t;
-              }
-            }
-          }
-
-          XLSX.utils.book_append_sheet(workbook, worksheet, 'structure_statistics');
-          XLSX.writeFile(workbook, filename);
-        }
-
-        function downloadFile(blob, filename) {
-          const link = document.createElement('a');
-          const url = URL.createObjectURL(blob);
-
-          link.setAttribute('href', url);
-          link.setAttribute('download', filename);
-          link.style.visibility = 'hidden';
-          document.body.appendChild(link);
-          link.click();
-          document.body.removeChild(link);
-          URL.revokeObjectURL(url);
-        }
-
-        function escapeCSV(value) {
-          if (value === null || value === undefined) return '';
-          const stringValue = String(value);
-          if (stringValue.includes(',') || stringValue.includes('"') || stringValue.includes('\n')) {
-            return '"' + stringValue.replace(/"/g, '""') + '"';
-          }
-          return stringValue;
-        }
-
-        function processHTMLForCSV(value) {
-          if (value === null || value === undefined) return '';
-          let text = String(value);
-          text = text.replace(/<sub>.*?<\/sub>/g, (match) => {
-            return match.replace(/<\/?sub>/g, '');
-          });
-          text = decodeHTMLEntities(text);
-          return text;
-        }
-
-        function parseHTMLForExcel(value) {
-          if (value === null || value === undefined) return [{ t: '' }];
-
-          let text = String(value);
-          const richText = [];
-          let currentPos = 0;
-
-          const subRegex = /<sub>(.*?)<\/sub>/g;
-          let match;
-          const matches = [];
-
-          while ((match = subRegex.exec(text)) !== null) {
-            matches.push({
-              start: match.index,
-              end: match.index + match[0].length,
-              content: match[1]
-            });
-          }
-
-          if (matches.length === 0) {
-            return [{ t: decodeHTMLEntities(text) }];
-          }
-
-          for (const m of matches) {
-            if (currentPos < m.start) {
-              richText.push({
-                t: decodeHTMLEntities(text.substring(currentPos, m.start))
-              });
-            }
-
-            richText.push({
-              t: decodeHTMLEntities(m.content),
-              s: { vertAlign: 'subscript' }
-            });
-
-            currentPos = m.end;
-          }
-
-          if (currentPos < text.length) {
-            richText.push({
-              t: decodeHTMLEntities(text.substring(currentPos))
-            });
-          }
-
-          return richText.length > 0 ? richText : [{ t: '' }];
-        }
-
-        function decodeHTMLEntities(text) {
-          if (text === null || text === undefined) return '';
-
-          const greekLetters = {
-            '&Alpha;': 'Α', '&alpha;': 'α',
-            '&Beta;': 'Β', '&beta;': 'β',
-            '&Gamma;': 'Γ', '&gamma;': 'γ',
-            '&Delta;': 'Δ', '&delta;': 'δ',
-            '&Epsilon;': 'Ε', '&epsilon;': 'ε',
-            '&Zeta;': 'Ζ', '&zeta;': 'ζ',
-            '&Eta;': 'Η', '&eta;': 'η',
-            '&Theta;': 'Θ', '&theta;': 'θ',
-            '&Iota;': 'Ι', '&iota;': 'ι',
-            '&Kappa;': 'Κ', '&kappa;': 'κ',
-            '&Lambda;': 'Λ', '&lambda;': 'λ',
-            '&Mu;': 'Μ', '&mu;': 'μ',
-            '&Nu;': 'Ν', '&nu;': 'ν',
-            '&Xi;': 'Ξ', '&xi;': 'ξ',
-            '&Omicron;': 'Ο', '&omicron;': 'ο',
-            '&Pi;': 'Π', '&pi;': 'π',
-            '&Rho;': 'Ρ', '&rho;': 'ρ',
-            '&Sigma;': 'Σ', '&sigma;': 'σ',
-            '&Tau;': 'Τ', '&tau;': 'τ',
-            '&Upsilon;': 'Υ', '&upsilon;': 'υ',
-            '&Phi;': 'Φ', '&phi;': 'φ',
-            '&Chi;': 'Χ', '&chi;': 'χ',
-            '&Psi;': 'Ψ', '&psi;': 'ψ',
-            '&Omega;': 'Ω', '&omega;': 'ω'
-          };
-
-          let decoded = String(text);
-          for (const [entity, unicode] of Object.entries(greekLetters)) {
-            decoded = decoded.replace(new RegExp(entity.replace(/&/, '\\&'), 'g'), unicode);
-          }
-
-          return decoded;
-        }
-    </script>
+    <script src="{% static 'home/js/structure/statistics_gpcrome_wheels.js' %}"></script>    
 
 {% elif page == 'gprotein' %}
     
-    <!------------------------------------>
-    <!----- GPROTEIN PAGE PROCESSING ----->
-    <!------------------------------------>
+    <!-- -------------------------- -->
+    <!--  GPROTEIN PAGE PROCESSING  -->
+    <!-- -------------------------- -->
 
     <script type="text/javascript" charset="utf-8">
             class_a = {{ class_a | safe }};
@@ -1782,9 +1551,9 @@
 
 {% elif page == 'arrestin' %}
 
-    <!------------------------------------>
-    <!----- ARRESTIN PAGE PROCESSING ----->
-    <!------------------------------------>
+    <!-- -------------------------- -->
+    <!--  ARRESTIN PAGE PROCESSING  -->
+    <!-- -------------------------- -->
 
     <script src="{% static 'home/js/datamapper.js' %}"></script>
     <script src="{% static 'home/js/popper.min.js' %}"></script>

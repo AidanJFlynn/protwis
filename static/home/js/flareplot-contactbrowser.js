@@ -1335,8 +1335,8 @@ function invertColor(hex, bw) {
     return "#" + padZero(r) + padZero(g) + padZero(b);
 }
 
-Array.prototype.indexUpDown = indexUpDown;
-Array.prototype.rangeCount = rangeCount;
+Object.defineProperty(Array.prototype, "indexUpDown", {value: indexUpDown, enumerable: false, writable: true, configurable: true});
+Object.defineProperty(Array.prototype, "rangeCount", {value: rangeCount, enumerable: false, writable: true, configurable: true});
 
 function sortNumber(a,b) {
     return a - b;

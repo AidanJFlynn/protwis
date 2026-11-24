@@ -3,22 +3,24 @@
     "column_group": "Classification",
     "json_id": "protein_name",
     "title": "Protein",
-    "data_type": "text",
+    "data_type": "textselect",
     "allow_filter": true,
-    "show_symbol_popup": true    
+    "show_symbol_popup": true,
+    "width": "150px"
   },
   {
     "column_group": "Classification",
     "json_id": "uniprot",
     "title": "UniProt",
-    "data_type": "weblinktext",
-    "allow_filter": true
+    "data_type": "weblinktextselect",
+    "allow_filter": true,
+    "width": "70px"
   },
   {
     "column_group": "Classification",
     "json_id": "gene",
     "title": "Gene",
-    "data_type": "weblinktext",
+    "data_type": "weblinktextselect",
     "allow_filter": true,    
     "cssClassFilterInput": "gene_filter_input"
   },
@@ -27,6 +29,7 @@
     "json_id": "receptor_family",
     "title": "Receptor Family",
     "data_type": "textselect",
+    "max_display_length": 20,
     "allow_filter": true
   },
   {
@@ -34,6 +37,7 @@
     "json_id": "receptor_class",
     "title": "Receptor Class",
     "data_type": "textselect",
+    "max_display_length": 15,
     "allow_filter": true
   },
   {
@@ -49,80 +53,127 @@
     "json_id": "st_inact_c",
     "title": "Inactive",
     "data_type": "numeric",
-    "allow_filter": true
+    "allow_filter": true,
+    "cellStyler": {
+      "type": "gradient_greyscale",
+      "source": ["st_inact_c", "st_interm_c", "st_act_c"]
+    }
   },
   {
     "column_group": "State",
     "json_id": "st_interm_c",
     "title": "Intermediate",
     "data_type": "numeric",
-    "allow_filter": true
+    "allow_filter": true,
+    "cellStyler": {
+      "type": "gradient_greyscale",
+      "source": ["st_inact_c", "st_interm_c", "st_act_c"]
+    }
   },
   {
     "column_group": "State",
     "json_id": "st_act_c",
     "title": "Active",
     "data_type": "numeric",
-    "allow_filter": true
+    "allow_filter": true,
+    "cellStyler": {
+      "type": "gradient_greyscale",
+      "source": ["st_inact_c", "st_interm_c", "st_act_c"]
+    }
   },
   {
     "column_group": "Max Resolution",
     "json_id": "best_res_inact",
     "title": "Inactive",
     "data_type": "numeric",
+    "precision": 1,
     "allow_filter": true,
-    "exportHeaderOverride": "Max Resolution Inactive"
+    "exportHeaderOverride": "Max Resolution Inactive",
+    "cellStyler": {
+      "type": "gradient_greyscale",
+      "source": ["best_res_inact", "best_res_interm", "best_res_act"]
+    }
   },
   {
     "column_group": "Max Resolution",
     "json_id": "best_res_interm",
     "title": "Intermediate",
     "data_type": "numeric",
+    "precision": 1,
     "allow_filter": true,
-    "exportHeaderOverride": "Max Resolution Intermediate"
+    "exportHeaderOverride": "Max Resolution Intermediate",
+    "cellStyler": {
+      "type": "gradient_greyscale",
+      "source": ["best_res_inact", "best_res_interm", "best_res_act"]
+    }
   },
   {
     "column_group": "Max Resolution",
     "json_id": "best_res_act",
     "title": "Active",
     "data_type": "numeric",
+    "precision": 1,
     "allow_filter": true,
-    "exportHeaderOverride": "Max Resolution Active"
+    "exportHeaderOverride": "Max Resolution Active",
+    "cellStyler": {
+      "type": "gradient_greyscale",
+      "source": ["best_res_inact", "best_res_interm", "best_res_act"]
+    }
   },
   {
     "column_group": "Transducer family complexes",
     "json_id": "transd_gio_c",
     "title": "Gi/o",
     "data_type": "numeric",
-    "allow_filter": true
+    "allow_filter": true,
+    "cellStyler": {
+      "type": "gradient_greyscale",
+      "source": ["transd_gio_c", "transd_gq11_c", "transd_g1213_c", "transd_arrest_c", "transd_grks_c"]
+    }
   },
   {
     "column_group": "Transducer family complexes",
     "json_id": "transd_gq11_c",
     "title": "Gq/11",
     "data_type": "numeric",
-    "allow_filter": true
+    "allow_filter": true,
+    "cellStyler": {
+      "type": "gradient_greyscale",
+      "source": ["transd_gio_c", "transd_gq11_c", "transd_g1213_c", "transd_arrest_c", "transd_grks_c"]
+    }
   },
   {
     "column_group": "Transducer family complexes",
     "json_id": "transd_g1213_c",
     "title": "G12/13",
     "data_type": "numeric",
-    "allow_filter": true
+    "allow_filter": true,
+    "cellStyler": {
+      "type": "gradient_greyscale",
+      "source": ["transd_gio_c", "transd_gq11_c", "transd_g1213_c", "transd_arrest_c", "transd_grks_c"]
+    }
   },
   {
     "column_group": "Transducer family complexes",
     "json_id": "transd_arrest_c",
     "title": "Arrestins",
     "data_type": "numeric",
-    "allow_filter": true
+    "allow_filter": true,
+    "cellStyler": {
+      "type": "gradient_greyscale",
+      "source": ["transd_gio_c", "transd_gq11_c", "transd_g1213_c", "transd_arrest_c", "transd_grks_c"]
+    }
   },
   {
     "column_group": "Transducer family complexes",
     "json_id": "transd_grks_c",
     "title": "GRKs",
     "data_type": "numeric",
-    "allow_filter": true
+    "allow_filter": true,
+    "cellStyler": {
+      "type": "gradient_greyscale",
+      "source": ["transd_gio_c", "transd_gq11_c", "transd_g1213_c", "transd_arrest_c", "transd_grks_c"]
+    }
   },
   {
     "column_group": "Ligand types",
@@ -130,7 +181,11 @@
     "title": "Small mol.",
     "data_type": "numeric",
     "allow_filter": true,
-    "exportHeaderOverride": "Small mol. ligand"
+    "exportHeaderOverride": "Small mol. ligand",
+    "cellStyler": {
+      "type": "gradient_greyscale",
+      "source": ["ligand_types_smmol_c", "ligand_types_pep_c"]
+    }
   },
   {
     "column_group": "Ligand types",
@@ -138,7 +193,11 @@
     "title": "Peptide/protein",
     "data_type": "numeric",
     "allow_filter": true,
-    "exportHeaderOverride": "Peptide/protein ligand"
+    "exportHeaderOverride": "Peptide/protein ligand",
+    "cellStyler": {
+      "type": "gradient_greyscale",
+      "source": ["ligand_types_smmol_c", "ligand_types_pep_c"]
+    }
   },
   {
     "column_group": "Ligand modality groups",
@@ -146,7 +205,14 @@
     "title": "Stimulatory",
     "data_type": "numeric",
     "allow_filter": true,
-    "exportHeaderOverride": "Stimulatory ligand"
+    "exportHeaderOverride": "Stimulatory ligand",
+    "cellStyler": {
+      "type": "gradient_greyscale",
+      "source": ["limodgrp_stim_c", "limodgrp_inhib_c", "limodgrp_unk_c", 
+                  "limod_apo_c", "limod_ag_c", "limod_ag_partial_c", 
+                  "limod_allo_antag_c", "limod_antag_c", "limod_inv_ag_c", 
+                  "limod_nam_c", "limod_pam_c", "limod_unk_c"]
+    }
   },
   {
     "column_group": "Ligand modality groups",
@@ -154,7 +220,14 @@
     "title": "Inhibitory",
     "data_type": "numeric",
     "allow_filter": true,
-    "exportHeaderOverride": "Inhibitory ligand"
+    "exportHeaderOverride": "Inhibitory ligand",
+    "cellStyler": {
+      "type": "gradient_greyscale",
+      "source": ["limodgrp_stim_c", "limodgrp_inhib_c", "limodgrp_unk_c", 
+                  "limod_apo_c", "limod_ag_c", "limod_ag_partial_c", 
+                  "limod_allo_antag_c", "limod_antag_c", "limod_inv_ag_c", 
+                  "limod_nam_c", "limod_pam_c", "limod_unk_c"]
+    }
   },
   {
     "column_group": "Ligand modality groups",
@@ -162,63 +235,126 @@
     "title": "Unknown",
     "data_type": "numeric",
     "allow_filter": true,
-    "exportHeaderOverride": "Unknown ligand"
+    "exportHeaderOverride": "Unknown ligand",
+    "cellStyler": {
+      "type": "gradient_greyscale",
+      "source": ["limodgrp_stim_c", "limodgrp_inhib_c", "limodgrp_unk_c", 
+                  "limod_apo_c", "limod_ag_c", "limod_ag_partial_c", 
+                  "limod_allo_antag_c", "limod_antag_c", "limod_inv_ag_c", 
+                  "limod_nam_c", "limod_pam_c", "limod_unk_c"]
+    }
   },
   {
     "column_group": "Ligand modalities",
     "json_id": "limod_apo_c",
     "title": "Apo",
     "data_type": "numeric",
-    "allow_filter": true
+    "allow_filter": true,
+    "cellStyler": {
+      "type": "gradient_greyscale",
+      "source": ["limodgrp_stim_c", "limodgrp_inhib_c", "limodgrp_unk_c", 
+                  "limod_apo_c", "limod_ag_c", "limod_ag_partial_c", 
+                  "limod_allo_antag_c", "limod_antag_c", "limod_inv_ag_c", 
+                  "limod_nam_c", "limod_pam_c", "limod_unk_c"]
+    }
   },
   {
     "column_group": "Ligand modalities",
     "json_id": "limod_ag_c",
     "title": "Agonist",
     "data_type": "numeric",
-    "allow_filter": true
+    "allow_filter": true,
+    "cellStyler": {
+      "type": "gradient_greyscale",
+      "source": ["limodgrp_stim_c", "limodgrp_inhib_c", "limodgrp_unk_c", 
+                  "limod_apo_c", "limod_ag_c", "limod_ag_partial_c", 
+                  "limod_allo_antag_c", "limod_antag_c", "limod_inv_ag_c", 
+                  "limod_nam_c", "limod_pam_c", "limod_unk_c"]
+    }
   },
   {
     "column_group": "Ligand modalities",
     "json_id": "limod_ag_partial_c",
     "title": "Agonist partial",
     "data_type": "numeric",
-    "allow_filter": true
+    "allow_filter": true,
+    "cellStyler": {
+      "type": "gradient_greyscale",
+      "source": ["limodgrp_stim_c", "limodgrp_inhib_c", "limodgrp_unk_c", 
+                  "limod_apo_c", "limod_ag_c", "limod_ag_partial_c", 
+                  "limod_allo_antag_c", "limod_antag_c", "limod_inv_ag_c", 
+                  "limod_nam_c", "limod_pam_c", "limod_unk_c"]
+    }
   },
   {
     "column_group": "Ligand modalities",
     "json_id": "limod_allo_antag_c",
     "title": "Allosteric antagonist",
     "data_type": "numeric",
-    "allow_filter": true
+    "allow_filter": true,
+    "cellStyler": {
+      "type": "gradient_greyscale",
+      "source": ["limodgrp_stim_c", "limodgrp_inhib_c", "limodgrp_unk_c", 
+                  "limod_apo_c", "limod_ag_c", "limod_ag_partial_c", 
+                  "limod_allo_antag_c", "limod_antag_c", "limod_inv_ag_c", 
+                  "limod_nam_c", "limod_pam_c", "limod_unk_c"]
+    }
   },
   {
 "column_group": "Ligand modalities",
     "json_id": "limod_antag_c",
     "title": "Antagonist",
     "data_type": "numeric",
-    "allow_filter": true
+    "allow_filter": true,
+    "cellStyler": {
+      "type": "gradient_greyscale",
+      "source": ["limodgrp_stim_c", "limodgrp_inhib_c", "limodgrp_unk_c", 
+                  "limod_apo_c", "limod_ag_c", "limod_ag_partial_c", 
+                  "limod_allo_antag_c", "limod_antag_c", "limod_inv_ag_c", 
+                  "limod_nam_c", "limod_pam_c", "limod_unk_c"]
+    }
   },
   {
     "column_group": "Ligand modalities",
     "json_id": "limod_inv_ag_c",
     "title": "Inverse agonist",
     "data_type": "numeric",
-    "allow_filter": true
+    "allow_filter": true,
+    "cellStyler": {
+      "type": "gradient_greyscale",
+      "source": ["limodgrp_stim_c", "limodgrp_inhib_c", "limodgrp_unk_c", 
+                  "limod_apo_c", "limod_ag_c", "limod_ag_partial_c", 
+                  "limod_allo_antag_c", "limod_antag_c", "limod_inv_ag_c", 
+                  "limod_nam_c", "limod_pam_c", "limod_unk_c"]
+    }
   },
   {
 "column_group": "Ligand modalities",
     "json_id": "limod_nam_c",
     "title": "NAM",
     "data_type": "numeric",
-    "allow_filter": true
+    "allow_filter": true,
+    "cellStyler": {
+      "type": "gradient_greyscale",
+      "source": ["limodgrp_stim_c", "limodgrp_inhib_c", "limodgrp_unk_c", 
+                  "limod_apo_c", "limod_ag_c", "limod_ag_partial_c", 
+                  "limod_allo_antag_c", "limod_antag_c", "limod_inv_ag_c", 
+                  "limod_nam_c", "limod_pam_c", "limod_unk_c"]
+    }
   },
   {
 "column_group": "Ligand modalities",
     "json_id": "limod_pam_c",
     "title": "PAM",
     "data_type": "numeric",
-    "allow_filter": true
+    "allow_filter": true,
+    "cellStyler": {
+      "type": "gradient_greyscale",
+      "source": ["limodgrp_stim_c", "limodgrp_inhib_c", "limodgrp_unk_c", 
+                  "limod_apo_c", "limod_ag_c", "limod_ag_partial_c", 
+                  "limod_allo_antag_c", "limod_antag_c", "limod_inv_ag_c", 
+                  "limod_nam_c", "limod_pam_c", "limod_unk_c"]
+    }
   },
   {
 "column_group": "Ligand modalities",
@@ -226,6 +362,13 @@
     "title": "Unknown",
     "data_type": "numeric",
     "allow_filter": true,
-    "exportHeaderOverride": "Unknown modality"
+    "exportHeaderOverride": "Unknown modality",
+    "cellStyler": {
+      "type": "gradient_greyscale",
+      "source": ["limodgrp_stim_c", "limodgrp_inhib_c", "limodgrp_unk_c", 
+                  "limod_apo_c", "limod_ag_c", "limod_ag_partial_c", 
+                  "limod_allo_antag_c", "limod_antag_c", "limod_inv_ag_c", 
+                  "limod_nam_c", "limod_pam_c", "limod_unk_c"]
+    }
   }
 ]

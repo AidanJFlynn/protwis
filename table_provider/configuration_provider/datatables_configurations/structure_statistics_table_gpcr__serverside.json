@@ -4,7 +4,8 @@
   "deferRender": true,
   "scrollX": true,
   "layout": {
-    "topEnd": null
+    "topEnd": "pageLength",
+    "topStart": "buttons"    
   },
   "fixedColumns": { "left": 1 },
   "ajax": {
@@ -14,5 +15,9 @@
     "dataSrc":  "data"           
     
   },
-  "lengthMenu": [ [10, 25, 50], [10, 25, 50] ]
+  "nullValuePlaceholder": "-",
+  "lengthMenu": [10, 25, 50],
+  "buttons": [ "clear_filters_default", "column_visibility", "excel_extended"],
+  "exportKeepSuperHeaders": false,
+  "exportFileName": "gpcrdb_structure_statistics"
 }

@@ -1,141 +1,117 @@
 // This class represents the "text" data type used in the table manager.
-// It provides simple text filtering capabilities, allowing users to filter table data based on text input.
+// It displays text, truncated to the column's max_display_length. Its filter is chosen in the data type factory.
 
 import { DataTypeBase } from "./datatypebase.js";
+import { htmlToText, truncateHtml, bindTruncationToggles, applyFormatTags } from "./textutils.js";
 
+/**
+ * Data type for text columns. Displays text, truncated to max_display_length when set. Also the base class for the
+ * other text-based data types.
+ * @extends DataTypeBase
+ */
 class Text extends DataTypeBase {
 
-    createFilterInterface(tableManagerReference) {
-        if (!this.allow_filter) {
-            return null;
-        }
-
-        let filterInput = document.createElement("input");
-        filterInput.setAttribute("data-field", this.json_id);
-        filterInput.setAttribute("id", this.json_id + "_search");
-
-        filterInput.classList.add("col-filter");
-        filterInput.classList.add("text-filter");
-
-        if (this.cssClassFilterInput) {
-            filterInput.classList.add(this.cssClassFilterInput);
-        }
-
-        filterInput.addEventListener("blur", (e) => this.blurHandler(e, this.col_idx, tableManagerReference));
-        filterInput.addEventListener("keydown", (e) => {
-            if (e.key === "Enter") {
-                this.blurHandler(e, this.col_idx, tableManagerReference);
-            }
-        });
-
-        const wrapper = document.createElement("div");
-        wrapper.style.cssText = "position:relative;display:inline-flex;align-items:center;gap:2px;";
-        wrapper.appendChild(filterInput);
-
-        if (this.show_symbol_popup) {
-            const { symbolBtn, popup } = this.createSymbolPopup(filterInput);
-            wrapper.appendChild(symbolBtn);
-            wrapper.appendChild(popup);
-        }
-
-        return wrapper;
+    /**
+     * Displays the text's markup, truncated to max_display_length (see renderHtml). Numbers and booleans are shown as
+     * they are.
+     * @param {*} data - The cell text, or a formatted value.
+     * @returns {*} The display markup.
+     */
+    displayValue(data) {
+        return this._isText(data) ? this.renderHtml(data, this.column.max_display_length) : data;
     }
 
-    createSymbolPopup(filterInput) {
-        const greekSymbols = [
-            { label: "α", name: "alpha" },
-            { label: "β", name: "beta" },
-            { label: "δ", name: "delta" },
-            { label: "κ", name: "kappa" },
-            { label: "μ", name: "mu" },
-        ];
-
-        const popup = document.createElement("div");
-        let popupCss = "display:none;"
-        popupCss += "position:absolute;"
-        popupCss += "z-index:9999;"
-        popupCss += "background:#fff;"
-        popupCss += "border:1px solid #ccc;"
-        popupCss += "border-radius:4px;"
-        popupCss += "padding:4px;"
-        popupCss += "box-shadow:0 2px 6px rgba(0,0,0,0.2);"
-        popupCss += "display:none;"
-        popupCss += "grid-template-columns:repeat(3,1fr);"
-        popupCss += "gap:3px;"
-        popup.style.cssText = popupCss;
-
-        greekSymbols.forEach(({ label, name }) => {
-            const cell = document.createElement("button");
-            cell.type = "button";
-            cell.title = name;
-            cell.textContent = label;
-            let cellCss = "cursor:pointer;"
-            cellCss += "border:1px solid #ddd;"
-            cellCss += "border-radius:3px;"
-            cellCss += "background:#f8f8f8;"
-            cellCss += "padding:2px 5px;"
-            cellCss += "font-size:1em;"
-            cellCss += "line-height:1.4;"
-            cell.style.cssText = cellCss;
-            cell.addEventListener("mousedown", (e) => {
-                e.preventDefault();
-                filterInput.value += label;
-                filterInput.focus();
-            });
-            popup.appendChild(cell);
-        });
-
-        const symbolBtn = document.createElement("button");
-        symbolBtn.type = "button";
-        symbolBtn.textContent = "Ω";
-        let symbolBtnCss = "cursor:pointer;"
-        symbolBtnCss += "border:1px solid #ccc;"
-        symbolBtnCss += "border-radius:3px;"
-        symbolBtnCss += "background:#f0f0f0;"
-        symbolBtnCss += "padding:1px 4px;"
-        symbolBtnCss += "font-size:0.8em;"
-        symbolBtnCss += "white-space:nowrap;"
-        symbolBtn.style.cssText = symbolBtnCss;
-
-        let popupVisible = false;
-
-        symbolBtn.addEventListener("click", (e) => {
-            e.stopPropagation();
-            popupVisible = !popupVisible;
-            popup.style.display = popupVisible ? "grid" : "none";
-        });
-
-        document.addEventListener("click", () => {
-            if (popupVisible) {
-                popupVisible = false;
-                popup.style.display = "none";
-            }
-        }, true);
-
-        return { symbolBtn, popup };
+    /**
+     * The markup displaying a value: its markup (see displayHtml) truncated with an ellipsis if it is longer than
+     * maxDisplayLength, then wrapped by _wrapDisplay. Truncated text is followed by an icon that shows the full text
+     * for a few seconds (the full text is also kept in the title attribute). Used for the cell, and by the list data
+     * types for each item.
+     * @param {*} value - The value: a string, a formatted value, or for subclasses e.g. a link object.
+     * @param {number|undefined} maxDisplayLength - The maximum number of displayed characters, or a falsy value for no limit.
+     * @param {boolean} [expandIcon=true] - Whether truncated text gets its expand icon.
+     * @returns {string} The markup.
+     */
+    renderHtml(value, maxDisplayLength, expandIcon = true) {
+        const html = truncateHtml(this.displayHtml(value), maxDisplayLength, expandIcon, this.column.breakStyle).content;
+        return this._wrapDisplay(value, html);
     }
 
-    blurHandler = (e, col_idx, tableManagerReference) => {
-        function stripHtmlTags(str) {
-            return str.replace(/<[^>]*>/g, '');
+    /**
+     * Wraps a value's (possibly truncated) display markup, e.g. in a link. The default returns the markup unchanged.
+     * @param {*} value - The value.
+     * @param {string} html - The display markup.
+     * @returns {string} The wrapped markup.
+     */
+    _wrapDisplay(value, html) {
+        return html;
+    }
+
+    /**
+     * Searches and orders by the normalised plain text (see searchText), so e.g. "PIP₃" and "PIP3" are treated the
+     * same. Numbers and booleans are returned as they are, keeping their type.
+     * @param {*} data - The cell data.
+     * @returns {*} The search value.
+     */
+    searchValue(data) {
+        return this._isText(data) ? this.searchText(data) : data;
+    }
+
+    /**
+     * Whether a cell value is text: a string, or an object such as a formatted value, link or list.
+     * @param {*} data - The cell data.
+     * @returns {boolean} True for text values.
+     */
+    _isText(data) {
+        return typeof data === "string" || (data !== null && typeof data === "object");
+    }
+
+    /**
+     * Hooks up the expand icons of truncated text in the cell.
+     * @param {HTMLElement} cell - The rendered table cell.
+     * @param {*} cellData - The cell data.
+     * @param {*} rowData - The full row data.
+     * @param {number} rowIndex - The index of the row.
+     * @param {number} colIndex - The index of the column.
+     * @param {Object} tableManagerReference - The table manager that owns the table.
+     */
+    eventHookup(cell, cellData, rowData, rowIndex, colIndex, tableManagerReference) {
+        bindTruncationToggles(cell);
+    }
+
+    //------------------------------------------------------------------------------//
+    //  Cell value helpers. Subclasses with other data shapes (e.g. links) override  //
+    //  plainText and displayHtml; everything that needs text, search text or       //
+    //  markup goes through these rather than reading the data directly.            //
+    //------------------------------------------------------------------------------//
+
+    /**
+     * The text of a cell value as the user reads it: a formatted value's content, or a string with any markup removed
+     * and entities decoded (e.g. "&alpha;" to "α"). Used for exports, option labels and truncation lengths.
+     * @param {*} v - The cell value: a string, a {content, formatting} object, or another primitive.
+     * @returns {string} The plain text, or an empty string if the value is null or undefined.
+     */
+    plainText(v) {
+        if (v === null || v === undefined) {
+            return "";
         }
-
-        const currentSearchValue = tableManagerReference.dataTableReference.columns(col_idx).search()[0];
-
-        let newSearchValue = e.target.value;
-
-        const dataOptions = tableManagerReference.dataTableReference.column(col_idx).data(0).toArray().map((item) => stripHtmlTags(item));
-
-        const useRegex = !dataOptions.includes(newSearchValue)
-
-        if (useRegex) {
-              newSearchValue = newSearchValue.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'); // escape regex special characters
-              newSearchValue = ".*" + newSearchValue + ".*"; // wrap tag values with wildcards for "contains" search
+        if (typeof v === "object") {
+            // Formatted values hold plain text, with the formatting kept separately
+            return v.content === null || v.content === undefined ? "" : String(v.content);
         }
+        return htmlToText(String(v));
+    }
 
-        if (newSearchValue !== currentSearchValue) {
-            tableManagerReference.dataTableReference.columns(col_idx).search(newSearchValue, useRegex).draw();
+    /**
+     * The markup to display for a cell value, before truncation. Formatted values get their format tags with the text
+     * escaped. Strings are server-built and may hold markup, so they are used as given.
+     * @param {string|{content: string, formatting?: Array}} v - The cell value.
+     * @returns {string} The markup.
+     */
+    displayHtml(v) {
+        if (v !== null && typeof v === "object") {
+            return applyFormatTags(v.content, v.formatting);
         }
+        return String(v);
     }
 }
 

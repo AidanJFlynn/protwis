@@ -60,7 +60,6 @@ INSTALLED_APPS = (
     'mutational_landscape',
     'contactnetwork',
     'seqsign',
-    'angles',
     'hotspots',
     'classification',
     'django_rdkit',

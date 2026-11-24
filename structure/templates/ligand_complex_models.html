@@ -2,21 +2,10 @@
 {% load static %}
 
 {% block addon_css %}
-    <link rel="stylesheet" href="{% static 'home/css/construct_browser.css' %}" type="text/css" />
-    <link href="{% static 'home/css/construct_alignment.css' %}" rel="stylesheet">
-    <link href="{% static 'home/css/sequenceviewer.css' %}" rel="stylesheet">
-    <link href="{% static 'home/css/modal.css' %}" rel="stylesheet">
-    <link rel="stylesheet" href="{% static 'home/css/struct_tooltip.css' %}" type="text/css" />
-    <link rel="stylesheet" href="{% static 'home/css/select2_4.1.0-rc.0._full.css' %}" type="text/css">
-    <link rel="stylesheet" href="{% static 'home/css/BusyLoad.css' %}" type="text/css">
-    <link rel="stylesheet" href="{% static 'home/css/NewDrugsBrowser_datatables.min.css' %}" type="text/css"/>
+    <link rel="stylesheet" href="{% static '/home/css/frameworks/datatables/datatables_bundle-3.1.4_min.css' %}">
+    <link rel="stylesheet" href="{% static '/home/css/frameworks/select2/4.1.0/select2.css' %}">
+    <link rel="stylesheet" href="{% static 'home/css/tablemanager.css' %}">
     <style type="text/css">
-
-        .select2-result-label{
-            font-size:x-small;
-            font-size: 10px;
-        }
-
         @media (min-width: 1600px){
             #content {
                 width: 1570px;
@@ -27,234 +16,61 @@
                 width: 1770px;
             }
         }
-
-        .modal {
-            display: none; /* Hidden by default */
-            position: fixed; /* Stay in place */
-            z-index: 1; /* Sit on top */
-            padding-top: 100px; /* Location of the box */
-            left: 0;
-            top: 0;
-            width: 100%; /* Full width */
-            height: 100%; /* Full height */
-            overflow: auto; /* Enable scroll if needed */
-            background-color: rgb(0,0,0); /* Fallback color */
-            background-color: rgba(0,0,0,0.4); /* Black w/ opacity */
-        }
-
-        /* --- Init loader --- */
-        #Init_loader {
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            min-height: 40vh;
-        }
-
-        /* --- checkbox in header --- */
-        #select-all {
-            transform: scale(1.2);
-            display: inline-block;
-            margin: 0 auto;
-            vertical-align: middle;
-            overflow: visible;
-        }
-
-        /* --- DataTables 2.x auto-wraps header text in .dt-column-title -- let it wrap ---
-           Scoped to #homology_models_wrapper (not the #homology_models table itself): with
-           scrollX/scrollY on, DataTables splits the header into a separate cloned <thead>
-           (for horizontal-scroll sync) that does NOT carry the table's id, so a selector
-           scoped to #homology_models alone misses the header that's actually on screen. */
-        #homology_models_wrapper thead th:not([data-dt-order="disable"]) .dt-column-title {
-            display: inline-block;
-            text-align: center;
-            padding-left: 20px;
-            margin: 0;
-            line-height: 1.2em;
-            white-space: normal;
-        }
-
-        /* --- Section dividers, static (no ColVis -> columns never move/hide) ---
-           Applied to both header rows (via the wrapper, see note above) and body cells so the
-           divider runs continuously from the super-header down through the filter row and body. */
-        #homology_models_wrapper thead th:nth-child(3),
-        #homology_models_wrapper thead th:nth-child(8),
-        #homology_models_wrapper thead th:nth-child(14),
-        #homology_models_wrapper thead th:nth-child(17),
-        #homology_models_wrapper thead th:nth-child(20),
-        #homology_models tbody td:nth-child(3),
-        #homology_models tbody td:nth-child(8),
-        #homology_models tbody td:nth-child(14),
-        #homology_models tbody td:nth-child(17),
-        #homology_models tbody td:nth-child(20) {
-            border-left: 1px solid #ccc;
-        }
-
-        /* --- Filter row: center the dropdowns and the range min/max inputs ---
-           The filter row's <th> cells (data-dt-order="disable", populated by
-           NorgesDTFilterBuilder) don't get a text-align from the library, and its
-           "max" range input is missing the inline text-align:center its "min"
-           sibling has -- center everything explicitly instead. */
-        #homology_models_wrapper thead th[data-dt-order="disable"] {
-            text-align: center;
-        }
-        #homology_models_wrapper thead th[data-dt-order="disable"] .select2-container {
-            margin: 0 auto;
-        }
-        #homology_models_wrapper thead th[data-dt-order="disable"] input.select2 {
-            text-align: center !important;
-        }
-
-        /* --- Center-align body cells --- */
-        #homology_models tbody td {
-            text-align: center;
-        }
-
-        /* --- Compact cell: collapse to one line, expand on hover --- */
-        td.expand_1line {
-            max-width: 170px;
-            white-space: nowrap;
-            overflow: hidden;
-            text-overflow: ellipsis;
-            position: relative;
-        }
-        td.expand_1line .expanded {
-            display: none;
-            white-space: normal;
-        }
-        td.expand_1line:hover {
-            overflow: visible;
-            white-space: normal;
-        }
-        td.expand_1line:hover .collapsed {
-            display: none;
-        }
-        td.expand_1line:hover .expanded {
-            display: inline;
-        }
-
-        /* --- Selection styling --- */
-        #homology_models tbody tr {
-            cursor: pointer;
-        }
-        #homology_models tbody tr.row-selected td {
-            background-color: #e7f1ff !important;
-        }
-
-        /* --- Buttons, spread out like the structure browser --- */
-        .dt-btn { padding-left: 10%; box-sizing: border-box; }
-        .dt-buttons .dt-button { margin-right: 5px !important; font-size: 13px !important; }
-        .dt-buttons .dt-button.cluster-sep { margin-left: 35px !important; }
-        .dt-buttons .dt-button > span { padding: 5px 5px !important; }
-
-        .dt-button { position: relative; }
-        .dt-button > .btn-spinner {
-            display: none;
-            position: absolute; left: 50%; top: 50%;
-            transform: translate(-50%, -50%) rotate(0deg);
-            width: 16px; height: 16px;
-            border: 2px solid rgba(0,0,0,.25);
-            border-top-color: rgba(0,0,0,.7);
-            border-radius: 50%;
-            pointer-events: none;
-            z-index: 1;
-            animation: btnSpin .8s linear infinite;
-        }
-        @keyframes btnSpin { to { transform: translate(-50%, -50%) rotate(360deg); } }
-        .dt-button.is-busy > .btn-spinner { display: inline-block; }
-        .dt-button.is-busy > span { opacity: .45; }
-
     </style>
 {% endblock %}
 
-{% block addon_js %}
-    <script src="{% static 'home/js/gpcrdb.js' %}"></script>
-    <script src="{% static 'home/js/browser_functions.js' %}"></script>
-    <script src="{% static 'home/js/select2_4.1.0-rc.0_full.js' %}"></script>
-    <script src="{% static 'home/js/NewDrugsBrowser_datatables.min.js' %}"></script>
-    <script src="{% static 'home/js/NorgesDTFilterBuilder.js' %}"></script>
-    <script src="{% static 'home/js/BusyLoad.js' %}"></script>
-    <script src="{% static 'home/js/alignment.js' %}"></script>
-    <script src="{% static 'home/js/openchemlib-full.js' %}"></script> <!-- for rendering ligand images -->
-    <script src="{% static 'home/js/PeptideLayoutEngine.js' %}"></script>
-    <script src="{% static 'home/js/compoundPreviewTooltip.js' %}"></script>
+{% block content %}
+<div style='overflow-y:hidden;'>
+    <table class="display compact" id='ligand_complex_models_table'>
+        <!-- Dependencies for ligand structure popover -->
+            <script src="{% static '/home/js/PeptideLayoutEngine.js' %}"></script>
+            <script src="{% static 'home/js/openchemlib-full.js' %}"></script>
+        <!-- End dependencies -->
+        <script type="module">
+            // Populate ligand complex models table using TableManager
+            import { TableManager } from "{% static 'home/js/tablemanager/tablemanager.js' %}";
+            import { InjectorTemplates } from "{% static 'home/js/tablemanager/injectors/injectortemplates.js' %}";
 
-    <script type="text/javascript">
-        window.NO_IMAGE_URL = "{% static 'home/images/No_image_available.svg' %}";
-        window.GPCR_STRUCTURE_LOGO_URL = "{% static 'home/images/gpcr_structure_logo.png' %}";
-        window.MODEL_SURFACE_URL = "{% static 'home/images/model-surface.png' %}";
-    </script>
+            let config = null;
+            try {
+                config = await TableManager.fetchConfiguration(
+                    'ligand_complex_models_table', //dataTableConfigName
+                    'serverside', //dataTableConfigVariant
+                    'ligand_complex_models_table', //columnConfigName
+                    'basic') //columnConfigVariant
 
-    <script src="{% static 'home/js/structure/ligand_complex_models.js' %}"></script>
+            } catch(error) {
+                console.error('Error fetching configuration:', error);
+            }
 
-    <script type="text/javascript">
-        $(document).ready(function() {
-            compoundPreview("a.struct");
-        });
-    </script>
+            if (config){
+                // Initialize the table
+                let ligandComplexModelsTable = new TableManager(config.columnsSpecifications, 'ligand_complex_models_table');
+
+                const configuration = {
+                    ligand_type_json_id:"mol_modality",
+                    ligand_sequence_json_id:"sequence",
+                    ligand_smiles_json_id:"smiles_for_image",
+                    ligand_image_url_json_id:"ligand_image_url",
+                    noImageUrl: "{% static '/home/images/No_image_available.svg' %}"
+                };
+
+                ligandComplexModelsTable.cellInjectors.registerInjector("structurePopover",
+                    (cell, cellData, rowData, rowIndex, colIndex, tableManagerReference) => {
+                    // Requires dependencies: PeptideLayoutEngine.js and openchemlib-full.js
+                    InjectorTemplates.addChemicalStructureImagePopOver(cell, cellData, rowData, rowIndex, colIndex, tableManagerReference, configuration);
+                    }
+                );
+
+                ligandComplexModelsTable.initialiseDataTable(config.datatableConfiguration);
+            }
+        </script>
+    </table>
+</div>
+<br>
 {% endblock %}
 
-{% block content %}
-<div id="browser">
-    <div id="Init_loader"></div>
-    <div style="padding-top: 0px; font-size: 10px; display: none;" id="homology_models_div">
-        <table width="100%" class="display compact" id="homology_models">
-            <thead>
-                <!-- Dummy header row for complex header fix -->
-                <tr>
-                    <th colspan="20" style="text-align: center" data-dt-order="disable"></th>
-                </tr>
-
-                <!-- Super header row -->
-                <tr style="padding-top: 10px; font-size: 14px; white-space: nowrap;">
-                    <th colspan="2" style="text-align: center;" data-dt-order="disable">MODEL</th>
-                    <th colspan="5" style="text-align: center; border-left: 1px solid #ccc;" data-dt-order="disable">LIGAND</th>
-                    <th colspan="6" style="text-align: center; border-left: 1px solid #ccc;" data-dt-order="disable">RECEPTOR</th>
-                    <th colspan="3" style="text-align: center; border-left: 1px solid #ccc;" data-dt-order="disable">STRUCTURE</th>
-                    <th colspan="3" style="text-align: center; border-left: 1px solid #ccc;" data-dt-order="disable">LIGAND MODEL SCORE</th>
-                    <th colspan="1" style="text-align: center; border-left: 1px solid #ccc;" data-dt-order="disable">DATE</th>
-                </tr>
-
-                <!-- Titles row -->
-                <tr>
-                    <th data-dt-order="disable"><input type="checkbox" id="select-all"></th>
-                    <th data-dt-order="disable"></th>
-                    <th>Name</th>
-                    <th>Mol. modality</th>
-                    <th>Pharm. modality</th>
-                    <th>Physiological</th>
-                    <th>Clinical</th>
-                    <th>Gene</th>
-                    <th>Protein</th>
-                    <th>Family</th>
-                    <th>Class</th>
-                    <th>Modality</th>
-                    <th>Chemotype</th>
-                    <th>State</th>
-                    <th>Signal protein family</th>
-                    <th>Signal protein subtype</th>
-                    <th>AF2 (PAE mean)</th>
-                    <th>Boltz2 (Ligand pLDDT)</th>
-                    <th>RFAA (pLDDT mean)</th>
-                    <th>Date</th>
-                </tr>
-
-                <!-- Filter row (empty; filled by NorgesDTFilterBuilder) -->
-                <tr>
-                    <th data-dt-order="disable"></th><th data-dt-order="disable"></th>
-                    <th data-dt-order="disable"></th><th data-dt-order="disable"></th>
-                    <th data-dt-order="disable"></th><th data-dt-order="disable"></th>
-                    <th data-dt-order="disable"></th><th data-dt-order="disable"></th>
-                    <th data-dt-order="disable"></th><th data-dt-order="disable"></th>
-                    <th data-dt-order="disable"></th><th data-dt-order="disable"></th>
-                    <th data-dt-order="disable"></th><th data-dt-order="disable"></th>
-                    <th data-dt-order="disable"></th><th data-dt-order="disable"></th>
-                    <th data-dt-order="disable"></th><th data-dt-order="disable"></th>
-                    <th data-dt-order="disable"></th><th data-dt-order="disable"></th>
-                </tr>
-            </thead>
-            <tbody>
-            </tbody>
-        </table>
-    </div>
-</div>
+{% block addon_js %}
+    <script src="{% static '/home/js/frameworks/datatables/datatables_3.1.4_bundle.js' %}"></script>
+    <script src="{% static '/home/js/frameworks/select2/4.1.0/select2.min.js' %}"></script>
 {% endblock %}

@@ -74,13 +74,13 @@ class Protein(models.Model):
         return DrawHelixBox(residuelist,self.get_protein_class(),str(self))
 
     def get_snake_plot(self, domain=None):
-        from angles.models import get_snake_plot_distance_lookup
+        from contactnetwork.models import get_snake_plot_distance_lookup
         residuelist = Residue.objects.filter(protein_conformation__protein__entry_name=str(self)).prefetch_related('protein_segment','display_generic_number','generic_number')
         distance_lookup = get_snake_plot_distance_lookup(self)
         return DrawSnakePlot(residuelist,self.get_protein_class(),str(self), domain=domain, residue_distance_lookup=distance_lookup)
 
     def get_snake_plot_GAIN(self):
-        from angles.models import get_snake_plot_distance_lookup
+        from contactnetwork.models import get_snake_plot_distance_lookup
         residuelist = Residue.objects.filter(protein_conformation__protein__entry_name=str(self)).prefetch_related('protein_segment','display_generic_number','generic_number')
         distance_lookup = get_snake_plot_distance_lookup(self)
         return DrawSnakePlot(residuelist,self.get_protein_class(),str(self), domain='GAIN', residue_distance_lookup=distance_lookup)
@@ -90,7 +90,7 @@ class Protein(models.Model):
         return DrawHelixBox(residuelist,self.get_protein_class(),str(self), nobuttons=1)
 
     def get_snake_plot_no_buttons(self):
-        from angles.models import get_snake_plot_distance_lookup
+        from contactnetwork.models import get_snake_plot_distance_lookup
         residuelist = Residue.objects.filter(protein_conformation__protein__entry_name=str(self)).prefetch_related('protein_segment','display_generic_number','generic_number')
         distance_lookup = get_snake_plot_distance_lookup(self)
         return DrawSnakePlot(residuelist,self.get_protein_class(),str(self), nobuttons=1, residue_distance_lookup=distance_lookup)
