@@ -32,8 +32,7 @@ INSTALLED_APPS = (
     'django.contrib.humanize',
     'debug_toolbar',
     'rest_framework',
-    'rest_framework_swagger',
-    'polymorphic',
+    'drf_spectacular',
     'common',
     'api',
     'news',
@@ -102,11 +101,19 @@ MEDIA_URL = '/media/'
 MEDIA_ROOT = '/protwis/media/protwis'
 
 # Serializer
-SESSION_SERIALIZER = 'django.contrib.sessions.serializers.PickleSerializer'
+SESSION_SERIALIZER = 'common.session_serializers.PickleSerializer'
 SESSION_COOKIE_AGE = 86400 #Expire cookies and session after 24 hrs
-SWAGGER_SETTINGS = {
-    'USE_SESSION_AUTH' : False,
-    "exclude_namespaces": ["excluded_apis"],
+
+# Primary keys: keep 32-bit AutoField so no PK migrations are generated
+DEFAULT_AUTO_FIELD = 'django.db.models.AutoField'
+
+# REST framework / OpenAPI schema
+REST_FRAMEWORK = {
+    'DEFAULT_SCHEMA_CLASS': 'drf_spectacular.openapi.AutoSchema',
+}
+SPECTACULAR_SETTINGS = {
+    'TITLE': 'API calls',
+    'SERVE_INCLUDE_SCHEMA': False,
 }
 
 # Templates
@@ -121,6 +128,7 @@ TEMPLATES = [
             'context_processors': [
                 'django.contrib.auth.context_processors.auth',
                 'django.template.context_processors.debug',
+                'django.template.context_processors.request',
                 'django.template.context_processors.i18n',
                 'django.template.context_processors.media',
                 'django.template.context_processors.static',
@@ -212,8 +220,3 @@ CACHES = {
         }
     }
 }
-
-# Note that https://www.django-rest-framework.org/community/3.10-announcement
-# So, have to switch from CoreAPI to OpenAPI. Next line will work for now.
-# Uncomment when needed.
-# REST_FRAMEWORK = { 'DEFAULT_SCHEMA_CLASS': 'rest_framework.schemas.coreapi.AutoSchema' }

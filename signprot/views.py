@@ -4,7 +4,6 @@ from django.core.cache import cache
 from django.db.models import F, Q, Count, Prefetch
 from django.http import HttpResponse, JsonResponse, HttpResponseRedirect
 from django.shortcuts import render, redirect
-from django.utils.decorators import method_decorator
 from django.utils.html import format_html
 from django.utils.text import slugify
 from django.views.decorators.cache import cache_page
@@ -505,7 +504,6 @@ class CouplingBrowser(TemplateView):
     families = ["Gs", "Gi/o", "Gq/11", "G12/13"]
     template_name = "signprot/coupling_browser.html"
 
-    @method_decorator(csrf_exempt)
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
 
@@ -857,7 +855,6 @@ class CouplingBrowser_deprecated(TemplateView):
     families = ["Gs", "Gi/o", "Gq/11", "G12/13"]
     template_name = "signprot/coupling_browser_deprecated.html"
 
-    @method_decorator(csrf_exempt)
     def get_context_data(self, **kwargs):
         print('CouplingBrowser_deprecated get_context_data called')
         context = super().get_context_data(**kwargs)
@@ -2001,7 +1998,7 @@ def interface_dataset():
 
     return list(conf_ids), list(interactions)
 
-@method_decorator(csrf_exempt)
+@csrf_exempt
 def AJAX_Interactions(request, include_non_gns):
     t1 = time.time()
     selected_pdbs = request.POST.getlist("selected_pdbs[]")
@@ -2249,7 +2246,7 @@ def InteractionMatrix(request, database='gprotein'):
                   context
                   )
 
-@method_decorator(csrf_exempt)
+@csrf_exempt
 def IMSequenceSignature(request):
     """Accept set of proteins + generic numbers and calculate the signature for those"""
 
@@ -2308,7 +2305,7 @@ def IMSequenceSignature(request):
 
     return JsonResponse(res, safe=False)
 
-@method_decorator(csrf_exempt)
+@csrf_exempt
 def IMSignatureMatch(request):
     '''Take the signature stored in the session and query the db'''
     signature_data = request.session.get('signature')
@@ -2354,7 +2351,7 @@ def IMSignatureMatch(request):
     signature_match_parsed = prepare_signature_match(signature_match, effector)
     return JsonResponse(signature_match_parsed, safe=False)
 
-@method_decorator(csrf_exempt)
+@csrf_exempt
 def render_IMSigMat(request):
     # signature_match = request.session.get('signature_match')
     signature_data = request.session.get('signature')

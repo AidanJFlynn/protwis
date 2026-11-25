@@ -1,11 +1,14 @@
 from django.urls import path, re_path
 from django.views.decorators.cache import cache_page
+from drf_spectacular.views import SpectacularAPIView, SpectacularSwaggerView
 from api import views
 
 
+# API documentation (OpenAPI schema + Swagger UI), not part of the schema itself
 excluded_apis = [
-    path('', views.schema_view),
-    re_path(r'^reference/', views.schema_view)]
+    path('schema/', SpectacularAPIView.as_view(), name='schema'),
+    path('', SpectacularSwaggerView.as_view(url_name='schema'), name='swagger-ui'),
+    re_path(r'^reference/', SpectacularSwaggerView.as_view(url_name='schema'), name='swagger-reference')]
 
 urlpatterns = excluded_apis + [
     re_path(r'^protein/accession/(?P<accession>[^/].+)/$', views.ProteinByAccessionDetail.as_view(),

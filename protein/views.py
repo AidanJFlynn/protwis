@@ -339,7 +339,7 @@ def get_sankey_data(entry_name):
 
 def SelectionAutocomplete(request):
 
-    if request.is_ajax():
+    if request.headers.get('x-requested-with') == 'XMLHttpRequest':
         q = request.GET.get('term').strip()
         type_of_selection = request.GET.get('type_of_selection')
         selection_only_receptors = request.GET.get('selection_only_receptors')

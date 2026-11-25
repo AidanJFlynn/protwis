@@ -1,11 +1,7 @@
-from rest_framework import views, generics, schemas
-from rest_framework.decorators import api_view, renderer_classes
+from rest_framework import views, generics
 from rest_framework.response import Response
 from rest_framework.parsers import FileUploadParser
 from rest_framework.renderers import JSONRenderer
-
-from rest_framework_swagger.views import get_swagger_view
-from rest_framework_swagger.renderers import OpenAPIRenderer, SwaggerUIRenderer
 
 from django.template.loader import render_to_string
 from django.db.models import Prefetch, Q, Min, Count
@@ -41,15 +37,6 @@ from collections import OrderedDict
 # FIXME add
 # getMutations
 # numberPDBfile
-
-class JSONOpenAPIRenderer(OpenAPIRenderer):
-    media_type = 'application/json'
-
-@api_view()
-@renderer_classes([SwaggerUIRenderer, OpenAPIRenderer, JSONOpenAPIRenderer])
-def schema_view(request):
-    generator = schemas.SchemaGenerator(title='API calls')
-    return Response(generator.get_schema(request=request))
 
 class ProteinDetail(generics.RetrieveAPIView):
 
