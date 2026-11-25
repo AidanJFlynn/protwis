@@ -66,6 +66,7 @@ INSTALLED_APPS = (
 )
 
 MIDDLEWARE = (
+    'django.middleware.security.SecurityMiddleware',
     'common.middleware.stats.StatsMiddleware',
     'debug_toolbar.middleware.DebugToolbarMiddleware',
     'django.contrib.sessions.middleware.SessionMiddleware',
@@ -78,6 +79,21 @@ MIDDLEWARE = (
 )
 
 ROOT_URLCONF = 'protwis.urls'
+
+# Security
+# Since Django 4.0 CSRF compares the Origin header with request.scheme://host.
+# Behind a TLS-terminating proxy that forwards plain HTTP, that check fails for
+# every POST unless the public HTTPS origins are trusted explicitly.
+CSRF_TRUSTED_ORIGINS = [
+    'https://gpcrdb.org', 'https://*.gpcrdb.org',
+    'https://gproteindb.org', 'https://*.gproteindb.org',
+    'https://arrestindb.org', 'https://*.arrestindb.org',
+    'https://biasedsignalingatlas.org', 'https://*.biasedsignalingatlas.org',
+]
+# Django 3.0 changed the default from SAMEORIGIN to DENY; the classification
+# pages and the construct tool frame their own pages.
+X_FRAME_OPTIONS = 'SAMEORIGIN'
+SILENCED_SYSTEM_CHECKS = ['security.W019']  # SAMEORIGIN is intentional (see above)
 
 # WSGI_APPLICATION = 'protwis.wsgi.application'
 

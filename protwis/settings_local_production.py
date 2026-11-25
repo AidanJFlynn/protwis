@@ -39,3 +39,14 @@ SECRET_KEY = '-eqrx61@n*z3y1mc1w_@x1+yo(@^!k7i-vjaz0tx1$902a!4mu'
 DEBUG = False
 
 ALLOWED_HOSTS = ['*']
+
+# HTTPS behind the nginx proxy
+# nginx must set (overwrite) the header: proxy_set_header X-Forwarded-Proto $scheme;
+# and Django must only be reachable through nginx, or clients could spoof it.
+SECURE_PROXY_SSL_HEADER = ('HTTP_X_FORWARDED_PROTO', 'https')
+# Only send session/CSRF cookies over HTTPS. Do not use these settings for a
+# site served over plain HTTP: sessions and POSTs would stop working.
+SESSION_COOKIE_SECURE = True
+CSRF_COOKIE_SECURE = True
+# HTTP->HTTPS redirects and HSTS are left to nginx (SECURE_SSL_REDIRECT would
+# loop if nginx does not forward X-Forwarded-Proto).
