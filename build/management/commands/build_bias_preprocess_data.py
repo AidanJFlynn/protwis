@@ -651,10 +651,10 @@ class Command(BaseBuild):
             data_subtype = Command.AdjustedFly(protein, True)
             for publication in data.keys():
                 for row in data[publication]:
-                    pathway_dump = pathway_dump.append(data[publication][row], ignore_index=True)
+                    pathway_dump = pd.concat([pathway_dump, pd.DataFrame([data[publication][row]])], ignore_index=True)
             for publication in data_subtype.keys():
                 for row in data_subtype[publication]:
-                    pathway_dump = pathway_dump.append(data_subtype[publication][row], ignore_index=True)
+                    pathway_dump = pd.concat([pathway_dump, pd.DataFrame([data_subtype[publication][row]])], ignore_index=True)
         return pathway_dump
 
     @staticmethod

@@ -22,7 +22,7 @@ import datetime
 import logging
 from optparse import make_option
 import os
-import xlrd
+from common import xlrd_compat as xlrd
 import json
 import django.apps
 

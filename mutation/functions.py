@@ -1,5 +1,5 @@
 
-import xlrd
+from common import xlrd_compat as xlrd
 
 import json
 import urllib.request

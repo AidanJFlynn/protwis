@@ -730,7 +730,6 @@ def AlignIsoformWildtype(request):
     from Bio import pairwise2
     from Bio.pairwise2 import format_alignment
     from Bio.Align import substitution_matrices as matlist
-    from Bio.Align.Applications import ClustalOmegaCommandline
     from Bio import AlignIO
     cache_dir = ['ensembl', 'isoform']
     url = 'https://rest.ensembl.org/sequence/id/$index?content-type=application/json&type=protein'

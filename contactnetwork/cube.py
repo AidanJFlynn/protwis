@@ -1,6 +1,7 @@
 from django.conf import settings
 
 from Bio.PDB import Selection, PDBParser, Polypeptide
+from Bio.Data.PDBData import protein_letters_3to1
 from Bio.PDB.NeighborSearch import NeighborSearch
 
 from contactnetwork.interaction import *
@@ -53,7 +54,7 @@ def compute_interactions(pdb_name, protein=None, signprot=None, lig=None, do_int
         # CREATING THE DUMMY RESIDUES FOR ALL THE RESIDUES OF CHAIN A (aka protein)
         # for res in chain:
         #     try:
-        #         one_letter = Polypeptide.three_to_one(res.get_resname())
+        #         one_letter = protein_letters_3to1[res.get_resname()]
         #     except KeyError:
         #         if res.get_resname() in unnatural_amino_acids:
         #             one_letter = unnatural_amino_acids[res.get_resname()]
@@ -230,7 +231,7 @@ def compute_interactions(pdb_name, protein=None, signprot=None, lig=None, do_int
                 dbres_pep = {}
                 for res in s[pep_chain]:
                     try:
-                        one_letter = Polypeptide.three_to_one(res.get_resname())
+                        one_letter = protein_letters_3to1[res.get_resname()]
                     except KeyError:
                         if res.get_resname() in unnatural_amino_acids:
                             one_letter = unnatural_amino_acids[res.get_resname()]
@@ -510,7 +511,7 @@ def compute_interactions(pdb_name, protein=None, signprot=None, lig=None, do_int
 #                 dbres_pep = {}
 #                 for res in s[pep_chain]:
 #                     try:
-#                         one_letter = Polypeptide.three_to_one(res.get_resname())
+#                         one_letter = protein_letters_3to1[res.get_resname()]
 #                     except KeyError:
 #                         if res.get_resname() in unnatural_amino_acids:
 #                             one_letter = unnatural_amino_acids[res.get_resname()]

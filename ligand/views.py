@@ -4273,7 +4273,7 @@ class OTFBiasBrowser(TemplateView):
                 if 'Reference_ligand' in data[pub][key].keys():
                     Reference_ligand = data[pub][key]['Reference_ligand']
             for drug in ligands:
-                data_subset = data_subset.append(ligands[drug], ignore_index=True)
+                data_subset = pd.concat([data_subset, pd.DataFrame([ligands[drug]])], ignore_index=True)
             data_subset['Class'] = receptor_info[0][0]
             data_subset['Receptor family'] = receptor_info[0][1].strip('receptors')
             data_subset['UniProt'] = receptor_info[0][2].split('_')[0].upper()
@@ -4282,7 +4282,7 @@ class OTFBiasBrowser(TemplateView):
                 data_subset['Reference ligand'] = Reference_ligand
                 data_subset['Reference ligand ID'] = lig_id_name_dict[Reference_ligand]
 
-            table = table.append(data_subset, ignore_index=True)
+            table = pd.concat([table, data_subset], ignore_index=True)
 
         table.fillna('', inplace=True)
         context = dict()

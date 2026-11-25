@@ -7,7 +7,7 @@ from common.tools import test_model_updates
 from django.conf import settings
 import logging
 import os
-import xlrd
+from common import xlrd_compat as xlrd
 import django.apps
 
 class Command(BaseBuild):

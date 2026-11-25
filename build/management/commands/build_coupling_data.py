@@ -16,7 +16,7 @@ import sys
 from itertools import islice
 from collections import defaultdict
 import django.apps
-import xlrd
+from common import xlrd_compat as xlrd
 
 
 class Command(BaseCommand):

@@ -10,8 +10,18 @@ from collections import OrderedDict
 import yaml
 import shlex
 import os
+import subprocess
 from Bio import AlignIO
-from Bio.Align.Applications import ClustalOmegaCommandline
+
+
+def run_clustalo(infile, outfile):
+    """Align `infile` with Clustal Omega, writing FASTA to `outfile` (overwritten).
+
+    Replaces Bio.Align.Applications.ClustalOmegaCommandline(..., force=True),
+    which newer Biopython releases removed. Raises CalledProcessError on failure.
+    """
+    return subprocess.run(["clustalo", "-i", infile, "-o", outfile, "--force"],
+                          check=True, capture_output=True, text=True)
 
 def parse_scheme_tables(path):
     # get generic residue numbering schemes
@@ -533,8 +543,7 @@ def align_protein_to_reference(protein, tpl_ref_pos_file_path, ref_protein):
 
     try:
         ali_filename = "/tmp/out.fa"
-        acmd = ClustalOmegaCommandline(infile=seq_filename, outfile=ali_filename, force=True)
-        stdout, stderr = acmd()
+        run_clustalo(seq_filename, ali_filename)
         a = AlignIO.read(ali_filename, "fasta")
         logger.info("{} aligned to {}".format(protein['entry_name'], ref_protein.entry_name))
     except:

@@ -22,6 +22,7 @@ from interaction.models import StructureLigandInteraction
 from tools.management.commands.bioactivity_receptors import Command as Bioactivity
 
 import Bio.PDB as PDB
+from Bio.Data.PDBData import protein_letters_3to1
 from modeller import *
 from modeller.automodel import *
 from collections import OrderedDict
@@ -656,9 +657,9 @@ class CallHomologyModeling():
                 #         cluster_centers_indices = af.cluster_centers_indices_
                 #         labels = af.labels_
 
-                #         if len(cluster_centers_indices)>rotamer_cluster_numbers[PDB.Polypeptide.three_to_one(ref_atoms[0].get_parent().get_resname())]:
+                #         if len(cluster_centers_indices)>rotamer_cluster_numbers[protein_letters_3to1[ref_atoms[0].get_parent().get_resname()]]:
                 #             # KMeans
-                #             kmeans = KMeans(n_clusters=rotamer_cluster_numbers[PDB.Polypeptide.three_to_one(ref_atoms[0].get_parent().get_resname())], random_state=0).fit(data)
+                #             kmeans = KMeans(n_clusters=rotamer_cluster_numbers[protein_letters_3to1[ref_atoms[0].get_parent().get_resname()]], random_state=0).fit(data)
                 #             labels = kmeans.labels_
                 #             cluster_centers = kmeans.cluster_centers_
                 #             cluster_centers_indices = []
@@ -1230,12 +1231,12 @@ class CallHomologyModeling():
                     for key in key_list:
                         if len(key.split('.'))>2:
                             main_pdb_array[seg_dict[key]][key] = new_residues[key]
-                            template_dict[seg_dict[key]][key] = PDB.Polypeptide.three_to_one(new_residues[key][0].get_parent().get_resname())
-                            alignment_dict[seg_dict[key]][key] = PDB.Polypeptide.three_to_one(new_residues[key][0].get_parent().get_resname())
+                            template_dict[seg_dict[key]][key] = protein_letters_3to1[new_residues[key][0].get_parent().get_resname()]
+                            alignment_dict[seg_dict[key]][key] = protein_letters_3to1[new_residues[key][0].get_parent().get_resname()]
                         else:
                             main_pdb_array[seg_dict[key.replace('.','x')]][key] = new_residues[key]
-                            template_dict[seg_dict[key.replace('.','x')]][key.replace('.','x')] = PDB.Polypeptide.three_to_one(new_residues[key][0].get_parent().get_resname())
-                            alignment_dict[seg_dict[key.replace('.','x')]][key.replace('.','x')] = PDB.Polypeptide.three_to_one(new_residues[key][0].get_parent().get_resname())
+                            template_dict[seg_dict[key.replace('.','x')]][key.replace('.','x')] = protein_letters_3to1[new_residues[key][0].get_parent().get_resname()]
+                            alignment_dict[seg_dict[key.replace('.','x')]][key.replace('.','x')] = protein_letters_3to1[new_residues[key][0].get_parent().get_resname()]
 
                 ### Rotamer swap (missing atoms and non-wt)
                 for seglab, seg in alignment_dict.items():
@@ -1247,7 +1248,7 @@ class CallHomologyModeling():
                             superpose = sp.RotamerSuperpose(orig_res, alt_res)
                             new_atoms = superpose.run()
                             main_pdb_array[seglab][mpa_gn] = new_atoms
-                            new_aa = PDB.Polypeptide.three_to_one(new_atoms[0].get_parent().get_resname())
+                            new_aa = protein_letters_3to1[new_atoms[0].get_parent().get_resname()]
                             template_dict[seglab][gn] = new_aa
                             alignment_dict[seglab][gn] = new_aa
                             template_source[seglab][gn][1] = None
@@ -1272,9 +1273,9 @@ class CallHomologyModeling():
                         # remove waters
                         if b_res.get_resname()=='HOH':
                             continue
-                        reference_dict['Beta'][key] = PDB.Polypeptide.three_to_one(b_res.get_resname())
-                        template_dict['Beta'][key] = PDB.Polypeptide.three_to_one(b_res.get_resname())
-                        alignment_dict['Beta'][key] = PDB.Polypeptide.three_to_one(b_res.get_resname())
+                        reference_dict['Beta'][key] = protein_letters_3to1[b_res.get_resname()]
+                        template_dict['Beta'][key] = protein_letters_3to1[b_res.get_resname()]
+                        alignment_dict['Beta'][key] = protein_letters_3to1[b_res.get_resname()]
                         atoms = [atom for atom in b_res]
                         main_pdb_array['Beta'][key] = atoms
                         template_source['Beta'][key] = [Homology_model.main_structure, Homology_model.main_structure]
@@ -1283,9 +1284,9 @@ class CallHomologyModeling():
                         # remove waters
                         if g_res.get_resname()=='HOH':
                             continue
-                        reference_dict['Gamma'][key] = PDB.Polypeptide.three_to_one(g_res.get_resname())
-                        template_dict['Gamma'][key] = PDB.Polypeptide.three_to_one(g_res.get_resname())
-                        alignment_dict['Gamma'][key] = PDB.Polypeptide.three_to_one(g_res.get_resname())
+                        reference_dict['Gamma'][key] = protein_letters_3to1[g_res.get_resname()]
+                        template_dict['Gamma'][key] = protein_letters_3to1[g_res.get_resname()]
+                        alignment_dict['Gamma'][key] = protein_letters_3to1[g_res.get_resname()]
                         atoms = [atom for atom in g_res]
                         main_pdb_array['Gamma'][key] = atoms
                         template_source['Gamma'][key] = [Homology_model.main_structure, Homology_model.main_structure]
@@ -1374,7 +1375,7 @@ class CallHomologyModeling():
                         # Skip amino acid HETRESIS
                         if res.get_id()[0].startswith('H_'):
                             continue
-                        if PDB.Polypeptide.three_to_one(res.get_resname())!=db_res.amino_acid:
+                        if protein_letters_3to1[res.get_resname()]!=db_res.amino_acid:
                             residue_shift = True
                             break
                     except:
@@ -2366,8 +2367,8 @@ class HomologyModeling(object):
                                                     gn__ = gen_num.replace('.','x')
                                                     self.template_source = update_template_source(self.template_source,[gn__],Bulge.template,ref_seg)
                                                     main_pdb_array[ref_seg][gen_num] = new_residues[gen_num]
-                                                    a.template_dict[temp_seg][gn__] = PDB.Polypeptide.three_to_one(
-                                                                                       atoms[0].get_parent().get_resname())
+                                                    a.template_dict[temp_seg][gn__] = protein_letters_3to1[
+                                                                                       atoms[0].get_parent().get_resname()]
                                                     if a.template_dict[temp_seg][gn__]==a.reference_dict[ref_seg][gn__]:
                                                         a.alignment_dict[aligned_seg][gn__]=a.template_dict[temp_seg][gn__]
                                                     else:
@@ -2410,8 +2411,8 @@ class HomologyModeling(object):
                                                     gn__ = gen_num.replace('.','x')
                                                     self.template_source = update_template_source(self.template_source,[gn__],Const.template,ref_seg)
                                                     main_pdb_array[ref_seg][gen_num] = new_residues[gen_num]
-                                                    a.template_dict[gn__] = PDB.Polypeptide.three_to_one(
-                                                                                       atoms[0].get_parent().get_resname())
+                                                    a.template_dict[gn__] = protein_letters_3to1[
+                                                                                       atoms[0].get_parent().get_resname()]
                                                     if a.template_dict[temp_seg][gn__]==a.reference_dict[ref_seg][gn__]:
                                                         a.alignment_dict[aligned_seg][gn__]=a.template_dict[temp_seg][gn__]
                                                 switch_res+=1
@@ -2450,8 +2451,8 @@ class HomologyModeling(object):
                                                     gn__ = gen_num.replace('.','x')
                                                     self.template_source = update_template_source(self.template_source,[gn__],Bulge.template,ref_seg)
                                                     main_pdb_array[ref_seg][gen_num] = new_residues[gen_num]
-                                                    a.template_dict[temp_seg][gn__] = PDB.Polypeptide.three_to_one(
-                                                                                       atoms[0].get_parent().get_resname())
+                                                    a.template_dict[temp_seg][gn__] = protein_letters_3to1[
+                                                                                       atoms[0].get_parent().get_resname()]
                                                     if a.template_dict[temp_seg][gn__]==a.reference_dict[ref_seg][gn__]:
                                                         a.alignment_dict[aligned_seg][gn__]=a.template_dict[temp_seg][gn__]
                                                 switch_res+=1
@@ -2489,8 +2490,8 @@ class HomologyModeling(object):
                                                     gn__ = gen_num.replace('.','x')
                                                     self.template_source = update_template_source(self.template_source,[gn__],Const.template,ref_seg)
                                                     main_pdb_array[ref_seg][gen_num] = new_residues[gen_num]
-                                                    a.template_dict[temp_seg][gn__] = PDB.Polypeptide.three_to_one(
-                                                                                       atoms[0].get_parent().get_resname())
+                                                    a.template_dict[temp_seg][gn__] = protein_letters_3to1[
+                                                                                       atoms[0].get_parent().get_resname()]
                                                     if a.template_dict[temp_seg][gn__]==a.reference_dict[ref_seg][gn__]:
                                                         a.alignment_dict[aligned_seg][gn__]=a.template_dict[temp_seg][gn__]
                                                 switch_res+=1
@@ -2560,8 +2561,8 @@ class HomologyModeling(object):
             try:
                 for gn, res in segment.items():
                     try:
-                        if (res==PDB.Polypeptide.three_to_one(
-                                            main_pdb_array[seg_label][gn.replace('x','.')][0].get_parent().get_resname()) and
+                        if (res==protein_letters_3to1[
+                                            main_pdb_array[seg_label][gn.replace('x','.')][0].get_parent().get_resname()] and
                                             main_pdb_array[seg_label][gn.replace('x','.')][0].get_parent().get_resname()!='YCM'):
                             pass
                         elif 'x' in gn:
@@ -2597,8 +2598,8 @@ class HomologyModeling(object):
                     else:
                         temp_array[seg_id] = segment
                 main_pdb_array = temp_array
-                a.template_dict[seg][list(incons.keys())[0]] = PDB.Polypeptide.three_to_one(
-                            main_pdb_array[seg][list(incons.keys())[0].replace('x','.')][0].get_parent().get_resname())
+                a.template_dict[seg][list(incons.keys())[0]] = protein_letters_3to1[
+                            main_pdb_array[seg][list(incons.keys())[0].replace('x','.')][0].get_parent().get_resname()]
                 if a.reference_dict[seg][list(incons.keys())[0]]==a.template_dict[seg][list(incons.keys())[0]]:
                     a.alignment_dict[seg][list(incons.keys())[0]] = a.reference_dict[seg][list(incons.keys())[0]]
                 else:
@@ -3142,7 +3143,7 @@ class HomologyModeling(object):
                             pep_seq = ''
                             for r in pep[l.chain]:
                                 try:
-                                    pep_seq+=PDB.Polypeptide.three_to_one(r.get_resname())
+                                    pep_seq+=protein_letters_3to1[r.get_resname()]
                                 except KeyError:
                                     pep_seq+='X'
                         self.peptide_ligands.append([l, pdbdata, pep, pep_resnums, pep_seq])
@@ -3517,8 +3518,8 @@ class HomologyModeling(object):
         for struct in similarity_table:
             try:
                 alt_temp = parse.fetch_residues_from_pdb(struct, [gn])
-                if reference_dict[ref_seg][ref_res]==PDB.Polypeptide.three_to_one(
-                                                        alt_temp[gn_][0].get_parent().get_resname()):
+                if reference_dict[ref_seg][ref_res]==protein_letters_3to1[
+                                                        alt_temp[gn_][0].get_parent().get_resname()]:
                     orig_res = main_pdb_array[ref_seg][str(ref_res).replace('x','.')]
                     alt_res = alt_temp[gn_]
                     if len(alt_res)!=atom_num_dict[reference_dict[ref_seg][ref_res]]:
@@ -4476,8 +4477,8 @@ class HelixEndsModeling(HomologyModeling):
                                         gn_ = gn.replace('.','x')
                                         if gn_ not in ref_keys:
                                             new_residues[gn] = atoms
-                                            a.template_dict[temp_seg][gn_] = PDB.Polypeptide.three_to_one(
-                                                                             atoms[0].get_parent().get_resname())
+                                            a.template_dict[temp_seg][gn_] = protein_letters_3to1[
+                                                                             atoms[0].get_parent().get_resname()]
                                             if a.template_dict[temp_seg][gn_]==a.reference_dict[ref_seg][gn_]:
                                                 a.alignment_dict[ref_seg][gn_] = a.reference_dict[ref_seg][gn_]
                                             else:
@@ -4525,8 +4526,8 @@ class HelixEndsModeling(HomologyModeling):
                                         gn_ = gn.replace('.','x')
                                         if gn_ in modifications['added'][ref_seg][1]:
                                             main_pdb_array[ref_seg][gn] = atoms
-                                            a.template_dict[ref_seg][gn_] = PDB.Polypeptide.three_to_one(
-                                                                            atoms[0].get_parent().get_resname())
+                                            a.template_dict[ref_seg][gn_] = protein_letters_3to1[
+                                                                            atoms[0].get_parent().get_resname()]
                                             if a.template_dict[ref_seg][gn_]==a.reference_dict[ref_seg][gn_]:
                                                 a.alignment_dict[ref_seg][gn_] = a.reference_dict[ref_seg][gn_]
                                             else:
@@ -5081,7 +5082,7 @@ class Loops(object):
                                     loop_gn = self.loop_label+'?'+str(l_res)
                             ref_loop_seg[loop_gn] = r_res
                             try:
-                                temp_loop_seg[loop_gn] = PDB.Polypeptide.three_to_one(loop_template[r_id][0].get_parent().get_resname())
+                                temp_loop_seg[loop_gn] = protein_letters_3to1[loop_template[r_id][0].get_parent().get_resname()]
                             except:
                                 temp_loop_seg[loop_gn] = '-'
                             if ref_loop_seg[loop_gn]==temp_loop_seg[loop_gn]:
@@ -5202,7 +5203,7 @@ class Loops(object):
                             except:
                                 ref_loop_seg[loop_gn] = r_res
                             try:
-                                temp_loop_seg[loop_gn] = PDB.Polypeptide.three_to_one(loop_template[r_id][0].get_parent().get_resname())
+                                temp_loop_seg[loop_gn] = protein_letters_3to1[loop_template[r_id][0].get_parent().get_resname()]
                             except:
                                 temp_loop_seg[loop_gn] = '-'
                             if ref_loop_seg[loop_gn]==temp_loop_seg[loop_gn]:
@@ -5363,8 +5364,8 @@ class Loops(object):
                     except:
                         temp_ref_dict['ECL2'][key.replace('.','x')] = '-'
                     try:
-                        temp_temp_dict['ECL2'][key.replace('.','x')] = PDB.Polypeptide.three_to_one(
-                                                        self.main_pdb_array['ECL2'][key][0].get_parent().get_resname())
+                        temp_temp_dict['ECL2'][key.replace('.','x')] = protein_letters_3to1[
+                                                        self.main_pdb_array['ECL2'][key][0].get_parent().get_resname()]
                     except:
                         temp_temp_dict['ECL2'][key.replace('.','x')] = self.main_pdb_array['ECL2'][key]
                     if temp_ref_dict['ECL2'][key.replace('.','x')]==temp_temp_dict['ECL2'][key.replace('.','x')]:

@@ -7,6 +7,7 @@ from structure.functions import create_structure_rotamer, build_rotamer_data, ge
 from structure.models import Rotamer, PdbData
 from common.tools import test_model_updates
 from Bio.PDB import PDBParser, PPBuilder, PDBIO, Polypeptide
+from Bio.Data.PDBData import protein_letters_3to1
 from io import StringIO
 from Bio import pairwise2
 import logging
@@ -64,7 +65,7 @@ class Command(BaseBuild):
                         if not 1<=res.get_id()[1]<=368:
                             continue
                     nums.append(res.get_id()[1])
-                    structure_seq+=Polypeptide.three_to_one(res.get_resname())
+                    structure_seq+=protein_letters_3to1[res.get_resname()]
 
             if options['debug']:
                 print(sc)

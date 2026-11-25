@@ -2,6 +2,7 @@ from structure.models import Structure
 
 from collections import OrderedDict
 import Bio.PDB as PDB
+from Bio.Data.PDBData import protein_letters_3to1
 
 
 class HomologyModelsTests(object):
@@ -43,7 +44,7 @@ class HomologyModelsTests(object):
         print('PDB-PIR mismatches:')
         for chain in pdb_struct:
             for res in chain:
-                if PDB.Polypeptide.three_to_one(res.get_resname())!=pir_temp_seq[res.get_id()[1]-1]:
+                if protein_letters_3to1[res.get_resname()]!=pir_temp_seq[res.get_id()[1]-1]:
                     print(res, pir_temp_seq[res.get_id()[1]-1])
             for i, r in enumerate(pir_temp_seq):
                 if r=='-':

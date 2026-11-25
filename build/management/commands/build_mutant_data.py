@@ -21,7 +21,7 @@ import random
 import re
 from datetime import datetime
 import math
-import xlrd
+from common import xlrd_compat as xlrd
 import operator
 import traceback
 import time

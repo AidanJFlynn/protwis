@@ -5,6 +5,7 @@ from copy import deepcopy
 import pprint
 
 import Bio.PDB.Polypeptide as polypeptide
+from Bio.Data.PDBData import protein_letters_3to1
 from Bio.PDB import PDBParser
 import structure.structural_superposition as sp
 from structure.models import Structure, Rotamer
@@ -39,7 +40,7 @@ class Command(BaseCommand):
                 if rmsd>superpose2.rmsd:
                     rmsd = round(superpose2.rmsd,3)
 
-            AA = polypeptide.three_to_one(af_atoms[0].get_parent().get_resname())
+            AA = protein_letters_3to1[af_atoms[0].get_parent().get_resname()]
             this_temp = ['AF', round(rmsd,3)]
             for pdb in Structure.objects.filter(structure_type__origin='experiment'):#gn_dict[g]:
                 struct = pdb#Structure.objects.get(pdb_code__index=pdb)

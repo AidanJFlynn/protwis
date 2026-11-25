@@ -31,7 +31,8 @@ import html
 import re
 from collections import OrderedDict
 from io import BytesIO
-import xlsxwriter, xlrd
+import xlsxwriter
+from common import xlrd_compat as xlrd
 import time
 import json
 import urllib

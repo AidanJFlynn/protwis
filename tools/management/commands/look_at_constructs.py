@@ -8,7 +8,7 @@ from structure.models import Structure
 from common import definitions
 from common.selection import SelectionItem
 from common.alignment_gpcr import Alignment
-import xlsxwriter, xlrd
+import xlsxwriter
 from construct.models import *
 from construct.functions import *
 from construct.tool import *

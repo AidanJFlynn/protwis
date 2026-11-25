@@ -18,7 +18,8 @@ from residue.models import ResidueGenericNumberEquivalent
 import os
 from collections import OrderedDict
 from io import BytesIO
-import xlsxwriter, xlrd
+import xlsxwriter
+from common import xlrd_compat as xlrd
 
 
 def _missing_site_features(simple_selection):

@@ -6,7 +6,6 @@ from xml.etree.ElementTree import fromstring
 
 import pandas as pd
 import requests
-import xlrd
 import django.apps
 from django.conf import settings
 from django.core.management.base import BaseCommand

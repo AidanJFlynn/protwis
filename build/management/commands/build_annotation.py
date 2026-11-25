@@ -25,7 +25,6 @@ import time
 from collections import OrderedDict
 from itertools import islice
 from urllib.request import urlopen, quote
-import xlrd
 import operator
 import traceback
 import numbers
@@ -613,8 +612,7 @@ class Command(BaseBuild):
 
             try:
                 ali_filename = "/tmp/"+ortholog.entry_name +"_out.fa"
-                acmd = ClustalOmegaCommandline(infile=seq_filename, outfile=ali_filename, force=True)
-                stdout, stderr = acmd()
+                run_clustalo(seq_filename, ali_filename)
                 pw2 = AlignIO.read(ali_filename, "fasta")
             except:
                 return False

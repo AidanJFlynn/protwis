@@ -14,7 +14,7 @@ from common.definitions import AMINO_ACIDS, AMINO_ACID_GROUPS, STRUCTURAL_RULES,
 import json
 from collections import OrderedDict
 import re
-import xlrd
+from common import xlrd_compat as xlrd
 import yaml
 import os
 import time

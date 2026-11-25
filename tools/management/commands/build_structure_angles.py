@@ -26,7 +26,6 @@ import scipy.stats as stats
 from scipy.spatial.transform import Rotation as R
 from collections import OrderedDict
 from sklearn.decomposition import PCA
-from numpy.core.umath_tests import inner1d
 
 
 from multiprocessing import Queue, Process, Value, Lock
@@ -346,12 +345,12 @@ class Command(BaseCommand):
             ba = -b
             bc = c + ba
             ba[:,0] = 0
-            #return np.degrees(np.arccos(inner1d(ba, bc) / (np.linalg.norm(ba,axis=1) * np.linalg.norm(bc,axis=1))))
+            #return np.degrees(np.arccos(np.einsum("ij,ij->i", ba, bc) / (np.linalg.norm(ba,axis=1) * np.linalg.norm(bc,axis=1))))
 
             # Alternative and clockwise angle implementation - angles left/right different value
             ba = ba[:,1:3]
             bc = bc[:,1:3]
-            return np.degrees(np.arctan2(ba[:,0]*bc[:,1]-ba[:,1]*bc[:,0], inner1d(ba, bc)))
+            return np.degrees(np.arctan2(ba[:,0]*bc[:,1]-ba[:,1]*bc[:,0], np.einsum("ij,ij->i", ba, bc)))
 
         def ca_cb_calc(ca,cb,pca):
             """

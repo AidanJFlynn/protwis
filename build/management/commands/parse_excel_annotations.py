@@ -12,7 +12,7 @@ import logging
 from optparse import make_option
 import os
 import shutil
-import xlrd
+from common import xlrd_compat as xlrd
 import yaml
 from collections import OrderedDict
 import pprint

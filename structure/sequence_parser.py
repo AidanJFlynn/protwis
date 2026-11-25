@@ -6,6 +6,7 @@ from structure.models import Structure
 from structure.functions import BlastSearch, BlastSearchOnline
 
 from Bio import SeqIO, pairwise2
+from Bio.Data.PDBData import protein_letters_3to1
 from Bio.PDB import PDBParser, PPBuilder
 import Bio.PDB.Polypeptide as polypeptide
 
@@ -120,7 +121,7 @@ class AuxProtein(object):
         """
         Returns a sequence string of a given list of Bio.PDB.Residue objects.
         """
-        return "".join([polypeptide.three_to_one(x.resname.replace('HID', 'HIS')) for x in residues if x.resname in self.residue_list])
+        return "".join([protein_letters_3to1[x.resname.replace('HID', 'HIS')] for x in residues if x.resname in self.residue_list])
 
     def map_aux(self):
         print('aux1',datetime.now() - startTime)
@@ -226,7 +227,7 @@ class SequenceParser(object):
         # a dictionary of per chain lists of peptides found in the pdb
         self.pdb_seq = {}
         for chain in self.pdb_struct:
-            self.pdb_seq[chain.id] = ''.join([polypeptide.three_to_one(x.resname.replace('HID', 'HIS')) for x in chain if x.resname in self.residue_list])
+            self.pdb_seq[chain.id] = ''.join([protein_letters_3to1[x.resname.replace('HID', 'HIS')] for x in chain if x.resname in self.residue_list])
 
     def parse_pdb(self, pdb_struct):
         """
@@ -297,13 +298,13 @@ class SequenceParser(object):
         """
         Returns a sequence string of a given chain.
         """
-        return "".join([polypeptide.three_to_one(x.resname.replace('HID', 'HIS')) for x in self.residues[chain] if x.resname in self.residue_list])
+        return "".join([protein_letters_3to1[x.resname.replace('HID', 'HIS')] for x in self.residues[chain] if x.resname in self.residue_list])
 
     def get_peptide_sequence(self, residues):
         """
         Returns a sequence string of a given list of Bio.PDB.Residue objects.
         """
-        return "".join([polypeptide.three_to_one(x.resname.replace('HID', 'HIS')) for x in residues if x.resname in self.residue_list])
+        return "".join([protein_letters_3to1[x.resname.replace('HID', 'HIS')] for x in residues if x.resname in self.residue_list])
 
     def find_nonredundant_chains(self):
         """
@@ -368,7 +369,7 @@ class SequenceParser(object):
                             resnum = r.get_id()[1]
                             if resnum not in self.mapping[chain_id] and resnum>start:
                                 try:
-                                    one_letter_res = polypeptide.three_to_one(r.resname.replace('HID', 'HIS'))
+                                    one_letter_res = protein_letters_3to1[r.resname.replace('HID', 'HIS')]
                                 except KeyError:
                                     continue
                                 self.mapping[chain_id][resnum] = ParsedResidue(one_letter_res, resnum, None, None)
@@ -643,7 +644,7 @@ class SequenceParserPW(object):
 
 
     def get_chain_sequence(self, chain):
-        return "".join([polypeptide.three_to_one(x.resname.replace('HID', 'HIS')) for x in chain if x.resname in self.residue_list])
+        return "".join([protein_letters_3to1[x.resname.replace('HID', 'HIS')] for x in chain if x.resname in self.residue_list])
 
 
     def align_to_wt(self, sequence):

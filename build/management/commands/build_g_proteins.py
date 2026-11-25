@@ -15,7 +15,6 @@ import numpy as np
 import pandas as pd
 from pprint import pprint
 import requests
-import xlrd
 import xmltodict, json
 import yaml
 import django.apps
@@ -240,7 +239,7 @@ class Command(BaseCommand):
 
         for i, row in residue_data.iterrows():
             try:
-                residue_data['CGN'][i] = lookup_dict[str(int(residue_data['sortColumn'][i]))][6].replace('(',
+                residue_data.loc[i, 'CGN'] = lookup_dict[str(int(residue_data['sortColumn'][i]))][6].replace('(',
                                                                                                          '').replace(
                     ')', '')
             except:

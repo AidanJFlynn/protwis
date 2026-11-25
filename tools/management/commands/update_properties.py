@@ -11,7 +11,6 @@ import logging
 
 import numpy as np
 from sklearn.decomposition import PCA
-from numpy.core.umath_tests import inner1d
 import io
 import freesasa
 import scipy.stats as stats
@@ -66,7 +65,7 @@ def calc_angle(b,c):
     ba = -b
     bc = c + ba
     ba[:,0] = 0
-    return np.degrees(np.arccos(inner1d(ba, bc) / (np.linalg.norm(ba,axis=1) * np.linalg.norm(bc,axis=1))))
+    return np.degrees(np.arccos(np.einsum("ij,ij->i", ba, bc) / (np.linalg.norm(ba,axis=1) * np.linalg.norm(bc,axis=1))))
 
 def ca_cb_calc(ca,cb,pca):
     """

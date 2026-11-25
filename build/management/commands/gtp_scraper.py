@@ -243,7 +243,7 @@ for ID in final:
         if drug == 'Drugs':
             for value in final[ID][drug]:
                 row['Name'] = value
-                GtoP_endogenous = GtoP_endogenous.append(row, ignore_index=True)
+                GtoP_endogenous = pd.concat([GtoP_endogenous, pd.DataFrame([row])], ignore_index=True)
             continue
         if drug == 'Comment':
             continue
@@ -263,9 +263,9 @@ for ID in final:
                     if value in GtoP_endogenous.keys():
                         temp[value] = final[ID][drug][species][value]
                 temp1 = {**row, **temp}
-                GtoP_endogenous = GtoP_endogenous.append(temp1, ignore_index=True)
+                GtoP_endogenous = pd.concat([GtoP_endogenous, pd.DataFrame([temp1])], ignore_index=True)
         if spec_count == 0:
-            GtoP_endogenous = GtoP_endogenous.append(row, ignore_index=True)
+            GtoP_endogenous = pd.concat([GtoP_endogenous, pd.DataFrame([row])], ignore_index=True)
         # if (len(row) > 3) and (len(row) < 13):
 
 

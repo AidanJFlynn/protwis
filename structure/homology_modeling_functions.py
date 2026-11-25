@@ -13,6 +13,7 @@ import structure.structural_superposition as sp
 import structure.assign_generic_numbers_gpcr as as_gn
 
 import Bio.PDB as PDB
+from Bio.Data.PDBData import protein_letters_3to1
 from collections import OrderedDict
 import os
 import logging
@@ -668,15 +669,15 @@ class Remodeling():
                 if not first_resi:
                     first_resi = resi.get_id()[1]
                     self.first_resis.append(resi.get_id()[1])
-                ref_seq+=PDB.Polypeptide.three_to_one(resi.get_resname())
+                ref_seq+=protein_letters_3to1[resi.get_resname()]
                 if chain.get_id() in self.gaps:
                     for g in self.gaps[chain.get_id()]:
                         if g[0]<=resi.get_id()[1]<=g[1]:
                             temp_seq+='-'
                         else:
-                            temp_seq+=PDB.Polypeptide.three_to_one(resi.get_resname())
+                            temp_seq+=protein_letters_3to1[resi.get_resname()]
                 else:
-                    temp_seq+=PDB.Polypeptide.three_to_one(resi.get_resname())
+                    temp_seq+=protein_letters_3to1[resi.get_resname()]
                 resnum = resi.get_id()[1]
             last_chain_id = chain.get_id()
             ref_seq+='/'

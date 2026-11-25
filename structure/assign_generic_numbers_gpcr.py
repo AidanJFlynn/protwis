@@ -1,6 +1,7 @@
 from django.conf import settings
 
 from Bio.Seq import Seq
+from Bio.Data.PDBData import protein_letters_3to1
 from Bio.SeqRecord import SeqRecord
 from Bio.PDB import *
 from Bio.PDB.PDBIO import Select
@@ -93,11 +94,11 @@ class GenericNumbering(object):
             for res in chain:
             #in bio.pdb the residue's id is a tuple of (hetatm flag, residue number, insertion code)
                 if res.resname == "HID":
-                    resname = polypeptide.three_to_one('HIS')
+                    resname = protein_letters_3to1['HIS']
                 else:
                     if res.resname not in self.residue_list:
                         continue
-                    self.residues[chain.id][res.id[1]] = MappedResidue(res.id[1], polypeptide.three_to_one(res.resname))
+                    self.residues[chain.id][res.id[1]] = MappedResidue(res.id[1], protein_letters_3to1[res.resname])
 
             self.pdb_seq[chain.id] = ''.join([self.residues[chain.id][x].name for x in sorted(self.residues[chain.id].keys())])
 

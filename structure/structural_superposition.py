@@ -4,6 +4,7 @@ from collections import OrderedDict
 import numpy as np
 
 import Bio.PDB.Polypeptide as polypeptide
+from Bio.Data.PDBData import protein_letters_3to1
 from Bio.PDB import *
 from Bio.Seq import Seq
 from copy import deepcopy
@@ -189,10 +190,10 @@ class FragmentSuperpose(object):
             for res in chain:
             #in bio.pdb the residue's id is a tuple of (hetatm flag, residue number, insertion code)
                 if res.resname == "HID":
-                    self.pdb_seq[chain.id] += polypeptide.three_to_one('HIS')
+                    self.pdb_seq[chain.id] += protein_letters_3to1['HIS']
                 else:
                     try:
-                        self.pdb_seq[chain.id] += polypeptide.three_to_one(res.resname)
+                        self.pdb_seq[chain.id] += protein_letters_3to1[res.resname]
                     except Exception as msg:
                         continue
         return pdb_struct

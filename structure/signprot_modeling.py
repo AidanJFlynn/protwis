@@ -9,6 +9,7 @@ import structure.structural_superposition as sp
 from structure.homology_modeling_functions import GPCRDBParsingPDB
 
 import Bio.PDB as PDB
+from Bio.Data.PDBData import protein_letters_3to1
 from collections import OrderedDict
 import pprint
 from io import StringIO
@@ -284,7 +285,7 @@ class SignprotModeling():
                         if key in signprot_pdb_array[seg] and signprot_pdb_array[seg][key]!='x':
                             continue
                         signprot_pdb_array[seg][key] = new_residues[key]
-                        new_aa = PDB.Polypeptide.three_to_one(new_residues[key][0].get_parent().get_resname())
+                        new_aa = protein_letters_3to1[new_residues[key][0].get_parent().get_resname()]
                         sign_a.template_dict[seg][key] = new_aa
                         if sign_a.reference_dict[seg][key]==new_aa:
                             sign_a.alignment_dict[seg][key] = new_aa
@@ -469,8 +470,8 @@ class SignprotModeling():
         # Updating template dict with pdb_array
         for seg, resis in signprot_pdb_array.items():
             for cgn, atoms in resis.items():
-                if len(atoms)>1 and PDB.Polypeptide.three_to_one(atoms[0].get_parent().get_resname())!=sign_a.template_dict[seg][cgn]:
-                    sign_a.template_dict[seg][cgn] = PDB.Polypeptide.three_to_one(atoms[0].get_parent().get_resname())
+                if len(atoms)>1 and protein_letters_3to1[atoms[0].get_parent().get_resname()]!=sign_a.template_dict[seg][cgn]:
+                    sign_a.template_dict[seg][cgn] = protein_letters_3to1[atoms[0].get_parent().get_resname()]
                     if sign_a.template_dict[seg][cgn]!=sign_a.reference_dict[seg][cgn]:
                         sign_a.alignment_dict[seg][cgn] = '.'
                 elif atoms=='x':
@@ -528,7 +529,7 @@ class SignprotModeling():
                     if new_array[seg][key]=='-':
                         sign_a.template_dict[seg][key] = '-'
                     else:
-                        pdb_res = PDB.Polypeptide.three_to_one(new_array[seg][key][0].get_parent().get_resname())
+                        pdb_res = protein_letters_3to1[new_array[seg][key][0].get_parent().get_resname()]
                         if pdb_res!=sign_a.template_dict[seg][key]:
                             sign_a.template_dict[seg][key] = pdb_res
             self.a.template_dict[seg] = sign_a.template_dict[seg]
@@ -617,7 +618,7 @@ class SignprotModeling():
             if seg in gprotein_segment_slugs:
                 for key, atoms in val.items():
                     if atoms not in ['-','x']:
-                        if atom_num_dict[PDB.Polypeptide.three_to_one(atoms[0].get_parent().get_resname())]>len(atoms):
+                        if atom_num_dict[protein_letters_3to1[atoms[0].get_parent().get_resname()]]>len(atoms):
                             self.trimmed_residues.append(key)
 
         # Add Beta and Gamma chains
@@ -639,9 +640,9 @@ class SignprotModeling():
             # remove waters
             if b_res.get_resname()=='HOH':
                 continue
-            self.a.reference_dict['Beta'][key] = PDB.Polypeptide.three_to_one(b_res.get_resname())
-            self.a.template_dict['Beta'][key] = PDB.Polypeptide.three_to_one(b_res.get_resname())
-            self.a.alignment_dict['Beta'][key] = PDB.Polypeptide.three_to_one(b_res.get_resname())
+            self.a.reference_dict['Beta'][key] = protein_letters_3to1[b_res.get_resname()]
+            self.a.template_dict['Beta'][key] = protein_letters_3to1[b_res.get_resname()]
+            self.a.alignment_dict['Beta'][key] = protein_letters_3to1[b_res.get_resname()]
             atoms = [atom for atom in b_res]
             self.main_pdb_array['Beta'][key] = atoms
             self.template_source['Beta'][key] = [self.main_structure, self.main_structure]
@@ -650,9 +651,9 @@ class SignprotModeling():
             # remove waters
             if g_res.get_resname()=='HOH':
                 continue
-            self.a.reference_dict['Gamma'][key] = PDB.Polypeptide.three_to_one(g_res.get_resname())
-            self.a.template_dict['Gamma'][key] = PDB.Polypeptide.three_to_one(g_res.get_resname())
-            self.a.alignment_dict['Gamma'][key] = PDB.Polypeptide.three_to_one(g_res.get_resname())
+            self.a.reference_dict['Gamma'][key] = protein_letters_3to1[g_res.get_resname()]
+            self.a.template_dict['Gamma'][key] = protein_letters_3to1[g_res.get_resname()]
+            self.a.alignment_dict['Gamma'][key] = protein_letters_3to1[g_res.get_resname()]
             atoms = [atom for atom in g_res]
             self.main_pdb_array['Gamma'][key] = atoms
             self.template_source['Gamma'][key] = [self.main_structure, self.main_structure]
@@ -709,7 +710,7 @@ class SignprotModeling():
                 else:
                     new_seg_ref[gn] = '-'
                     if atoms!='x':
-                        new_seg_temp[gn] = PDB.Polypeptide.three_to_one(atoms[0].get_parent().get_resname())
+                        new_seg_temp[gn] = protein_letters_3to1[atoms[0].get_parent().get_resname()]
                     new_seg_align[gn] = '-'
             new_ref[seg] = new_seg_ref
             new_temp[seg] = new_seg_temp

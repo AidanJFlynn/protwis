@@ -37,7 +37,6 @@ import json
 import numpy as np
 import os
 import xlsxwriter
-import xlrd
 
 
 def _filter_context_selection_domain(context, domain):

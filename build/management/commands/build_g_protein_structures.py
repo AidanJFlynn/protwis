@@ -17,6 +17,7 @@ from protein.management.commands.blastp import CustomBlast
 import re
 from concurrent.futures import ThreadPoolExecutor, as_completed
 from Bio import pairwise2, SeqIO
+from Bio.Data.PDBData import protein_letters_3to1
 from collections import OrderedDict
 import logging
 import shlex, subprocess
@@ -190,7 +191,7 @@ class Command(BaseBuild):
                             if res.get_id()[1]<1005:
                                 continue
                         nums.append(res.get_id()[1])
-                        structure_seq+=Polypeptide.three_to_one(res.get_resname())
+                        structure_seq+=protein_letters_3to1[res.get_resname()]
 
                 if self.options['debug']:
                     print('Annotated protein:')
@@ -310,7 +311,7 @@ class Command(BaseBuild):
                     pdb_HN_seq = ''
                     for num, val in pdb_num_dict.items():
                         if num<=target_HN.reverse()[0].sequence_number:
-                            pdb_HN_seq+=Polypeptide.three_to_one(val[0].get_resname())
+                            pdb_HN_seq+=protein_letters_3to1[val[0].get_resname()]
                     if self.options['debug']:
                         print('Checking if HN is gnai1_human')
                         print(pdb_HN_seq)

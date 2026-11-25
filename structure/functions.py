@@ -1,4 +1,5 @@
 from Bio.Blast import NCBIXML, NCBIWWW
+from Bio.Data.PDBData import protein_letters_3to1
 from Bio.PDB import PDBParser, PDBIO
 from Bio.PDB.PDBIO import Select
 import Bio.PDB.Polypeptide as polypeptide
@@ -426,12 +427,12 @@ class BackboneSelector():
                 try:
                     gn = self.get_generic_number(res)
                     if gn == fragment.rotamer.residue.display_generic_number.label:
-                        if polypeptide.three_to_one(res.resname) == fragment.rotamer.residue.amino_acid:
+                        if protein_letters_3to1[res.resname] == fragment.rotamer.residue.amino_acid:
                             return [res['CA'], res['N'], res['O']]
                         else:
                             if use_similar:
                                 for rule in self.similarity_rules:
-                                    if polypeptide.three_to_one(res.resname) in rule[self.similarity_dict["target_residue"]] and \
+                                    if protein_letters_3to1[res.resname] in rule[self.similarity_dict["target_residue"]] and \
                                         fragment.rotamer.residue.amino_acid in rule[self.similarity_dict["target_residue"]] and \
                                         fragment.interaction_type.slug in rule[self.similarity_dict["interaction_type"]]:
                                         return [res['CA'], res['N'], res['O']]
@@ -1863,7 +1864,7 @@ class X50Finder():
             structure_seq[chain_id] = ''
             for res in chain:
                 if "CA" in res and res.id[0]==" ":
-                    structure_seq[chain_id]+=polypeptide.three_to_one(res.get_resname())
+                    structure_seq[chain_id]+=protein_letters_3to1[res.get_resname()]
         return structure_seq
 
     def run(self):
@@ -2007,7 +2008,7 @@ def build_rotamer_data(PDB_residue):
     io = PDBIO()
     io.set_structure(PDB_residue)
     io.save(out_stream)
-    missing_atoms = atom_num_dict[polypeptide.three_to_one(PDB_residue.get_resname())] > len(PDB_residue.get_unpacked_list())
+    missing_atoms = atom_num_dict[protein_letters_3to1[PDB_residue.get_resname()]] > len(PDB_residue.get_unpacked_list())
     return out_stream.getvalue(), missing_atoms
 
 def create_structure_rotamer(PDB_residue, residue_object, structure):

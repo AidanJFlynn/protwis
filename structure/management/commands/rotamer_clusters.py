@@ -4,6 +4,7 @@ from django.core.management.base import BaseCommand
 import pprint
 
 import Bio.PDB.Polypeptide as polypeptide
+from Bio.Data.PDBData import protein_letters_3to1
 from Bio.PDB import PDBParser
 import structure.structural_superposition as sp
 from structure.models import Rotamer
@@ -41,7 +42,7 @@ class Command(BaseCommand):
 
                 for res in rot.get_residues():
                     try:
-                        if polypeptide.three_to_one(res.get_resname())!=aa:
+                        if protein_letters_3to1[res.get_resname()]!=aa:
                             continue
                     except KeyError:
                         continue

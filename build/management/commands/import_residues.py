@@ -6,6 +6,7 @@ from protein.models import Protein, ProteinConformation, ProteinSegment
 from residue.models import Residue, ResidueGenericNumber, ResidueNumberingScheme
 
 import Bio.PDB.Polypeptide as polypeptide
+from Bio.Data.PDBData import protein_letters_3to1
 from optparse import make_option
 import logging, os, shlex
 
@@ -126,7 +127,7 @@ class Command(BaseCommand):
                 r = Residue()
                 r.protein_conformation = pconf
                 r.sequence_number = int(res_num)
-                r.amino_acid = polypeptide.three_to_one(res_name.upper())
+                r.amino_acid = protein_letters_3to1[res_name.upper()]
                 
                 generic_numbers = []
                 

@@ -8,7 +8,8 @@ from residue.models import ResidueGenericNumber, ResidueGenericNumberEquivalent
 from common import definitions
 from common.selection import SelectionItem
 from common.alignment_gpcr import Alignment
-import xlsxwriter, xlrd
+import xlsxwriter
+from common import xlrd_compat as xlrd
 
 
 import logging, json, os
