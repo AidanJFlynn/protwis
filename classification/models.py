@@ -1,4 +1,4 @@
-from django.contrib.postgres.fields import JSONField
+from django.db.models import JSONField
 from django.db import models, connection
 
 
@@ -60,7 +60,7 @@ class ReceptorSimilarity(models.Model):
                 name='crs_uniq_pair',
             ),
             models.CheckConstraint(
-                check=~models.Q(protein_ref=models.F('protein_target')),
+                condition=~models.Q(protein_ref=models.F('protein_target')),
                 name='crs_ref_ne_target',
             ),
         ]
@@ -144,7 +144,7 @@ class StructureSimilarity(_StructureSimilarityBase):
                 name='css_uniq_state_pair',
             ),
             models.CheckConstraint(
-                check=~models.Q(structure_ref=models.F('structure_target')),
+                condition=~models.Q(structure_ref=models.F('structure_target')),
                 name='css_ref_ne_target',
             ),
         ]

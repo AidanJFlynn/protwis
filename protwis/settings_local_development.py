@@ -22,7 +22,7 @@ GOOGLE_ANALYTICS_API = False
 # Database
 DATABASES = {
     'default': {
-        'ENGINE': 'django.db.backends.postgresql_psycopg2',
+        'ENGINE': 'django.db.backends.postgresql',
         'NAME': 'protwis',
         'USER': 'protwis',
         'PASSWORD': 'protwis',

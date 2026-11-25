@@ -1,4 +1,4 @@
-from django.conf.urls import url
+from django.urls import path, re_path
 from django.urls import path
 from django.views.decorators.cache import cache_page
 from django.views.generic import TemplateView
@@ -6,21 +6,21 @@ from ligand import views
 
 urlpatterns = [
     #  url(r'^browser$', cache_page(3600*24*7)(views.LigandBrowser.as_view()), name='ligand_browser'),
-    url(r'^$', views.LigandTargetSelection.as_view(), name='ligand_selection'),
+    path('', views.LigandTargetSelection.as_view(), name='ligand_selection'),
     path('ligand_by_name', views.LigandNameSelection.as_view(), name='ligand_selection'),
     path('read_input_ligand_bulk_search', views.ReadInputLigandBulkSearch.as_view(), name='read_input_ligand_bulk_search'),
     path('ligand_bulk_search', views.LigandBulkSearch.as_view(), name='ligand_bulk_search'),
     path('read_input_ligand_structural_search', views.ReadInputLigandStructuralSearch.as_view(), name='read_input_ligand_structural_search'),
     path('ligand_structural_search', views.LigandStructuralSearch.as_view(), name='ligand_structural_search'),
 
-    url(r'^target/all/(?P<slug>[-\w]+)/$', views.CachedTargetDetailsExtended, name='ligand_target_detail'),
+    re_path(r'^target/all/(?P<slug>[-\w]+)/$', views.CachedTargetDetailsExtended, name='ligand_target_detail'),
     path('target_detail', views.CachedTargetDetailsExtended, name='ligand_target_detail'),
     path('targets_compact', views.CachedTargetDetailsCompact, name='ligand_target_detail_compact'),
-    url(r'^targets_purchasable', views.TargetPurchasabilityDetails, name='ligand_target_detail_purchasable'),
-    url(r'^coverage', views.LigandStatistics.as_view(), name='ligand_statistics'),
+    re_path(r'^targets_purchasable', views.TargetPurchasabilityDetails, name='ligand_target_detail_purchasable'),
+    re_path(r'^coverage', views.LigandStatistics.as_view(), name='ligand_statistics'),
 
     # BIASED LIGANDS
-    url(r'^bias_coverage', cache_page(3600*24*7)(views.LigandStatistics.as_view(page='ligand_bias')), name='ligand_statistics'),
+    re_path(r'^bias_coverage', cache_page(3600*24*7)(views.LigandStatistics.as_view(page='ligand_bias')), name='ligand_statistics'),
     path('bias_rank_order_selection', views.BiasedSignallingSelection.as_view(way='BiasRankOrder'), name='bias_ro_selection'),
     path('bias_rankorder', views.BiasedSignallingOnTheFlyCalculation.as_view(label='bias'), name='biased_rank_order'),
     path('bias_rankorder_path_bias', views.BiasedSignallingOnTheFlyCalculation.as_view(label='bias', balanced=True), name='biased_rank_order'),
@@ -46,7 +46,7 @@ urlpatterns = [
     path('tau_path_profiles_path_bias', views.BiasedSignallingOnTheFlyCalculation.as_view(page='pathwayprofiles', label='tau', balanced=True), name='biased_rank_order'),
     path('userbiased_tau_path_profile', views.BiasedSignallingOnTheFlyCalculation.as_view(page='pathwayprofiles', label='tau', user=True), name='biased_rank_order'),
     # SUBTYPE BIASED
-    url(r'^subtype_coverage', cache_page(3600*24*7)(views.LigandStatistics.as_view(page='subtype')), name='ligand_statistics'),
+    re_path(r'^subtype_coverage', cache_page(3600*24*7)(views.LigandStatistics.as_view(page='subtype')), name='ligand_statistics'),
     # url(r'^subtype_coverage', views.LigandStatistics.as_view(page='subtype'), name='ligand_statistics'),
     path('subtype_bias_rankorder_selection', views.BiasedSignallingSelection.as_view(subtype=True, way='BiasRankOrderSubtype'), name='bias_subtype_ro_selection'),
     path('subtype_bias_rankorder', views.BiasedSignallingOnTheFlyCalculation.as_view(label='bias',subtype=True), name='biased_rank_order'),
@@ -121,11 +121,11 @@ urlpatterns = [
     path('pathwaypreferencebrowser',views.BiasedSignallingSelection.as_view(pathway=True, way='BrowserPathway'), name='bias_browser-list1'),
     path('biasedsubtypesbrowser',views.BiasedSignallingSelection.as_view(subtype=True, way='BrowserSubtype'), name='bias_browser-list1'),
 
-    url(r'^vendors$', views.test_link, name='test'),
-    url(r'^browservendors$', views.BiasVendorBrowser.as_view(), name='browservendor'),
+    path('vendors', views.test_link, name='test'),
+    path('browservendors', views.BiasVendorBrowser.as_view(), name='browservendor'),
     path('biasedpathways', cache_page(3600*24*7)(views.BiasPathways.as_view()), name='pathways'),
     # path('biasedpathways', views.BiasPathways.as_view(), name='pathways'),
-    url(r'^pathwaydata/(?P<pk>[-\w]+)/detail$', views.PathwayExperimentEntryView.as_view()),
+    re_path(r'^pathwaydata/(?P<pk>[-\w]+)/detail$', views.PathwayExperimentEntryView.as_view()),
     #GUIDELINES SECTION cache_page(3600*24*7)(views.LigandStatistics.as_view()), name='ligand_statistics'),
     path('bias_guidelines', views.BiasGuidelines.as_view(), name='bias_guidelines'),
     path('reference_selection', views.ReferenceSelection.as_view(), name='reference_selection'),

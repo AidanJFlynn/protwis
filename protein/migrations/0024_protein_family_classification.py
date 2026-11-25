@@ -124,7 +124,7 @@ class Migration(migrations.Migration):
         migrations.AddConstraint(
             model_name="proteinfamilyclassification",
             constraint=models.CheckConstraint(
-                check=models.Q(chemotype_order__isnull=True)
+                condition=models.Q(chemotype_order__isnull=True)
                 | models.Q(chemotype_order__in=[1, 2]),
                 name="pfc_chemotype_order_valid",
             ),
@@ -132,7 +132,7 @@ class Migration(migrations.Migration):
         migrations.AddConstraint(
             model_name="proteinfamilyclassification",
             constraint=models.CheckConstraint(
-                check=models.Q(modality_order__isnull=True)
+                condition=models.Q(modality_order__isnull=True)
                 | models.Q(modality_order__in=[1, 2]),
                 name="pfc_modality_order_valid",
             ),

@@ -1,6 +1,6 @@
 import re
 
-from django.contrib.postgres.fields import JSONField
+from django.db.models import JSONField
 from django.core.exceptions import FieldDoesNotExist, ImproperlyConfigured
 from django.db import models
 from rest_framework import serializers

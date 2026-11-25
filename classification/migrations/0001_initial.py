@@ -117,7 +117,7 @@ class Migration(migrations.Migration):
         ),
         migrations.AddConstraint(
             model_name='structuresimilarity',
-            constraint=models.CheckConstraint(check=models.Q(_negated=True, structure_ref=django.db.models.expressions.F('structure_target')), name='css_ref_ne_target'),
+            constraint=models.CheckConstraint(condition=models.Q(_negated=True, structure_ref=django.db.models.expressions.F('structure_target')), name='css_ref_ne_target'),
         ),
         migrations.AddIndex(
             model_name='receptorsimilarity',
@@ -141,7 +141,7 @@ class Migration(migrations.Migration):
         ),
         migrations.AddConstraint(
             model_name='receptorsimilarity',
-            constraint=models.CheckConstraint(check=models.Q(_negated=True, protein_ref=django.db.models.expressions.F('protein_target')), name='crs_ref_ne_target'),
+            constraint=models.CheckConstraint(condition=models.Q(_negated=True, protein_ref=django.db.models.expressions.F('protein_target')), name='crs_ref_ne_target'),
         ),
         migrations.AddIndex(
             model_name='clustercoord',

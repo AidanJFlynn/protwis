@@ -29,7 +29,7 @@ def _structure_array(structures, field, base_field=None):
     base_field = base_field or TextField()
     return Subquery(
         structures.order_by().values('ligand').annotate(
-            aggregated=ArrayAgg(field, ordering='structure__pdb_code__index')
+            aggregated=ArrayAgg(field, order_by='structure__pdb_code__index')
         ).values('aggregated'),
         output_field=ArrayField(base_field),
     )

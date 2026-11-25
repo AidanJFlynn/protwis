@@ -1,5 +1,5 @@
 from django.db import models
-from django.contrib.postgres.fields import JSONField
+from django.db.models import JSONField
 class GpcrStructureStatisticsTable(models.Model):
     """Model representing the structure statistics table for GPCRs generated from the data retrieved by GpcrStructureCoverageStatisticsQuery"""
 

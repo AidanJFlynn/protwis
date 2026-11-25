@@ -1,8 +1,8 @@
-from django.conf.urls import url
+from django.urls import re_path
 
 from family import views
 
 
 urlpatterns = [
-    url(r'^(?P<slug>[-\w]+)/$', views.detail, name='detail'),
+    re_path(r'^(?P<slug>[-\w]+)/$', views.detail, name='detail'),
 ]

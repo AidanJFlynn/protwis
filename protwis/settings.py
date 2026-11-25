@@ -89,7 +89,6 @@ FILE_UPLOAD_MAX_MEMORY_SIZE = 26214400
 LANGUAGE_CODE = 'en-us'
 TIME_ZONE = 'Europe/Copenhagen'
 USE_I18N = True
-USE_L10N = True
 USE_TZ = True
 
 # Default site configuration (gpcr - GPCRdb, gprotein - GproteinDb, arrestin - ArrestinDb, biasedsignalingatlas - Biased Signaling Atlas)

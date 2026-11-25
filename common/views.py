@@ -115,7 +115,7 @@ def _current_alignment_domain(request):
     """Identifies which alignment flow issued this AJAX call from the Referer
     header - stateless, per-request, nothing stored in the session. Returns
     None (no filtering applied) for every other app/page's calls."""
-    referer = request.META.get('HTTP_REFERER') or ''
+    referer = request.headers.get('referer') or ''
     for path, domain in _ALIGNMENT_REFERER_DOMAINS:
         if path in referer:
             return domain

@@ -1,4 +1,4 @@
-from django.conf.urls import url
+from django.urls import re_path
 from django.urls import path
 from django.views.decorators.cache import cache_page
 
@@ -28,14 +28,14 @@ urlpatterns = [
     path('segmentselection', views.SegmentSelection.as_view(), name='segmentselection'),
     path('render', views.render_mutations, name='render'),
 
-    url(r'^(?P<download>download)', views.render_mutations, name='render'),
-    url(r'^protein/(?P<protein>[^/]*?)/$', views.render_mutations, name='render'),
-    url(r'^protein/(?P<protein>[^/]*?)/(?P<download>download)$', views.render_mutations, name='render'),
+    re_path(r'^(?P<download>download)', views.render_mutations, name='render'),
+    re_path(r'^protein/(?P<protein>[^/]*?)/$', views.render_mutations, name='render'),
+    re_path(r'^protein/(?P<protein>[^/]*?)/(?P<download>download)$', views.render_mutations, name='render'),
     #url(r'^list/(?P<receptor_class>[^/]*?)/(?P<gn>[^/]*?)/(?P<aa>[^/]*?)$', views.render_mutations, name='render'),
     path('list/<receptor_class>/<gn>/<aa>', views.render_mutations, name='render'),
     path('list/<receptor_class>/<gn>/<aa>/', views.render_mutations, name='render'),
-    url(r'^family/(?P<family>[^/]*?)/$', views.render_mutations, name='render'),
-    url(r'^family/(?P<family>[^/]*?)/(?P<download>download)$', views.render_mutations, name='render'),
-    url(r'^ajax/(?P<slug>[^/]*?)/$', views.ajax, name='ajax'),
-    url(r'^ajax/(?P<slug>[^/]*?)/(?P<segments>.+)/$', views.ajaxSegments, name='ajaxSegments'),
+    re_path(r'^family/(?P<family>[^/]*?)/$', views.render_mutations, name='render'),
+    re_path(r'^family/(?P<family>[^/]*?)/(?P<download>download)$', views.render_mutations, name='render'),
+    re_path(r'^ajax/(?P<slug>[^/]*?)/$', views.ajax, name='ajax'),
+    re_path(r'^ajax/(?P<slug>[^/]*?)/(?P<segments>.+)/$', views.ajaxSegments, name='ajaxSegments'),
 ]

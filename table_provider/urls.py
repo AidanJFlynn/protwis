@@ -1,4 +1,4 @@
-from django.conf.urls import url
+from django.urls import re_path
 from django.views.decorators.cache import cache_page
 from django.views.generic import TemplateView
 from table_provider.views import GpcrStructureBrowserSummaryTable, GpcrStructureStatisticsSummaryTable, PdbStructureSummaryTable, PhysiologicalLigandsSummaryTable, LigandComplexModelsSummaryTable, HomologyModelsSummaryTable, ConfigurationFactoryView
@@ -14,13 +14,13 @@ def datatable_urls(path, view_class, name, cached_path=None):
     path/countdistinct            distinct value counts per column
     """
     path = path.strip('/')
-    patterns = [url(r'^%s/?$' % path, view_class.as_view(), name=name)]
+    patterns = [re_path(r'^%s/?$' % path, view_class.as_view(), name=name)]
     if cached_path:
-        patterns.append(url(r'^%s/?$' % cached_path.strip('/'), cache_page(60 * 60 * 24)(view_class.as_view()), name=name + '_cached'))
+        patterns.append(re_path(r'^%s/?$' % cached_path.strip('/'), cache_page(60 * 60 * 24)(view_class.as_view()), name=name + '_cached'))
     patterns += [
-        url(r'^%s/options/(?P<column>[^/]+)/?$' % path, view_class.as_view(action='options'), name=name + '_options'),
-        url(r'^%s/range/(?P<column>[^/]+)/?$' % path, view_class.as_view(action='range'), name=name + '_range'),
-        url(r'^%s/countdistinct/?$' % path, view_class.as_view(action='countdistinct'), name=name + '_count_distinct'),
+        re_path(r'^%s/options/(?P<column>[^/]+)/?$' % path, view_class.as_view(action='options'), name=name + '_options'),
+        re_path(r'^%s/range/(?P<column>[^/]+)/?$' % path, view_class.as_view(action='range'), name=name + '_range'),
+        re_path(r'^%s/countdistinct/?$' % path, view_class.as_view(action='countdistinct'), name=name + '_count_distinct'),
     ]
     return patterns
 
@@ -43,5 +43,5 @@ urlpatterns = [
     # TableManager configuration factory #
     ######################################
 
-    url(r'^configuration/(?P<configuration_type>[^/]+)/(?P<table_name>[^/]+)/(?P<configuration_variant>[^/]+)/?$', ConfigurationFactoryView.as_view(), name='configuration_factory'),
+    re_path(r'^configuration/(?P<configuration_type>[^/]+)/(?P<table_name>[^/]+)/(?P<configuration_variant>[^/]+)/?$', ConfigurationFactoryView.as_view(), name='configuration_factory'),
 ]

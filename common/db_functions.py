@@ -1,4 +1,4 @@
-from django.contrib.postgres.fields import JSONField
+from django.db.models import JSONField
 from django.db.models import CharField, TextField
 from django.db.models.lookups import Lookup, Transform
 

@@ -49,10 +49,10 @@ class StatsMiddleware:
         text_file = open(log_file, "a")
         if bot_user:
             text_file.write('%s %s %s %s %s %s\n' % (datetime.datetime.utcnow().strftime("%Y-%m-%d %H:%M:%S"), round(total, 2),
-                                                     request.META.get('HTTP_X_FORWARDED_FOR'), request.method, request.path, request.META.get('HTTP_USER_AGENT')))
+                                                     request.headers.get('x-forwarded-for'), request.method, request.path, request.headers.get('user-agent')))
         else:
             text_file.write('%s %s %s %s %s\n' % (datetime.datetime.utcnow().strftime(
-                "%Y-%m-%d %H:%M:%S"), round(total, 2), request.META.get('HTTP_X_FORWARDED_FOR'), request.method, request.path))
+                "%Y-%m-%d %H:%M:%S"), round(total, 2), request.headers.get('x-forwarded-for'), request.method, request.path))
 
         text_file.close()
 
@@ -69,7 +69,7 @@ class StatsMiddleware:
                     settings.BASE_DIR, "logs/stats_slow_bots.log")
             text_file = open(log_file, "a")
             text_file.write('%s %s %s %s %s %s\n' % (datetime.datetime.utcnow().strftime("%Y-%m-%d %H:%M:%S"), round(total, 2),
-                                                     request.META.get('HTTP_X_FORWARDED_FOR'), request.method, request.path, request.META.get('HTTP_USER_AGENT')))
+                                                     request.headers.get('x-forwarded-for'), request.method, request.path, request.headers.get('user-agent')))
             text_file.close()
 
         return response
@@ -81,7 +81,7 @@ class StatsMiddleware:
 
         text_file = open(log_file, "a")
         text_file.write('%s %s - %s %s - %s "%s" "%s"\n' % (datetime.datetime.utcnow().strftime("%Y-%m-%d %H:%M:%S"), request.method, request.path,
-                                                            request.META.get('HTTP_REFERER'), request.META.get('HTTP_X_FORWARDED_FOR'), request.META.get('HTTP_USER_AGENT'), str(exception)))
+                                                            request.headers.get('referer'), request.headers.get('x-forwarded-for'), request.headers.get('user-agent'), str(exception)))
         text_file.close()
 
     @staticmethod
@@ -94,5 +94,5 @@ class StatsMiddleware:
         Analyzed Feb-2021 on listings at useragentstring.com.
         """
         bot_IDs = ["bot", "slurp", "crawler", "spider", "curl", "facebook", "python"]
-        user_agent = request.META.get("HTTP_USER_AGENT", "").lower()
+        user_agent = request.headers.get("user-agent", "").lower()
         return any(bot_ID in user_agent for bot_ID in bot_IDs)

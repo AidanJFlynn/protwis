@@ -351,7 +351,7 @@ def SelectionAutocomplete(request):
         if fields is not None:
             field_list = fields.split(',')
 
-        referer = request.META.get('HTTP_REFERER')
+        referer = request.headers.get('referer')
 
         if 'gproteinselection' in str(referer) or 'signprot' in str(referer) and not 'ginterface' in str(referer):
             exclusion_slug = '00'

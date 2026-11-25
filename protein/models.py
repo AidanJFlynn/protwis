@@ -413,11 +413,11 @@ class ProteinFamilyClassification(models.Model):
         db_table = "protein_family_classification"
         constraints = [
             models.CheckConstraint(
-                check=models.Q(chemotype_order__isnull=True) | models.Q(chemotype_order__in=[1, 2]),
+                condition=models.Q(chemotype_order__isnull=True) | models.Q(chemotype_order__in=[1, 2]),
                 name="pfc_chemotype_order_valid",
             ),
             models.CheckConstraint(
-                check=models.Q(modality_order__isnull=True) | models.Q(modality_order__in=[1, 2]),
+                condition=models.Q(modality_order__isnull=True) | models.Q(modality_order__in=[1, 2]),
                 name="pfc_modality_order_valid",
             ),
         ]

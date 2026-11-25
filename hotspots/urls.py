@@ -1,8 +1,8 @@
-from django.conf.urls import url
+from django.urls import path
 
 from hotspots import views
 
 urlpatterns = [
-    url(r'^hotspotsview$', views.hotspotsView, name='hotspotsView'),
-    url(r'^hotspotsdata$', views.getHotspots, name='hotspotsJSON')
+    path('hotspotsview', views.hotspotsView, name='hotspotsView'),
+    path('hotspotsdata', views.getHotspots, name='hotspotsJSON')
 ]
