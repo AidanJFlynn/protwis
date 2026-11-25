@@ -1240,7 +1240,7 @@ def _radio_label(mass, element):
 
 def get_radioactive_info(name, synonyms, smiles=None):
     # Regex for radioactive isotopes
-    regexes = {"isotope":"\[(<sup>\d+</sup>[A-Za-z]{1,2})\]"}#, "other":"\[(?=[^\]]*<sup>)([^\]]+)\]"}
+    regexes = {"isotope":r"\[(<sup>\d+</sup>[A-Za-z]{1,2})\]"}#, "other":"\[(?=[^\]]*<sup>)([^\]]+)\]"}
     for _, regex in regexes.items():
         isotope_search = re.findall(regex, name)
         if len(isotope_search)>0:

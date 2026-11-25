@@ -868,7 +868,7 @@ class SequenceSignature:
             for _, gn_list in generic_numbers_set[scheme].items():
                 for col, gn_pair in enumerate(gn_list.items()):
                     try:
-                        tm, bw, gpcrdb = re.split('\.|x', strip_html_tags(gn_pair[1]))
+                        tm, bw, gpcrdb = re.split(r'\.|x', strip_html_tags(gn_pair[1]))
                     except:
                         tm, bw, gpcrdb = ('', '', '')
                     worksheet.write(
@@ -1054,7 +1054,7 @@ class SequenceSignature:
             for _, gn_list in generic_numbers_set[scheme].items():
                 for col, gn_pair in enumerate(gn_list.items()):
                     try:
-                        tm, bw, gpcrdb = re.split('\.|x', strip_html_tags(gn_pair[1]))
+                        tm, bw, gpcrdb = re.split(r'\.|x', strip_html_tags(gn_pair[1]))
                     except:
                         tm, bw, gpcrdb = ('', '', '')
                     worksheet.write(
@@ -1540,7 +1540,7 @@ def signature_score_excel(workbook, scores, protein_signatures, signature_filter
         for _, gn_list in relevant_gn[scheme].items():
             for col, gn_pair in enumerate(gn_list.items()):
                 try:
-                    tm, bw, gpcrdb = re.split('\.|x', strip_html_tags(gn_pair[1]))
+                    tm, bw, gpcrdb = re.split(r'\.|x', strip_html_tags(gn_pair[1]))
                 except:
                     tm, bw, gpcrdb = ('', '', '')
                 worksheet.write(

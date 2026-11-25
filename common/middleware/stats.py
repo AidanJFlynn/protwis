@@ -24,7 +24,7 @@ class StatsMiddleware:
 #       # Start/top logger - not needed as we do slow query logging instead
 #        request_id = uuid.uuid4().hex
 #        text_file = open(os.path.join(settings.BASE_DIR, "logs/stats_start_stop.log"), "a")
-#        text_file.write('%s %s %s START %s %s\n' % (datetime.datetime.utcnow().strftime("%Y-%m-%d %H:%M:%S"),request.META.get('REMOTE_ADDR'),request_id, request.method, request.path ))
+#        text_file.write('%s %s %s START %s %s\n' % (datetime.datetime.now(datetime.timezone.utc).strftime("%Y-%m-%d %H:%M:%S"),request.META.get('REMOTE_ADDR'),request_id, request.method, request.path ))
 #        text_file.close()
 
         # start timer
@@ -48,17 +48,17 @@ class StatsMiddleware:
 
         text_file = open(log_file, "a")
         if bot_user:
-            text_file.write('%s %s %s %s %s %s\n' % (datetime.datetime.utcnow().strftime("%Y-%m-%d %H:%M:%S"), round(total, 2),
+            text_file.write('%s %s %s %s %s %s\n' % (datetime.datetime.now(datetime.timezone.utc).strftime("%Y-%m-%d %H:%M:%S"), round(total, 2),
                                                      request.headers.get('x-forwarded-for'), request.method, request.path, request.headers.get('user-agent')))
         else:
-            text_file.write('%s %s %s %s %s\n' % (datetime.datetime.utcnow().strftime(
+            text_file.write('%s %s %s %s %s\n' % (datetime.datetime.now(datetime.timezone.utc).strftime(
                 "%Y-%m-%d %H:%M:%S"), round(total, 2), request.headers.get('x-forwarded-for'), request.method, request.path))
 
         text_file.close()
 
 #       # Start/top logger - not needed as we do slow query logging instead
 #        text_file = open(os.path.join(settings.BASE_DIR, "logs/stats_start_stop.log"), "a")
-#        text_file.write('%s %s %s FINISH %s %s %s\n' % (datetime.datetime.utcnow().strftime("%Y-%m-%d %H:%M:%S"),request.META.get('REMOTE_ADDR'),request_id, round(total,2), request.method, request.path ))
+#        text_file.write('%s %s %s FINISH %s %s %s\n' % (datetime.datetime.now(datetime.timezone.utc).strftime("%Y-%m-%d %H:%M:%S"),request.META.get('REMOTE_ADDR'),request_id, round(total,2), request.method, request.path ))
 #        text_file.close()
 
         # Extended logging of queries that are slower than 5 seconds
@@ -68,7 +68,7 @@ class StatsMiddleware:
                 log_file = os.path.join(
                     settings.BASE_DIR, "logs/stats_slow_bots.log")
             text_file = open(log_file, "a")
-            text_file.write('%s %s %s %s %s %s\n' % (datetime.datetime.utcnow().strftime("%Y-%m-%d %H:%M:%S"), round(total, 2),
+            text_file.write('%s %s %s %s %s %s\n' % (datetime.datetime.now(datetime.timezone.utc).strftime("%Y-%m-%d %H:%M:%S"), round(total, 2),
                                                      request.headers.get('x-forwarded-for'), request.method, request.path, request.headers.get('user-agent')))
             text_file.close()
 
@@ -80,7 +80,7 @@ class StatsMiddleware:
             log_file = os.path.join(settings.BASE_DIR, "logs/errors_bots.log")
 
         text_file = open(log_file, "a")
-        text_file.write('%s %s - %s %s - %s "%s" "%s"\n' % (datetime.datetime.utcnow().strftime("%Y-%m-%d %H:%M:%S"), request.method, request.path,
+        text_file.write('%s %s - %s %s - %s "%s" "%s"\n' % (datetime.datetime.now(datetime.timezone.utc).strftime("%Y-%m-%d %H:%M:%S"), request.method, request.path,
                                                             request.headers.get('referer'), request.headers.get('x-forwarded-for'), request.headers.get('user-agent'), str(exception)))
         text_file.close()
 

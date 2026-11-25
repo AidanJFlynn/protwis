@@ -1662,10 +1662,10 @@ class HomologyModeling(object):
             for line in pdblines:
                 try:
                     if prev_num==None:
-                        pdb_re = re.search('(ATOM[A-Z\s\d]{13}\S{3})([\sA-Z]+)(\d+)([A-Z\s\d.-]{49,53})',line)
+                        pdb_re = re.search(r'(ATOM[A-Z\s\d]{13}\S{3})([\sA-Z]+)(\d+)([A-Z\s\d.-]{49,53})',line)
                         prev_num = int(pdb_re.group(3))
                         prev_chain = pdb_re.group(2).strip()
-                    pdb_re = re.search('(ATOM[A-Z\s\d]{13}\S{3})([\sA-Z]+)(\d+)([A-Z\s\d.-]{49,53})',line)
+                    pdb_re = re.search(r'(ATOM[A-Z\s\d]{13}\S{3})([\sA-Z]+)(\d+)([A-Z\s\d.-]{49,53})',line)
                     if int(pdb_re.group(3))>prev_num or (int(pdb_re.group(3))<prev_num and prev_chain!=pdb_re.group(2).strip()):
                         i+=1
                         prev_num = int(pdb_re.group(3))
@@ -1723,7 +1723,7 @@ class HomologyModeling(object):
                                 for l in self.peptide_ligands:
                                     if l[0].chain==line[21]:
                                         break
-                                pdb_re = re.search('(ATOM[A-Z\s\d]{13}\S{3})([\sA-Z]+)(\d+)([A-Z\s\d.-]{49,53})',line)
+                                pdb_re = re.search(r'(ATOM[A-Z\s\d]{13}\S{3})([\sA-Z]+)(\d+)([A-Z\s\d.-]{49,53})',line)
                                 if not first_ligand_pep_res:
                                     prev_num = pdb_re.group(3)
                                     prev_chain = pdb_re.group(2).strip()
@@ -1738,7 +1738,7 @@ class HomologyModeling(object):
                             ###
                             if len(pref_chain)>1:
                                 pref_chain = pref_chain[0]
-                            pdb_re = re.search('(HETATM[0-9\sA-Z{apo}]{{11}})([A-Z0-9\s]{{3}})([\sA-Z]+)(\d+)([\s0-9.A-Z-]+)'.format(apo="'"),line)
+                            pdb_re = re.search(r'(HETATM[0-9\sA-Z{apo}]{{11}})([A-Z0-9\s]{{3}})([\sA-Z]+)(\d+)([\s0-9.A-Z-]+)'.format(apo="'"),line)
                             if not pdb_re:
                                 continue
                             alternate_water = False
@@ -3075,7 +3075,7 @@ class HomologyModeling(object):
                 i = -1
                 while not model_lines[i].startswith('ATOM'):
                     i-=1
-                pdb_re_model = re.search('(ATOM[0-9\sA-Z{apo}]{{13}})([A-Z0-9\s]{{3}})\s({pref})([0-9\s]{{4}})'.format(apo="'",pref=pref_chain), model_lines[i])
+                pdb_re_model = re.search(r'(ATOM[0-9\sA-Z{apo}]{{13}})([A-Z0-9\s]{{3}})\s({pref})([0-9\s]{{4}})'.format(apo="'",pref=pref_chain), model_lines[i])
                 last_seqnum = int(pdb_re_model.group(4))
                 hetatm = 1
                 for line in lines:
@@ -3084,7 +3084,7 @@ class HomologyModeling(object):
                             continue
                         if self.main_structure.pdb_code.index=='4BUO' and 'GLY' in line:
                             continue
-                        pdb_re = re.search('(HETATM[0-9\sA-Z{apo}]{{11}})([A-Z0-9\s]{{3}})\s({pref})([0-9\s]{{4}})'.format(apo="'",pref=pref_chain), line)
+                        pdb_re = re.search(r'(HETATM[0-9\sA-Z{apo}]{{11}})([A-Z0-9\s]{{3}})\s({pref})([0-9\s]{{4}})'.format(apo="'",pref=pref_chain), line)
                         if not pdb_re:
                             continue
 
@@ -3712,12 +3712,12 @@ ATOM{atom_num}  {atom}{res} {chain}{res_num}{coord1}{coord2}{coord3}{occupancy}{
             lines = f.readlines()
             for line in lines:
                 try:
-                    pdb_re = re.search('(ATOM[A-Z\s\d]{13}\S{3}\s\S\s+)(\d+)([A-Z\s\d.-]{49,53})',line)
+                    pdb_re = re.search(r'(ATOM[A-Z\s\d]{13}\S{3}\s\S\s+)(\d+)([A-Z\s\d.-]{49,53})',line)
                     start_num = pdb_re.group(2)
                     break
                 except:
                     try:
-                        pdb_re = re.search('(ATOM[A-Z\s\d]{13}\S{3}\s+)(\d+)([A-Z\s\d.-]{49,53})',line)
+                        pdb_re = re.search(r'(ATOM[A-Z\s\d]{13}\S{3}\s+)(\d+)([A-Z\s\d.-]{49,53})',line)
                         start_num = pdb_re.group(2)
                         break
                     except:

@@ -598,7 +598,7 @@ class ImportHomologyModel():
                 if c>10:
                     break
                 if line.startswith('SSBOND'):
-                    pdb_re = re.search('SSBOND\s+\d+\s+CYS\sR\s+(\d+)\s+CYS\sR\s+(\d+)', line)
+                    pdb_re = re.search(r'SSBOND\s+\d+\s+CYS\sR\s+(\d+)\s+CYS\sR\s+(\d+)', line)
                     num1 = pdb_re.group(1)
                     num2 = pdb_re.group(2)
                     res1, res2 = list(Residue.objects.filter(protein_conformation__protein__entry_name=self.receptor, sequence_number__in=[num1, num2]))

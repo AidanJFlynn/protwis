@@ -57,7 +57,7 @@ class Command(BaseBuild):
 
 	def build_ECD_anomalies(self):
 		with open(self.anomalies_file, 'r') as fa:
-			self.anomalies = yaml.load(fa)
+			self.anomalies = yaml.safe_load(fa)
 
 	def build_ECD_gn(self, gn, segment):
 		ecd_gn, created = ResidueGenericNumber.objects.get_or_create(label=gn, protein_segment=segment, scheme=self.scheme)

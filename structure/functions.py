@@ -1254,7 +1254,7 @@ class ParseAFComplexModels():
             # Grab model date/version from pdb file
             with open(location, 'r') as model_file:
                 line = model_file.readlines()[0]
-                date_re = re.search('HEADER[A-Z\S\D]+(\d{4}-\d{2}-\d{2})', line)
+                date_re = re.search(r'HEADER[A-Z\S\D]+(\d{4}-\d{2}-\d{2})', line)
                 try:
                     model_date = date_re.group(1)
                 except AttributeError:
@@ -1400,7 +1400,7 @@ class ParseRFAAModels():
             ### Grab model date/version from pdb file
             with open(location, 'r') as model_file:
                 line = model_file.readlines()[0]
-                date_re = re.search('HEADER[A-Z\S\D]+(\d{4}-\d{2}-\d{2})', line)
+                date_re = re.search(r'HEADER[A-Z\S\D]+(\d{4}-\d{2}-\d{2})', line)
                 try:
                     model_date = date_re.group(1)
                 except:

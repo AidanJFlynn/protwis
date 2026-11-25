@@ -45,7 +45,7 @@ class Command(BaseCommand):
             filename = self.options['custom']
             print(filename)
             with open(filename, 'r') as signprot_file:
-                signprot = yaml.load(signprot_file)
+                signprot = yaml.safe_load(signprot_file)
             structure = Structure.objects.get(pdb_code__index=signprot['pdb'])
             signprot_complex, created = SignprotComplex.objects.get_or_create(protein=Protein.objects.get(entry_name=signprot['alpha_uniprot']), 
                                                                               structure=structure,

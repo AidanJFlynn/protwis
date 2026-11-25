@@ -303,11 +303,11 @@ def find_interacting_ligand(pdb_location, pdb, file_input):
                 if lig in line:
                     if line.startswith('HETSYN'):
                         try:
-                            m = re.match("HETSYN[\s]+([\w]{3})[\s]+(.+)", line)
+                            m = re.match(r"HETSYN[\s]+([\w]{3})[\s]+(.+)", line)
                             d[m.group(1)] = m.group(2).strip()
                         except AttributeError:
                             #apply exception to ligand with multiline names1
-                            m = re.match("HETSYN[\s]+([\w]{1})[\s]+(.+)", line)
+                            m = re.match(r"HETSYN[\s]+([\w]{1})[\s]+(.+)", line)
                             code = m.group(2).split(' ')[0]
                             d[code] += m.group(2).split(' ')[1].strip()
                     else:
@@ -1163,7 +1163,7 @@ def addresiduestoligand(projectdir, ligand, pdb, residuelist, pdbfile):
     for line in f_in:
         if line.startswith('ATOM'):
             temp = line.split()
-            m = re.match("(\w)(\d+)", temp[4])
+            m = re.match(r"(\w)(\d+)", temp[4])
             if (m):
                 temp[4] = m.group(1)
                 temp[5] = m.group(2)
@@ -2108,7 +2108,7 @@ def calculate(request, redirect=None):
                     # need to fix bad PDB formatting where col4 and col5 are
                     # put together for some reason -- usually seen when the id
                     # is +1000
-                    m = re.match("HETSYN[\s]+([\w]{3})[\s]+(.+)", line)
+                    m = re.match(r"HETSYN[\s]+([\w]{3})[\s]+(.+)", line)
                     if (m):
                         hetsyn[m.group(2).strip()] = m.group(1).upper()
                         hetsyn_reverse[m.group(1)] = m.group(2).strip().upper()
@@ -2116,7 +2116,7 @@ def calculate(request, redirect=None):
                     # need to fix bad PDB formatting where col4 and col5 are
                     # put together for some reason -- usually seen when the id
                     # is +1000
-                    m = re.match("HETNAM[\s]+([\w]{3})[\s]+(.+)", line)
+                    m = re.match(r"HETNAM[\s]+([\w]{3})[\s]+(.+)", line)
                     if (m):
                         hetsyn[m.group(2).strip()] = m.group(1).upper()
                         hetsyn_reverse[m.group(1)] = m.group(2).strip().upper()

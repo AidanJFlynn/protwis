@@ -125,7 +125,7 @@ def steps(options):
             )
         )
         return []
-    stamp = datetime.datetime.utcnow().strftime("%Y%m%dT%H%M%SZ")
+    stamp = datetime.datetime.now(datetime.timezone.utc).strftime("%Y%m%dT%H%M%SZ")
     imports = []
     for command, data_dir, report_dir, default_dir in (
         (

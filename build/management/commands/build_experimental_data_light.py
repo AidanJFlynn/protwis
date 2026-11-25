@@ -2272,7 +2272,7 @@ class Command(BaseBuild):
         pdsp_file = os.sep.join([Command.data_dir, 'pdsp_ki_backup_august25.csv'])
         bioactivity_kidata = pd.read_csv(pdsp_link, dtype=str, encoding='mac_roman')
         if 'Could not connect: ' in bioactivity_kidata.columns:
-            print("\n===============\Prep: Error is fetching data from remote, using local backup file")
+            print("\n===============\\Prep: Error is fetching data from remote, using local backup file")
             bioactivity_kidata = pd.read_csv(pdsp_file, dtype=str, encoding='mac_roman')
             bioactivity_kidata["Ki value"].replace(">10000", 10000.0, inplace=True)
             src = 'Local'

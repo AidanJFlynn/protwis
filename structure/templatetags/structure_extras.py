@@ -201,7 +201,7 @@ def receptor_short ( objs ):
 @register.filter
 def br_after_class_code ( objs ):
     objs = objs.strip()
-    m = re.match("^([A-Z][0-9]?)\s(\(.+\))", objs)
+    m = re.match(r"^([A-Z][0-9]?)\s(\(.+\))", objs)
     if m:
         return m.group(1) + "<br/>" + m.group(2)
     else:

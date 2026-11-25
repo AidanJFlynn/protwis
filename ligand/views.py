@@ -43,9 +43,9 @@ from interaction.models import StructureLigandInteraction
 from mutation.models import MutationExperiment
 from drugs.models import Drugs, Indication, ATCCodes
 
-re_whitespaces = re.compile('\s+')
-re_leading_whitespaces = re.compile('^\s+')
-re_trailing_whitespaces = re.compile('\s+$')
+re_whitespaces = re.compile(r'\s+')
+re_leading_whitespaces = re.compile(r'^\s+')
+re_trailing_whitespaces = re.compile(r'\s+$')
 MAX_RECORDS = 10**6
 
 

@@ -265,7 +265,7 @@ class Command(BaseBuild):
                 mutations, shifted_mutations = OrderedDict(), OrderedDict()
                 # Search for annotated engineered mutations in pdb SEQADV
                 for s in seqadv:
-                    line_search = re.search("SEQADV\s{1}[A-Z\s\d]{4}\s{1}([A-Z]{3})\s{1}([A-Z]{1})\s+(\d+)[\s\S\d]{5}([\s\S\d]{12})([A-Z]{3})\s+(\d+)(\s\S+)",s)
+                    line_search = re.search(r"SEQADV\s{1}[A-Z\s\d]{4}\s{1}([A-Z]{3})\s{1}([A-Z]{1})\s+(\d+)[\s\S\d]{5}([\s\S\d]{12})([A-Z]{3})\s+(\d+)(\s\S+)",s)
                     if line_search!=None:
                         if line_search.group(2)==sc.alpha:
                             if line_search.group(4).strip()==sc.protein.accession:

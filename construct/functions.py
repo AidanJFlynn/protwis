@@ -573,7 +573,7 @@ def fetch_pdb_info(pdbname, protein ,new_xtal=False, ignore_gasper_annotation=Fa
             uniprot_seq = elm.text
             if uniprot_seq:
                 import re
-                uniprot_seq = re.sub('[\s+]', '', uniprot_seq)
+                uniprot_seq = re.sub(r'[\s+]', '', uniprot_seq)
                 # print(uniprot_seq)
     # print(variants_mapping)
     # if len(uniprot_seq)!=len(d['wt_seq']): print("gpcrdb seq",len(d['wt_seq']),'uniport len',len(uniprot_seq))

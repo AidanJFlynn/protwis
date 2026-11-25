@@ -1602,12 +1602,12 @@ class Command(BaseBuild):
             hetsyn_reverse = {}
             for line in pdbdata_raw.splitlines():
                 if line.startswith('HETSYN'):
-                    m = re.match("HETSYN[\s]+([\w]{3})[\s]+(.+)",line) ### need to fix bad PDB formatting where col4 and col5 are put together for some reason -- usually seen when the id is +1000
+                    m = re.match(r"HETSYN[\s]+([\w]{3})[\s]+(.+)",line) ### need to fix bad PDB formatting where col4 and col5 are put together for some reason -- usually seen when the id is +1000
                     if (m):
                         hetsyn[m.group(2).strip()] = m.group(1).upper()
                         hetsyn_reverse[m.group(1)] = m.group(2).strip().upper()
                 if line.startswith('HETNAM'):
-                    m = re.match("HETNAM[\s]+([\w]{3})[\s]+(.+)",line) ### need to fix bad PDB formatting where col4 and col5 are put together for some reason -- usually seen when the id is +1000
+                    m = re.match(r"HETNAM[\s]+([\w]{3})[\s]+(.+)",line) ### need to fix bad PDB formatting where col4 and col5 are put together for some reason -- usually seen when the id is +1000
                     if (m):
                         hetsyn[m.group(2).strip()] = m.group(1).upper()
                         hetsyn_reverse[m.group(1)] = m.group(2).strip().upper()
