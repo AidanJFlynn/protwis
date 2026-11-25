@@ -432,9 +432,15 @@ class LigandBulkSearch(TemplateView):
                     for smiles in entries[1:]:
                         q = q | q1
                     qs = LigandMol.objects.filter(q).values("ligand")
-                    sql_query = str(qs.query).replace(
-                        "(" + sql_string_placeholder + ")", string_to_replace_by
-                    )
+                    sql_query = str(qs.query)
+                    # Django 2.2 rendered the lookup value as "@> (placeholder)"; Django 5
+                    # drops the parentheses for a bare Value ("@> placeholder").
+                    if "(" + sql_string_placeholder + ")" in sql_query:
+                        sql_query = sql_query.replace(
+                            "(" + sql_string_placeholder + ")", string_to_replace_by
+                        )
+                    else:
+                        sql_query = sql_query.replace(sql_string_placeholder, string_to_replace_by)
                     sql_final_query = "SET SESSION rdkit.do_chiral_sss=%s; " + sql_query
                     cursor.execute(sql_final_query, [str(stereochemistry)] + entries)
                     cursor_results = cursor.fetchall()
