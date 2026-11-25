@@ -2624,11 +2624,12 @@ class GenericNumberingIndex(TemplateView):
 
         context = super(GenericNumberingIndex, self).get_context_data(**kwargs)
         # get attributes of this class and add them to the context
-        context['form_code'] = str(self.form_code)
         attributes = inspect.getmembers(self, lambda a:not(inspect.isroutine(a)))
         for a in attributes:
             if not(a[0].startswith('__') and a[0].endswith('__')):
                 context[a[0]] = a[1]
+        # Django 5 renders a bare form with divs; keep the 2.2 table layout
+        context['form_code'] = self.form_code.as_table()
 
         return context
 
@@ -2838,7 +2839,6 @@ class SuperpositionWorkflowIndex(TemplateView):
                 context['selection'][selection_box] = selection.dict(selection_box)['selection'][selection_box]
 
         # get attributes of this class and add them to the context
-        context['form_code'] = str(self.form_code)
         context['source'] = self.website
         if self.website == 'gpcr':
             context['url'] = '/structure/superposition_workflow_selection'
@@ -2849,6 +2849,8 @@ class SuperpositionWorkflowIndex(TemplateView):
         for a in attributes:
             if not(a[0].startswith('__') and a[0].endswith('__')):
                 context[a[0]] = a[1]
+        # Django 5 renders a bare form with divs; keep the 2.2 table layout
+        context['form_code'] = self.form_code.as_table()
         return context
 
 #Class rendering selection box for sequence segments
